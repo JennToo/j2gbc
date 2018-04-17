@@ -58,8 +58,9 @@ impl Cpu {
                 self.pc = a;
             }
             Instruction::CallI(a) => {
-                self.mmu.write16(self.sp, self.pc.into());
-                self.sp -= Address(2);
+                let nsp = self.sp - Address(2);
+                self.mmu.write16(self.sp, nsp.into());
+                self.sp = nsp;
                 self.pc = a;
             }
             Instruction::LdRM(r, a) => {
