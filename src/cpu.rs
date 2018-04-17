@@ -66,7 +66,7 @@ impl Cpu {
 
     pub fn run_cycle(&mut self) {
         let instruction = self.fetch_instruction();
-        println!("Running {:#X}: {:?}", self.pc.0, instruction);
+        println!("Running {:?}: {:?}", self.pc, instruction);
         self.pc += Address(1);
         self.execute(instruction);
     }

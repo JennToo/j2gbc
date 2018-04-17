@@ -1,9 +1,16 @@
 use std::ops::{Add, AddAssign, Sub, SubAssign};
 use std::convert::Into;
+use std::fmt::{Debug, Formatter, Result};
 use cart::Cart;
 
-#[derive(Eq, PartialEq, Ord, PartialOrd, Debug, Copy, Clone)]
+#[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone)]
 pub struct Address(pub u16);
+
+impl Debug for Address {
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        write!(f, "Address({:#X})", self.0)
+    }
+}
 
 impl Add<Address> for Address {
     type Output = Address;
@@ -98,6 +105,7 @@ pub struct Mmu {
     internal_ram: Ram,
     tiny_ram: Ram,
     cart: Cart,
+    // TODO: Actually implement IE register
     interrupt_enable: u8,
 }
 
@@ -128,7 +136,7 @@ impl MemDevice for Mmu {
         } else if a == OFF_INTR_ENABLE_REG {
             self.interrupt_enable
         } else {
-            panic!("MMU: Unimplemented memory read at address {:#X}", a.0);
+            panic!("MMU: Unimplemented memory read at address {:?}", a);
         }
     }
 
@@ -142,7 +150,7 @@ impl MemDevice for Mmu {
         } else if a == OFF_INTR_ENABLE_REG {
             self.interrupt_enable = v;
         } else {
-            panic!("MMU: Unimplemented memory write at address {:#X}", a.0);
+            panic!("MMU: Unimplemented memory write at address {:?}", a);
         }
     }
 }
