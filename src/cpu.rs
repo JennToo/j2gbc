@@ -56,8 +56,8 @@ impl Cpu {
                 self.pc = a;
             }
             Instruction::CallI(a) => {
-                self.mmu.write16(self.sp, self.pc.0);
-                self.sp.0 -= 2;
+                self.mmu.write16(self.sp, self.pc.into());
+                self.sp -= Address(2);
                 self.pc = a;
             }
         }        
@@ -67,12 +67,12 @@ impl Cpu {
     pub fn run_cycle(&mut self) {
         let instruction = self.fetch_instruction();
         println!("Running {:#X}: {:?}", self.pc.0, instruction);
-        self.pc.0 += 1;
+        self.pc += Address(1);
         self.execute(instruction);
     }
 
     fn fetch_instruction(&self) -> Instruction {
-        let bytes = [self.mmu.read(self.pc), self.mmu.read(Address(self.pc.0 + 1)), self.mmu.read(Address(self.pc.0 + 2))];
+        let bytes = [self.mmu.read(self.pc), self.mmu.read(self.pc + Address(1)), self.mmu.read(self.pc + Address(2))];
         Instruction::decode(bytes)
     }
 }

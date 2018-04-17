@@ -1,5 +1,5 @@
 use std::io::{Result, Read};
-use mem::{MemDevice, Address, OFF_ROM_BANK0_START, OFF_ROM_BANK0_END};
+use mem::{MemDevice, Address, RNG_ROM_BANK0};
 
 pub struct Cart {
     pub data: Vec<u8>,    
@@ -45,18 +45,18 @@ impl Cart {
 
 impl MemDevice for Cart {
     fn read(&self, a: Address) -> u8 {
-        if a >= OFF_ROM_BANK0_START && a < OFF_ROM_BANK0_END {
+        if a.in_(RNG_ROM_BANK0) {
             self.data[a.0 as usize]
         } else {
-            panic!("Unimplemented region for cart");
+            panic!("Unimplemented region for cart {:#X}", a.0);
         }
     }
 
     fn write(&mut self, a: Address, v: u8) {
-        if a >= OFF_ROM_BANK0_START && a < OFF_ROM_BANK0_END {
+        if a.in_(RNG_ROM_BANK0) {
             self.data[a.0 as usize] = v;
         } else {
-            panic!("Unimplemented region for cart");
+            panic!("Unimplemented region for cart {:#X}", a.0);
         }
     }
 }
