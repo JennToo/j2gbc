@@ -5,6 +5,7 @@ use mem::{Address, MemDevice, Mmu};
 use cart::Cart;
 
 #[repr(u8)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Register8 {
     A,
     B,
@@ -17,6 +18,7 @@ pub enum Register8 {
 }
 
 #[repr(u8)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Register16 {
     AF,
     BC,
@@ -60,18 +62,29 @@ impl Cpu {
                 self.sp -= Address(2);
                 self.pc = a;
             }
+            Instruction::LdRM(r, a) => {
+                self[r] = self.mmu.read(a);
+            }
+            Instruction::LdMR(a, r) => {
+                let v = self[r];
+                self.mmu.write(a, v);
+            }
+            Instruction::Res(b, r) => {
+                let v = self[r] & !(1 << b);
+                self[r] = v;
+            }
         }
         self.cycle += i.cycles() as u64;
     }
 
     pub fn run_cycle(&mut self) {
-        let instruction = self.fetch_instruction();
+        let (instruction, len) = self.fetch_instruction();
         println!("Running {:?}: {:?}", self.pc, instruction);
-        self.pc += Address(1);
+        self.pc += Address(len as u16);
         self.execute(instruction);
     }
 
-    fn fetch_instruction(&self) -> Instruction {
+    fn fetch_instruction(&self) -> (Instruction, u8) {
         let bytes = [
             self.mmu.read(self.pc),
             self.mmu.read(self.pc + Address(1)),
