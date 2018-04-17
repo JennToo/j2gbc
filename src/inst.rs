@@ -25,7 +25,7 @@ impl Instruction {
             0 => Instruction::Nop,
             0xC3 => Instruction::JpI(Address(hi_lo(bytes[2], bytes[1]))),
             0xCD => Instruction::CallI(Address(hi_lo(bytes[2], bytes[1]))),
-            _ => panic!("Unknown instruction {:?}", bytes),
+            _ => panic!("Unknown instruction {:#X} {:#X} {:#X}", bytes[0], bytes[1], bytes[2]),
         }
     }
 }
