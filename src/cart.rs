@@ -1,8 +1,8 @@
-use std::io::{Result, Read};
-use mem::{MemDevice, Address, RNG_ROM_BANK0};
+use std::io::{Read, Result};
+use mem::{Address, MemDevice, RNG_ROM_BANK0};
 
 pub struct Cart {
-    pub data: Vec<u8>,    
+    pub data: Vec<u8>,
 }
 
 const OFF_CART_NAME_START: usize = 0x134;

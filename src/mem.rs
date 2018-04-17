@@ -1,4 +1,4 @@
-use std::ops::{Add, Sub, AddAssign, SubAssign};
+use std::ops::{Add, AddAssign, Sub, SubAssign};
 use std::convert::Into;
 use cart::Cart;
 
@@ -52,7 +52,6 @@ impl Address {
     pub fn in_(self, a: AddressRange) -> bool {
         self >= a.0 && self < a.1
     }
-    
 }
 
 impl AddressRange {
@@ -81,9 +80,7 @@ impl Ram {
         for _ in 0..size {
             data.push(0);
         }
-        Ram {
-            data,
-        }
+        Ram { data }
     }
 }
 

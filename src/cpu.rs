@@ -1,7 +1,7 @@
 use std::ops::{Index, IndexMut};
 
 use inst::Instruction;
-use mem::{Address, Mmu, MemDevice};
+use mem::{Address, MemDevice, Mmu};
 use cart::Cart;
 
 #[repr(u8)]
@@ -23,7 +23,7 @@ pub enum Register16 {
     DE,
     HL,
     SP,
-    PC
+    PC,
 }
 
 pub struct Cpu {
@@ -60,7 +60,7 @@ impl Cpu {
                 self.sp -= Address(2);
                 self.pc = a;
             }
-        }        
+        }
         self.cycle += i.cycles() as u64;
     }
 
@@ -72,7 +72,11 @@ impl Cpu {
     }
 
     fn fetch_instruction(&self) -> Instruction {
-        let bytes = [self.mmu.read(self.pc), self.mmu.read(self.pc + Address(1)), self.mmu.read(self.pc + Address(2))];
+        let bytes = [
+            self.mmu.read(self.pc),
+            self.mmu.read(self.pc + Address(1)),
+            self.mmu.read(self.pc + Address(2)),
+        ];
         Instruction::decode(bytes)
     }
 }
