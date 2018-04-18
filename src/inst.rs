@@ -37,37 +37,42 @@ impl Instruction {
         }
     }
 
-    pub fn decode(bytes: [u8; 3]) -> (Instruction, u8) {
+    pub fn decode(bytes: [u8; 3]) -> Result<(Instruction, u8), ()> {
         match bytes[0] {
-            0 => (Instruction::Nop, 1),
-            0xC3 => (Instruction::JpI(Address(hi_lo(bytes[2], bytes[1]))), 3),
-            0xCD => (Instruction::CallI(Address(hi_lo(bytes[2], bytes[1]))), 3),
-            0xF0 => (
+            0 => Ok((Instruction::Nop, 1)),
+            0xC3 => Ok((Instruction::JpI(Address(hi_lo(bytes[2], bytes[1]))), 3)),
+            0xCD => Ok((Instruction::CallI(Address(hi_lo(bytes[2], bytes[1]))), 3)),
+            0xF0 => Ok((
                 Instruction::LdRM(Register8::A, Address(0xFF00) + Address(bytes[1] as u16)),
                 2,
-            ),
-            0xE0 => (
+            )),
+            0xE0 => Ok((
                 Instruction::LdMR(Address(0xFF00) + Address(bytes[1] as u16), Register8::A),
                 2,
-            ),
-            0xFE => (Instruction::CpI(bytes[1]), 2),
-            0x20 => (Instruction::JrNZI(bytes[1] as i8), 2),
-            0xE6 => (Instruction::AndI(bytes[1]), 2),
-            0xC9 => (Instruction::Ret, 1),
-            0xCB => (
+            )),
+            0xFE => Ok((Instruction::CpI(bytes[1]), 2)),
+            0x20 => Ok((Instruction::JrNZI(bytes[1] as i8), 2)),
+            0xE6 => Ok((Instruction::AndI(bytes[1]), 2)),
+            0xC9 => Ok((Instruction::Ret, 1)),
+            0xCB => {
                 match bytes[1] {
-                    0x87 => Instruction::Res(0, Register8::A),
-                    _ => panic!(
-                        "Unknown instruction {:#X} {:#X} {:#X}",
-                        bytes[0], bytes[1], bytes[2]
-                    ),
-                },
-                2,
-            ),
-            _ => panic!(
-                "Unknown instruction {:#X} {:#X} {:#X}",
-                bytes[0], bytes[1], bytes[2]
-            ),
+                    0x87 => Ok((Instruction::Res(0, Register8::A), 2)),
+                    _ => {
+                        println!(
+                            "Unknown instruction {:#X} {:#X} {:#X}",
+                            bytes[0], bytes[1], bytes[2]
+                        );
+                        Err(())
+                    },
+                }
+            }
+            _ => {
+                println!(
+                    "Unknown instruction {:#X} {:#X} {:#X}",
+                    bytes[0], bytes[1], bytes[2]
+                );
+                Err(())
+            }
         }
     }
 }

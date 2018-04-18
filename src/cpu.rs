@@ -52,7 +52,7 @@ impl Cpu {
         self.cycle
     }
 
-    fn execute(&mut self, i: Instruction) {
+    fn execute(&mut self, i: Instruction) -> Result<(), ()> {
         match i {
             Instruction::Nop => {}
             Instruction::JpI(a) => {
@@ -65,7 +65,7 @@ impl Cpu {
                 self.pc = a;
             }
             Instruction::LdRM(r, a) => {
-                self[r] = self.mmu.read(a);
+                self[r] = try!(self.mmu.read(a));
             }
             Instruction::LdMR(a, r) => {
                 let v = self[r];
@@ -90,25 +90,26 @@ impl Cpu {
                 self[Register8::F] = flags;
             }
             Instruction::Ret => {
-                self.pc = Address(self.mmu.read16(self.sp));
+                self.pc = Address(try!(self.mmu.read16(self.sp)));
                 self.sp += Address(2);
             }
         }
         self.cycle += i.cycles() as u64;
+        Ok(())
     }
 
-    pub fn run_cycle(&mut self) {
-        let (instruction, len) = self.fetch_instruction();
+    pub fn run_cycle(&mut self) -> Result<(), ()> {
+        let (instruction, len) = try!(self.fetch_instruction());
         println!("Running {:?}: {:?}", self.pc, instruction);
         self.pc += Address(len as u16);
-        self.execute(instruction);
+        self.execute(instruction)
     }
 
-    fn fetch_instruction(&self) -> (Instruction, u8) {
+    fn fetch_instruction(&self) -> Result<(Instruction, u8), ()> {
         let bytes = [
-            self.mmu.read(self.pc),
-            self.mmu.read(self.pc + Address(1)),
-            self.mmu.read(self.pc + Address(2)),
+            try!(self.mmu.read(self.pc)),
+            try!(self.mmu.read(self.pc + Address(1))),
+            try!(self.mmu.read(self.pc + Address(2))),
         ];
         Instruction::decode(bytes)
     }

@@ -23,6 +23,6 @@ fn main() {
 
     let mut runner = cpu::Cpu::new(c);
     loop {
-        runner.run_cycle();
+        runner.run_cycle().expect("Unhandled fault");
     }
 }

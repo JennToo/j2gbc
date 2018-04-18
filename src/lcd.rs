@@ -14,30 +14,38 @@ impl Lcd {
 }
 
 impl MemDevice for Lcd {
-    fn read(&self, a: Address) -> u8 {
+    fn read(&self, a: Address) -> Result<u8, ()> {
         match a {
             REG_LY => {
                 println!("Warning: Reading from stub register LY");
-                145
+                Ok(145)
             }
             REG_LCDC => {
                 println!("Warning: Reading from stub register LCDC");
-                self.lcdc
+                Ok(self.lcdc)
             }
             _ => {
-                panic!("Unimplemented LCD register {:?}", a);
+                println!("Unimplemented LCD register {:?}", a);
+                Err(())
             }
         }
     }
 
-    fn write(&mut self, a: Address, v: u8) {
+    fn write(&mut self, a: Address, v: u8) -> Result<(), ()> {
         match a {
-            REG_LY => panic!("LY is a read only register!"),
+            REG_LY => {
+                println!("LY is a read only register!");
+                Err(())
+            }
             REG_LCDC => {
                 println!("Warning: Writing to stub register LCDC");
                 self.lcdc = v;
+                Ok(())
             }
-            _ => panic!("Unimplemented LCD register {:?}", a),
+            _ =>  {
+                println!("Unimplemented LCD register {:?}", a);
+                Err(())
+            }
         }
     }
 }

@@ -1,6 +1,7 @@
 use std::ops::{Add, AddAssign, Sub, SubAssign};
 use std::convert::Into;
-use std::fmt::{Debug, Formatter, Result};
+use std::fmt::{Debug, Formatter};
+use std::fmt;
 
 use cart::Cart;
 use lcd::Lcd;
@@ -9,7 +10,7 @@ use lcd::Lcd;
 pub struct Address(pub u16);
 
 impl Debug for Address {
-    fn fmt(&self, f: &mut Formatter) -> Result {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(f, "Address({:#X})", self.0)
     }
 }
@@ -70,16 +71,16 @@ impl AddressRange {
 }
 
 pub trait MemDevice {
-    fn read(&self, a: Address) -> u8;
-    fn write(&mut self, a: Address, v: u8);
+    fn read(&self, a: Address) -> Result<u8, ()>;
+    fn write(&mut self, a: Address, v: u8) -> Result<(), ()>;
 
     fn write16(&mut self, a: Address, v: u16) {
         self.write(a, ((v >> 8) & 0xFF) as u8);
         self.write(a + Address(1), (v & 0xFF) as u8);
     }
 
-    fn read16(&self, a: Address) -> u16 {
-        (self.read(a) as u16) << 8 | (self.read(a + Address(1)) as u16)
+    fn read16(&self, a: Address) -> Result<u16, ()> {
+        Ok((try!(self.read(a)) as u16) << 8 | (try!(self.read(a + Address(1))) as u16))
     }
 }
 
@@ -98,12 +99,13 @@ impl Ram {
 }
 
 impl MemDevice for Ram {
-    fn read(&self, a: Address) -> u8 {
-        self.data[a.0 as usize]
+    fn read(&self, a: Address) -> Result<u8, ()> {
+        Ok(self.data[a.0 as usize])
     }
 
-    fn write(&mut self, a: Address, v: u8) {
+    fn write(&mut self, a: Address, v: u8) -> Result<(), ()> {
         self.data[a.0 as usize] = v;
+        Ok(())
     }
 }
 
@@ -135,7 +137,7 @@ impl Mmu {
 }
 
 impl MemDevice for Mmu {
-    fn read(&self, a: Address) -> u8 {
+    fn read(&self, a: Address) -> Result<u8, ()> {
         if a.in_(RNG_INT_RAM) {
             self.internal_ram.read(a - RNG_INT_RAM.0)
         } else if a.in_(RNG_ROM_BANK0) {
@@ -143,27 +145,30 @@ impl MemDevice for Mmu {
         } else if a.in_(RNG_INT_TINY_RAM) {
             self.tiny_ram.read(a - RNG_INT_TINY_RAM.0)
         } else if a == OFF_INTR_ENABLE_REG {
-            self.interrupt_enable
+            Ok(self.interrupt_enable)
         } else if a.in_(RNG_LCD_MM_REG) {
             self.lcd.read(a)
         } else {
-            panic!("MMU: Unimplemented memory read at address {:?}", a);
+            println!("MMU: Unimplemented memory read at address {:?}", a);
+            Err(())
         }
     }
 
-    fn write(&mut self, a: Address, v: u8) {
+    fn write(&mut self, a: Address, v: u8) -> Result<(), ()> {
         if a.in_(RNG_INT_RAM) {
-            self.internal_ram.write(a - RNG_INT_RAM.0, v);
+            self.internal_ram.write(a - RNG_INT_RAM.0, v)
         } else if a.in_(RNG_ROM_BANK0) {
-            self.cart.write(a, v);
+            self.cart.write(a, v)
         } else if a.in_(RNG_INT_TINY_RAM) {
-            self.tiny_ram.write(a - RNG_INT_TINY_RAM.0, v);
+            self.tiny_ram.write(a - RNG_INT_TINY_RAM.0, v)
         } else if a == OFF_INTR_ENABLE_REG {
             self.interrupt_enable = v;
+            Ok(())
         } else if a.in_(RNG_LCD_MM_REG) {
-            self.lcd.write(a, v);
+            self.lcd.write(a, v)
         } else {
-            panic!("MMU: Unimplemented memory write at address {:?}", a);
+            println!("MMU: Unimplemented memory write at address {:?}", a);
+            Err(())
         }
     }
 }
