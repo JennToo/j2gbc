@@ -77,6 +77,10 @@ pub trait MemDevice {
         self.write(a, ((v >> 8) & 0xFF) as u8);
         self.write(a + Address(1), (v & 0xFF) as u8);
     }
+
+    fn read16(&self, a: Address) -> u16 {
+        (self.read(a) as u16) << 8 | (self.read(a + Address(1)) as u16)
+    }
 }
 
 pub struct Ram {

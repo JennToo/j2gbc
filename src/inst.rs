@@ -11,6 +11,8 @@ pub enum Instruction {
     Res(u8, Register8),
     CpI(u8),
     JrNZI(i8),
+    AndI(/* will always love */ u8),
+    Ret,
 }
 
 fn hi_lo(hi: u8, lo: u8) -> u16 {
@@ -30,6 +32,8 @@ impl Instruction {
             Instruction::CpI(_) => 8,
             // TODO: This is actually variable
             Instruction::JrNZI(_) => 8,
+            Instruction::AndI(_) => 8,
+            Instruction::Ret => 16,
         }
     }
 
@@ -48,6 +52,8 @@ impl Instruction {
             ),
             0xFE => (Instruction::CpI(bytes[1]), 2),
             0x20 => (Instruction::JrNZI(bytes[1] as i8), 2),
+            0xE6 => (Instruction::AndI(bytes[1]), 2),
+            0xC9 => (Instruction::Ret, 1),
             0xCB => (
                 match bytes[1] {
                     0x87 => Instruction::Res(0, Register8::A),

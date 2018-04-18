@@ -60,7 +60,7 @@ impl Cpu {
             }
             Instruction::CallI(a) => {
                 let nsp = self.sp - Address(2);
-                self.mmu.write16(self.sp, nsp.into());
+                self.mmu.write16(nsp, self.pc.into());
                 self.sp = nsp;
                 self.pc = a;
             }
@@ -83,6 +83,15 @@ impl Cpu {
                 if self[Register8::F] & MASK_FLAG_Z == 0 {
                     self.pc = Address((self.pc.0 as i32 + o as i32) as u16);
                 }
+            }
+            Instruction::AndI(v) => {
+                let (flags, value) = and(self[Register8::A], v);
+                self[Register8::A] = value;
+                self[Register8::F] = flags;
+            }
+            Instruction::Ret => {
+                self.pc = Address(self.mmu.read16(self.sp));
+                self.sp += Address(2);
             }
         }
         self.cycle += i.cycles() as u64;
@@ -131,5 +140,14 @@ fn sub(l: u8, r: u8) -> (u8, Wrapping<u8>) {
         ((MASK_FLAG_N | MASK_FLAG_H), Wrapping(l) - Wrapping(r))
     } else {
         ((MASK_FLAG_N | MASK_FLAG_Z), Wrapping(l) - Wrapping(r))
+    }
+}
+
+fn and(l: u8, r: u8) -> (u8, u8) {
+    let v = l & r;
+    if v == 0 {
+        ((MASK_FLAG_H | MASK_FLAG_Z), v)
+    } else {
+        (MASK_FLAG_H, v)
     }
 }
