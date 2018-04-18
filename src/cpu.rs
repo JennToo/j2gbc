@@ -1,4 +1,5 @@
 use std::ops::{Index, IndexMut};
+use std::num::Wrapping;
 
 use inst::Instruction;
 use mem::{Address, MemDevice, Mmu};
@@ -74,6 +75,15 @@ impl Cpu {
                 let v = self[r] & !(1 << b);
                 self[r] = v;
             }
+            Instruction::CpI(v) => {
+                let (flags, _) = sub(self[Register8::A], v);
+                self[Register8::F] = flags;
+            }
+            Instruction::JrNZI(o) => {
+                if self[Register8::F] & MASK_FLAG_Z == 0 {
+                    self.pc = Address((self.pc.0 as i32 + o as i32) as u16);
+                }
+            }
         }
         self.cycle += i.cycles() as u64;
     }
@@ -106,5 +116,20 @@ impl Index<Register8> for Cpu {
 impl IndexMut<Register8> for Cpu {
     fn index_mut(&mut self, r: Register8) -> &mut u8 {
         &mut self.registers[r as usize]
+    }
+}
+
+const MASK_FLAG_Z: u8 = 0b1000_0000;
+const MASK_FLAG_N: u8 = 0b0100_0000;
+const MASK_FLAG_H: u8 = 0b0010_0000;
+const MASK_FLAG_C: u8 = 0b0001_0000;
+
+fn sub(l: u8, r: u8) -> (u8, Wrapping<u8>) {
+    if l < r {
+        ((MASK_FLAG_N | MASK_FLAG_C), Wrapping(l) - Wrapping(r))
+    } else if l > r {
+        ((MASK_FLAG_N | MASK_FLAG_H), Wrapping(l) - Wrapping(r))
+    } else {
+        ((MASK_FLAG_N | MASK_FLAG_Z), Wrapping(l) - Wrapping(r))
     }
 }

@@ -1,7 +1,9 @@
 use std::ops::{Add, AddAssign, Sub, SubAssign};
 use std::convert::Into;
 use std::fmt::{Debug, Formatter, Result};
+
 use cart::Cart;
+use lcd::Lcd;
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone)]
 pub struct Address(pub u16);
@@ -107,12 +109,14 @@ pub struct Mmu {
     cart: Cart,
     // TODO: Actually implement IE register
     interrupt_enable: u8,
+    lcd: Lcd,
 }
 
 const RNG_INT_RAM: AddressRange = AddressRange(Address(0xC000), Address(0xE000));
 const RNG_INT_TINY_RAM: AddressRange = AddressRange(Address(0xFF80), Address(0xFFFF));
 pub const RNG_ROM_BANK0: AddressRange = AddressRange(Address(0x0000), Address(0x4000));
 const OFF_INTR_ENABLE_REG: Address = Address(0xFFFF);
+const RNG_LCD_MM_REG: AddressRange = AddressRange(Address(0xFF40), Address(0xFF6C));
 
 impl Mmu {
     pub fn new(cart: Cart) -> Mmu {
@@ -121,6 +125,7 @@ impl Mmu {
             tiny_ram: Ram::new(RNG_INT_TINY_RAM.len()),
             interrupt_enable: 0,
             cart,
+            lcd: Lcd::new(),
         }
     }
 }
@@ -135,6 +140,8 @@ impl MemDevice for Mmu {
             self.tiny_ram.read(a - RNG_INT_TINY_RAM.0)
         } else if a == OFF_INTR_ENABLE_REG {
             self.interrupt_enable
+        } else if a.in_(RNG_LCD_MM_REG) {
+            self.lcd.read(a)
         } else {
             panic!("MMU: Unimplemented memory read at address {:?}", a);
         }
@@ -149,6 +156,8 @@ impl MemDevice for Mmu {
             self.tiny_ram.write(a - RNG_INT_TINY_RAM.0, v);
         } else if a == OFF_INTR_ENABLE_REG {
             self.interrupt_enable = v;
+        } else if a.in_(RNG_LCD_MM_REG) {
+            self.lcd.write(a, v);
         } else {
             panic!("MMU: Unimplemented memory write at address {:?}", a);
         }

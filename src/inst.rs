@@ -9,6 +9,8 @@ pub enum Instruction {
     LdRM(Register8, Address),
     LdMR(Address, Register8),
     Res(u8, Register8),
+    CpI(u8),
+    JrNZI(i8),
 }
 
 fn hi_lo(hi: u8, lo: u8) -> u16 {
@@ -25,6 +27,9 @@ impl Instruction {
             Instruction::LdRM(_, _) => 12,
             Instruction::LdMR(_, _) => 12,
             Instruction::Res(_, _) => 8,
+            Instruction::CpI(_) => 8,
+            // TODO: This is actually variable
+            Instruction::JrNZI(_) => 8,
         }
     }
 
@@ -39,6 +44,14 @@ impl Instruction {
             ),
             0xE0 => (
                 Instruction::LdMR(Address(0xFF00) + Address(bytes[1] as u16), Register8::A),
+                2,
+            ),
+            0xFE => (
+                Instruction::CpI(bytes[1]),
+                2,
+            ),
+            0x20 => (
+                Instruction::JrNZI(bytes[1] as i8),
                 2,
             ),
             0xCB => (

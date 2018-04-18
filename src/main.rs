@@ -6,6 +6,7 @@ pub mod cpu;
 pub mod inst;
 pub mod cart;
 pub mod mem;
+pub mod lcd;
 
 fn main() {
     let mut args = std::env::args();
