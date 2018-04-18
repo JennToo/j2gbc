@@ -1,4 +1,4 @@
-use mem::{MemDevice, Address};
+use mem::{Address, MemDevice};
 
 const REG_LCDC: Address = Address(0xFF40);
 const REG_LY: Address = Address(0xFF44);
@@ -9,9 +9,7 @@ pub struct Lcd {
 
 impl Lcd {
     pub fn new() -> Lcd {
-        Lcd {
-            lcdc: 0x83,
-        }
+        Lcd { lcdc: 0x83 }
     }
 }
 

@@ -46,14 +46,8 @@ impl Instruction {
                 Instruction::LdMR(Address(0xFF00) + Address(bytes[1] as u16), Register8::A),
                 2,
             ),
-            0xFE => (
-                Instruction::CpI(bytes[1]),
-                2,
-            ),
-            0x20 => (
-                Instruction::JrNZI(bytes[1] as i8),
-                2,
-            ),
+            0xFE => (Instruction::CpI(bytes[1]), 2),
+            0x20 => (Instruction::JrNZI(bytes[1] as i8), 2),
             0xCB => (
                 match bytes[1] {
                     0x87 => Instruction::Res(0, Register8::A),
