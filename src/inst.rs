@@ -24,6 +24,7 @@ pub enum Control {
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Logic {
     AndI(/* will always love */ u8),
+    XorR(Register8),
 }
 
 fn hi_lo(hi: u8, lo: u8) -> u16 {
@@ -69,6 +70,7 @@ impl Instruction {
             0xFE => Ok((Instruction::CpI(bytes[1]), 2)),
             0x20 => Ok((Instruction::Control(Control::JrNZI(bytes[1] as i8)), 2)),
             0xE6 => Ok((Instruction::Logic(Logic::AndI(bytes[1])), 2)),
+            0xAF => Ok((Instruction::Logic(Logic::XorR(Register8::A)), 2)),
             0xC9 => Ok((Instruction::Control(Control::Ret), 1)),
             0xCB => match bytes[1] {
                 0x87 => Ok((Instruction::Res(0, Register8::A), 2)),
@@ -107,6 +109,7 @@ impl Logic {
     fn cycles(self) -> u8 {
         match self {
             Logic::AndI(_) => 8,
+            Logic::XorR(_) => 4,
         }
     }
 }

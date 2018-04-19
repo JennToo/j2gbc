@@ -116,6 +116,11 @@ impl Cpu {
                 self[Register8::A] = value;
                 self[Register8::F] = flags;
             }
+            Logic::XorR(r) => {
+                let (flags, value) = xor(self[Register8::A], self[r]);
+                self[Register8::A] = value;
+                self[Register8::F] = flags;
+            }
         }
 
         Ok(())
@@ -180,5 +185,14 @@ fn and(l: u8, r: u8) -> (u8, u8) {
         ((MASK_FLAG_H | MASK_FLAG_Z), v)
     } else {
         (MASK_FLAG_H, v)
+    }
+}
+
+fn xor(l: u8, r: u8) -> (u8, u8) {
+    let v = l ^ r;
+    if v == 0 {
+        (MASK_FLAG_Z, v)
+    } else {
+        (0, v)
     }
 }
