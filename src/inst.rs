@@ -1,3 +1,4 @@
+use alu::hi_lo;
 use mem::Address;
 use cpu::{Register16, Register8};
 
@@ -6,9 +7,15 @@ pub enum Instruction {
     Nop,
     Res(u8, Register8),
     CpI(u8),
+    Arith(Arith),
     Control(Control),
     Load(Load),
     Logic(Logic),
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum Arith {
+    DecR16(Register16),
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -33,10 +40,6 @@ pub enum Logic {
     XorR(Register8),
 }
 
-fn hi_lo(hi: u8, lo: u8) -> u16 {
-    (hi as u16) << 8 | lo as u16
-}
-
 impl Instruction {
     pub fn cycles(self) -> u8 {
         // TODO: Audit this list for accuracy
@@ -44,6 +47,7 @@ impl Instruction {
             Instruction::Nop => 4,
             Instruction::Res(_, _) => 8,
             Instruction::CpI(_) => 8,
+            Instruction::Arith(a) => a.cycles(),
             Instruction::Load(l) => l.cycles(),
             Instruction::Control(c) => c.cycles(),
             Instruction::Logic(l) => l.cycles(),
@@ -53,6 +57,10 @@ impl Instruction {
     pub fn decode(bytes: [u8; 3]) -> Result<(Instruction, u8), ()> {
         match bytes[0] {
             0 => Ok((Instruction::Nop, 1)),
+            0x0B => Ok((Instruction::Arith(Arith::DecR16(Register16::BC)), 1)),
+            0x1B => Ok((Instruction::Arith(Arith::DecR16(Register16::DE)), 1)),
+            0x2B => Ok((Instruction::Arith(Arith::DecR16(Register16::HL)), 1)),
+            0x3B => Ok((Instruction::Arith(Arith::DecR16(Register16::SP)), 1)),
             0xC3 => Ok((
                 Instruction::Control(Control::JpI(Address(hi_lo(bytes[2], bytes[1])))),
                 3,
@@ -114,6 +122,14 @@ impl Instruction {
                 );
                 Err(())
             }
+        }
+    }
+}
+
+impl Arith {
+    fn cycles(self) -> u8 {
+        match self {
+            Arith::DecR16(_) => 8,
         }
     }
 }

@@ -1,7 +1,8 @@
 use std::ops::{Index, IndexMut};
 use std::num::Wrapping;
 
-use inst::{Control, Instruction, Load, Logic};
+use alu::{and, hi, hi_lo, lo, sub, xor, MASK_FLAG_Z};
+use inst::{Arith, Control, Instruction, Load, Logic};
 use mem::{Address, MemDevice, Mmu};
 use cart::Cart;
 
@@ -63,6 +64,9 @@ impl Cpu {
                 let (flags, _) = sub(self[Register8::A], v);
                 self[Register8::F] = flags;
             }
+            Instruction::Arith(a) => {
+                try!(self.execute_arith(a));
+            }
             Instruction::Control(c) => {
                 try!(self.execute_control(c));
             }
@@ -74,6 +78,16 @@ impl Cpu {
             }
         }
         self.cycle += i.cycles() as u64;
+        Ok(())
+    }
+
+    fn execute_arith(&mut self, a: Arith) -> Result<(), ()> {
+        match a {
+            Arith::DecR16(r) => {
+                let v = Wrapping(self.read_r16(r));
+                self.write_r16(r, (v - Wrapping(1)).0);
+            }
+        }
         Ok(())
     }
 
@@ -178,14 +192,17 @@ impl Cpu {
             }
         }
     }
-}
 
-pub fn hi(v: u16) -> u8 {
-    ((v >> 8) & 0xFF) as u8
-}
-
-pub fn lo(v: u16) -> u8 {
-    (v & 0xFF) as u8
+    fn read_r16(&self, r: Register16) -> u16 {
+        match r {
+            Register16::SP => self.sp.0,
+            Register16::PC => self.pc.0,
+            Register16::AF => hi_lo(self[Register8::A], self[Register8::F]),
+            Register16::BC => hi_lo(self[Register8::B], self[Register8::C]),
+            Register16::DE => hi_lo(self[Register8::D], self[Register8::E]),
+            Register16::HL => hi_lo(self[Register8::H], self[Register8::L]),
+        }
+    }
 }
 
 impl Index<Register8> for Cpu {
@@ -199,38 +216,5 @@ impl Index<Register8> for Cpu {
 impl IndexMut<Register8> for Cpu {
     fn index_mut(&mut self, r: Register8) -> &mut u8 {
         &mut self.registers[r as usize]
-    }
-}
-
-const MASK_FLAG_Z: u8 = 0b1000_0000;
-const MASK_FLAG_N: u8 = 0b0100_0000;
-const MASK_FLAG_H: u8 = 0b0010_0000;
-const MASK_FLAG_C: u8 = 0b0001_0000;
-
-fn sub(l: u8, r: u8) -> (u8, Wrapping<u8>) {
-    if l < r {
-        ((MASK_FLAG_N | MASK_FLAG_C), Wrapping(l) - Wrapping(r))
-    } else if l > r {
-        ((MASK_FLAG_N | MASK_FLAG_H), Wrapping(l) - Wrapping(r))
-    } else {
-        ((MASK_FLAG_N | MASK_FLAG_Z), Wrapping(l) - Wrapping(r))
-    }
-}
-
-fn and(l: u8, r: u8) -> (u8, u8) {
-    let v = l & r;
-    if v == 0 {
-        ((MASK_FLAG_H | MASK_FLAG_Z), v)
-    } else {
-        (MASK_FLAG_H, v)
-    }
-}
-
-fn xor(l: u8, r: u8) -> (u8, u8) {
-    let v = l ^ r;
-    if v == 0 {
-        (MASK_FLAG_Z, v)
-    } else {
-        (0, v)
     }
 }
