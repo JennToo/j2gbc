@@ -4,12 +4,10 @@ use cpu::{Register16, Register8};
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Instruction {
     Nop,
-    LdRM(Register8, Address),
-    LdMR(Address, Register8),
-    LdRI16(Register16, u16),
     Res(u8, Register8),
     CpI(u8),
     Control(Control),
+    Load(Load),
     Logic(Logic),
 }
 
@@ -19,6 +17,13 @@ pub enum Control {
     Ret,
     JpI(Address),
     CallI(Address),
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum Load {
+    LdRM(Register8, Address),
+    LdMR(Address, Register8),
+    LdRI16(Register16, u16),
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -36,9 +41,9 @@ impl Instruction {
         // TODO: Audit this list for accuracy
         match self {
             Instruction::Nop => 4,
-            Instruction::LdRM(_, _) | Instruction::LdRI16(_, _) | Instruction::LdMR(_, _) => 12,
             Instruction::Res(_, _) => 8,
             Instruction::CpI(_) => 8,
+            Instruction::Load(l) => l.cycles(),
             Instruction::Control(c) => c.cycles(),
             Instruction::Logic(l) => l.cycles(),
         }
@@ -56,15 +61,21 @@ impl Instruction {
                 3,
             )),
             0xF0 => Ok((
-                Instruction::LdRM(Register8::A, Address(0xFF00) + Address(bytes[1] as u16)),
+                Instruction::Load(Load::LdRM(
+                    Register8::A,
+                    Address(0xFF00) + Address(bytes[1] as u16),
+                )),
                 2,
             )),
             0xE0 => Ok((
-                Instruction::LdMR(Address(0xFF00) + Address(bytes[1] as u16), Register8::A),
+                Instruction::Load(Load::LdMR(
+                    Address(0xFF00) + Address(bytes[1] as u16),
+                    Register8::A,
+                )),
                 2,
             )),
             0x31 => Ok((
-                Instruction::LdRI16(Register16::SP, hi_lo(bytes[2], bytes[1])),
+                Instruction::Load(Load::LdRI16(Register16::SP, hi_lo(bytes[2], bytes[1]))),
                 3,
             )),
             0xFE => Ok((Instruction::CpI(bytes[1]), 2)),
@@ -101,6 +112,14 @@ impl Control {
             // TODO: This is actually variable
             Control::JrNZI(_) => 8,
             Control::Ret => 16,
+        }
+    }
+}
+
+impl Load {
+    fn cycles(self) -> u8 {
+        match self {
+            Load::LdRM(_, _) | Load::LdRI16(_, _) | Load::LdMR(_, _) => 12,
         }
     }
 }

@@ -1,7 +1,7 @@
 use std::ops::{Index, IndexMut};
 use std::num::Wrapping;
 
-use inst::{Control, Instruction, Logic};
+use inst::{Control, Instruction, Load, Logic};
 use mem::{Address, MemDevice, Mmu};
 use cart::Cart;
 
@@ -55,16 +55,6 @@ impl Cpu {
     fn execute(&mut self, i: Instruction) -> Result<(), ()> {
         match i {
             Instruction::Nop => {}
-            Instruction::LdRM(r, a) => {
-                self[r] = try!(self.mmu.read(a));
-            }
-            Instruction::LdMR(a, r) => {
-                let v = self[r];
-                try!(self.mmu.write(a, v));
-            }
-            Instruction::LdRI16(r, i) => {
-                self.write_r16(r, i);
-            }
             Instruction::Res(b, r) => {
                 let v = self[r] & !(1 << b);
                 self[r] = v;
@@ -75,6 +65,9 @@ impl Cpu {
             }
             Instruction::Control(c) => {
                 try!(self.execute_control(c));
+            }
+            Instruction::Load(l) => {
+                try!(self.execute_load(l));
             }
             Instruction::Logic(l) => {
                 try!(self.execute_logic(l));
@@ -103,6 +96,23 @@ impl Cpu {
                 try!(self.mmu.write16(nsp, self.pc.into()));
                 self.sp = nsp;
                 self.pc = a;
+            }
+        }
+
+        Ok(())
+    }
+
+    fn execute_load(&mut self, l: Load) -> Result<(), ()> {
+        match l {
+            Load::LdRM(r, a) => {
+                self[r] = try!(self.mmu.read(a));
+            }
+            Load::LdMR(a, r) => {
+                let v = self[r];
+                try!(self.mmu.write(a, v));
+            }
+            Load::LdRI16(r, i) => {
+                self.write_r16(r, i);
             }
         }
 
