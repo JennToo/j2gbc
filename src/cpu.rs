@@ -1,7 +1,7 @@
 use std::ops::{Index, IndexMut};
 use std::num::Wrapping;
 
-use alu::{and, hi, hi_lo, lo, sub, xor, MASK_FLAG_Z};
+use alu::{and, hi, hi_lo, lo, or, sub, xor, MASK_FLAG_Z};
 use inst::{Arith, Control, Instruction, Load, Logic};
 use mem::{Address, MemDevice, Mmu};
 use cart::Cart;
@@ -141,6 +141,11 @@ impl Cpu {
         match l {
             Logic::AndI(v) => {
                 let (flags, value) = and(self[Register8::A], v);
+                self[Register8::A] = value;
+                self[Register8::F] = flags;
+            }
+            Logic::OrR(r) => {
+                let (flags, value) = or(self[Register8::A], self[r]);
                 self[Register8::A] = value;
                 self[Register8::F] = flags;
             }

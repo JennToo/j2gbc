@@ -36,6 +36,15 @@ pub fn and(l: u8, r: u8) -> (u8, u8) {
     }
 }
 
+pub fn or(l: u8, r: u8) -> (u8, u8) {
+    let v = l | r;
+    if v == 0 {
+        (MASK_FLAG_Z, v)
+    } else {
+        (0, v)
+    }
+}
+
 pub fn xor(l: u8, r: u8) -> (u8, u8) {
     let v = l ^ r;
     if v == 0 {

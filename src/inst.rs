@@ -37,6 +37,7 @@ pub enum Load {
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Logic {
     AndI(/* will always love */ u8),
+    OrR(Register8),
     XorR(Register8),
 }
 
@@ -146,6 +147,14 @@ impl Instruction {
             0xFE => Ok((Instruction::CpI(bytes[1]), 2)),
             0x20 => Ok((Instruction::Control(Control::JrNZI(bytes[1] as i8)), 2)),
             0xE6 => Ok((Instruction::Logic(Logic::AndI(bytes[1])), 2)),
+
+            0xB0 => Ok((Instruction::Logic(Logic::OrR(Register8::B)), 1)),
+            0xB1 => Ok((Instruction::Logic(Logic::OrR(Register8::C)), 1)),
+            0xB2 => Ok((Instruction::Logic(Logic::OrR(Register8::D)), 1)),
+            0xB3 => Ok((Instruction::Logic(Logic::OrR(Register8::E)), 1)),
+            0xB4 => Ok((Instruction::Logic(Logic::OrR(Register8::H)), 1)),
+            0xB5 => Ok((Instruction::Logic(Logic::OrR(Register8::L)), 1)),
+
             0xAF => Ok((Instruction::Logic(Logic::XorR(Register8::A)), 2)),
             0xC9 => Ok((Instruction::Control(Control::Ret), 1)),
             0xCB => match bytes[1] {
@@ -203,6 +212,7 @@ impl Logic {
         match self {
             Logic::AndI(_) => 8,
             Logic::XorR(_) => 4,
+            Logic::OrR(_) => 4,
         }
     }
 }
