@@ -1,5 +1,5 @@
 use mem::Address;
-use cpu::Register8;
+use cpu::{Register8, Register16};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Instruction {
@@ -8,6 +8,7 @@ pub enum Instruction {
     CallI(Address),
     LdRM(Register8, Address),
     LdMR(Address, Register8),
+    LdRI16(Register16, u16),
     Res(u8, Register8),
     CpI(u8),
     JrNZI(i8),
@@ -26,8 +27,7 @@ impl Instruction {
             Instruction::Nop => 4,
             Instruction::JpI(_) => 16,
             Instruction::CallI(_) => 24,
-            Instruction::LdRM(_, _) => 12,
-            Instruction::LdMR(_, _) => 12,
+            Instruction::LdRM(_, _) | Instruction::LdRI16(_, _) | Instruction::LdMR(_, _) => 12,
             Instruction::Res(_, _) => 8,
             Instruction::CpI(_) => 8,
             // TODO: This is actually variable
@@ -49,6 +49,10 @@ impl Instruction {
             0xE0 => Ok((
                 Instruction::LdMR(Address(0xFF00) + Address(bytes[1] as u16), Register8::A),
                 2,
+            )),
+            0x31 => Ok((
+                Instruction::LdRI16(Register16::SP, hi_lo(bytes[2], bytes[1])),
+                3
             )),
             0xFE => Ok((Instruction::CpI(bytes[1]), 2)),
             0x20 => Ok((Instruction::JrNZI(bytes[1] as i8), 2)),

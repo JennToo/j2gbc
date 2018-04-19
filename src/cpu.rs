@@ -71,6 +71,9 @@ impl Cpu {
                 let v = self[r];
                 try!(self.mmu.write(a, v));
             }
+            Instruction::LdRI16(r, i) => {
+                self.write_r16(r, i);
+            }
             Instruction::Res(b, r) => {
                 let v = self[r] & !(1 << b);
                 self[r] = v;
@@ -112,6 +115,13 @@ impl Cpu {
             try!(self.mmu.read(self.pc + Address(2))),
         ];
         Instruction::decode(bytes)
+    }
+
+    fn write_r16(&mut self, r: Register16, v: u16) {
+        match r {
+            Register16::SP => self.sp = Address(v),
+            _ => panic!("Unimpelemented register set"),
+        }
     }
 }
 
