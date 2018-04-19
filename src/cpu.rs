@@ -1,7 +1,7 @@
 use std::ops::{Index, IndexMut};
 use std::num::Wrapping;
 
-use inst::Instruction;
+use inst::{Control, Instruction, Logic};
 use mem::{Address, MemDevice, Mmu};
 use cart::Cart;
 
@@ -55,15 +55,6 @@ impl Cpu {
     fn execute(&mut self, i: Instruction) -> Result<(), ()> {
         match i {
             Instruction::Nop => {}
-            Instruction::JpI(a) => {
-                self.pc = a;
-            }
-            Instruction::CallI(a) => {
-                let nsp = self.sp - Address(2);
-                try!(self.mmu.write16(nsp, self.pc.into()));
-                self.sp = nsp;
-                self.pc = a;
-            }
             Instruction::LdRM(r, a) => {
                 self[r] = try!(self.mmu.read(a));
             }
@@ -82,22 +73,51 @@ impl Cpu {
                 let (flags, _) = sub(self[Register8::A], v);
                 self[Register8::F] = flags;
             }
-            Instruction::JrNZI(o) => {
+            Instruction::Control(c) => {
+                try!(self.execute_control(c));
+            }
+            Instruction::Logic(l) => {
+                try!(self.execute_logic(l));
+            }
+        }
+        self.cycle += i.cycles() as u64;
+        Ok(())
+    }
+
+    fn execute_control(&mut self, c: Control) -> Result<(), ()> {
+        match c {
+            Control::JrNZI(o) => {
                 if self[Register8::F] & MASK_FLAG_Z == 0 {
                     self.pc = Address((self.pc.0 as i32 + o as i32) as u16);
                 }
             }
-            Instruction::AndI(v) => {
+            Control::Ret => {
+                self.pc = Address(try!(self.mmu.read16(self.sp)));
+                self.sp += Address(2);
+            }
+            Control::JpI(a) => {
+                self.pc = a;
+            }
+            Control::CallI(a) => {
+                let nsp = self.sp - Address(2);
+                try!(self.mmu.write16(nsp, self.pc.into()));
+                self.sp = nsp;
+                self.pc = a;
+            }
+        }
+
+        Ok(())
+    }
+
+    fn execute_logic(&mut self, l: Logic) -> Result<(), ()> {
+        match l {
+            Logic::AndI(v) => {
                 let (flags, value) = and(self[Register8::A], v);
                 self[Register8::A] = value;
                 self[Register8::F] = flags;
             }
-            Instruction::Ret => {
-                self.pc = Address(try!(self.mmu.read16(self.sp)));
-                self.sp += Address(2);
-            }
         }
-        self.cycle += i.cycles() as u64;
+
         Ok(())
     }
 
