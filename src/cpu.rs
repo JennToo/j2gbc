@@ -114,6 +114,10 @@ impl Cpu {
             Load::LdRI16(r, i) => {
                 self.write_r16(r, i);
             }
+            Load::LdRR(d, s) => {
+                let v = self[s];
+                self[d] = v;
+            }
         }
 
         Ok(())

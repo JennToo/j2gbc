@@ -23,6 +23,7 @@ pub enum Control {
 pub enum Load {
     LdRM(Register8, Address),
     LdMR(Address, Register8),
+    LdRR(Register8, Register8),
     LdRI16(Register16, u16),
 }
 
@@ -78,6 +79,7 @@ impl Instruction {
                 Instruction::Load(Load::LdRI16(Register16::SP, hi_lo(bytes[2], bytes[1]))),
                 3,
             )),
+            0x47 => Ok((Instruction::Load(Load::LdRR(Register8::B, Register8::A)), 1)),
             0xFE => Ok((Instruction::CpI(bytes[1]), 2)),
             0x20 => Ok((Instruction::Control(Control::JrNZI(bytes[1] as i8)), 2)),
             0xE6 => Ok((Instruction::Logic(Logic::AndI(bytes[1])), 2)),
@@ -120,6 +122,7 @@ impl Load {
     fn cycles(self) -> u8 {
         match self {
             Load::LdRM(_, _) | Load::LdRI16(_, _) | Load::LdMR(_, _) => 12,
+            Load::LdRR(_, _) => 4,
         }
     }
 }
