@@ -42,7 +42,7 @@ impl MemDevice for Lcd {
                 self.lcdc = v;
                 Ok(())
             }
-            _ =>  {
+            _ => {
                 println!("Unimplemented LCD register {:?}", a);
                 Err(())
             }

@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+extern crate linenoise;
 
 use std::fs::File;
 
@@ -7,6 +8,7 @@ pub mod inst;
 pub mod cart;
 pub mod mem;
 pub mod lcd;
+pub mod debug;
 
 fn main() {
     let mut args = std::env::args();
@@ -23,6 +25,8 @@ fn main() {
 
     let mut runner = cpu::Cpu::new(c);
     loop {
-        runner.run_cycle().expect("Unhandled fault");
+        if runner.run_cycle().is_err() {
+            debug::debug(&mut runner);
+        }
     }
 }

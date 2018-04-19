@@ -31,8 +31,8 @@ pub enum Register16 {
 
 pub struct Cpu {
     registers: [u8; 8],
-    pc: Address,
-    sp: Address,
+    pub pc: Address,
+    pub sp: Address,
     mmu: Mmu,
     cycle: u64,
 }
@@ -60,7 +60,7 @@ impl Cpu {
             }
             Instruction::CallI(a) => {
                 let nsp = self.sp - Address(2);
-                self.mmu.write16(nsp, self.pc.into());
+                try!(self.mmu.write16(nsp, self.pc.into()));
                 self.sp = nsp;
                 self.pc = a;
             }
@@ -69,7 +69,7 @@ impl Cpu {
             }
             Instruction::LdMR(a, r) => {
                 let v = self[r];
-                self.mmu.write(a, v);
+                try!(self.mmu.write(a, v));
             }
             Instruction::Res(b, r) => {
                 let v = self[r] & !(1 << b);

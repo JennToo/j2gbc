@@ -74,9 +74,10 @@ pub trait MemDevice {
     fn read(&self, a: Address) -> Result<u8, ()>;
     fn write(&mut self, a: Address, v: u8) -> Result<(), ()>;
 
-    fn write16(&mut self, a: Address, v: u16) {
-        self.write(a, ((v >> 8) & 0xFF) as u8);
-        self.write(a + Address(1), (v & 0xFF) as u8);
+    fn write16(&mut self, a: Address, v: u16) -> Result<(), ()> {
+        try!(self.write(a, ((v >> 8) & 0xFF) as u8));
+        try!(self.write(a + Address(1), (v & 0xFF) as u8));
+        Ok(())
     }
 
     fn read16(&self, a: Address) -> Result<u16, ()> {

@@ -54,18 +54,16 @@ impl Instruction {
             0x20 => Ok((Instruction::JrNZI(bytes[1] as i8), 2)),
             0xE6 => Ok((Instruction::AndI(bytes[1]), 2)),
             0xC9 => Ok((Instruction::Ret, 1)),
-            0xCB => {
-                match bytes[1] {
-                    0x87 => Ok((Instruction::Res(0, Register8::A), 2)),
-                    _ => {
-                        println!(
-                            "Unknown instruction {:#X} {:#X} {:#X}",
-                            bytes[0], bytes[1], bytes[2]
-                        );
-                        Err(())
-                    },
+            0xCB => match bytes[1] {
+                0x87 => Ok((Instruction::Res(0, Register8::A), 2)),
+                _ => {
+                    println!(
+                        "Unknown instruction {:#X} {:#X} {:#X}",
+                        bytes[0], bytes[1], bytes[2]
+                    );
+                    Err(())
                 }
-            }
+            },
             _ => {
                 println!(
                     "Unknown instruction {:#X} {:#X} {:#X}",
