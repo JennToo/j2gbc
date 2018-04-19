@@ -159,9 +159,33 @@ impl Cpu {
     fn write_r16(&mut self, r: Register16, v: u16) {
         match r {
             Register16::SP => self.sp = Address(v),
-            _ => panic!("Unimpelemented register set"),
+            Register16::PC => self.pc = Address(v),
+            Register16::AF => {
+                self[Register8::A] = hi(v);
+                self[Register8::F] = lo(v);
+            }
+            Register16::BC => {
+                self[Register8::B] = hi(v);
+                self[Register8::C] = lo(v);
+            }
+            Register16::DE => {
+                self[Register8::D] = hi(v);
+                self[Register8::E] = lo(v);
+            }
+            Register16::HL => {
+                self[Register8::H] = hi(v);
+                self[Register8::L] = lo(v);
+            }
         }
     }
+}
+
+pub fn hi(v: u16) -> u8 {
+    ((v >> 8) & 0xFF) as u8
+}
+
+pub fn lo(v: u16) -> u8 {
+    (v & 0xFF) as u8
 }
 
 impl Index<Register8> for Cpu {

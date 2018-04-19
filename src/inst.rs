@@ -75,6 +75,18 @@ impl Instruction {
                 )),
                 2,
             )),
+            0x01 => Ok((
+                Instruction::Load(Load::LdRI16(Register16::BC, hi_lo(bytes[2], bytes[1]))),
+                3,
+            )),
+            0x11 => Ok((
+                Instruction::Load(Load::LdRI16(Register16::DE, hi_lo(bytes[2], bytes[1]))),
+                3,
+            )),
+            0x21 => Ok((
+                Instruction::Load(Load::LdRI16(Register16::HL, hi_lo(bytes[2], bytes[1]))),
+                3,
+            )),
             0x31 => Ok((
                 Instruction::Load(Load::LdRI16(Register16::SP, hi_lo(bytes[2], bytes[1]))),
                 3,
