@@ -1,9 +1,12 @@
 use std::io::Read;
 use std::io;
 use mem::{Address, MemDevice, RNG_ROM_BANK0};
+use mbc::Mbc;
+use mbc::mbc1::Mbc1;
 
 pub struct Cart {
     pub data: Vec<u8>,
+    mbc: Box<Mbc>,
 }
 
 const OFF_CART_NAME_START: usize = 0x134;
@@ -16,7 +19,10 @@ impl Cart {
     pub fn load<R: Read>(mut r: R) -> io::Result<Cart> {
         let mut data = Vec::new();
         try!(r.read_to_end(&mut data));
-        Ok(Cart { data })
+        Ok(Cart {
+            data: data.clone(),
+            mbc: Box::new(Mbc1::new(data)),
+        })
     }
 
     pub fn name(&self) -> String {
@@ -49,18 +55,11 @@ impl MemDevice for Cart {
         if a.in_(RNG_ROM_BANK0) {
             Ok(self.data[a.0 as usize])
         } else {
-            println!("Unimplemented region for cart {:#X}", a.0);
-            Err(())
+            self.mbc.read(a)
         }
     }
 
     fn write(&mut self, a: Address, v: u8) -> Result<(), ()> {
-        if a.in_(RNG_ROM_BANK0) {
-            self.data[a.0 as usize] = v;
-            Ok(())
-        } else {
-            println!("Unimplemented region for cart {:#X}", a.0);
-            Err(())
-        }
+        self.mbc.write(a, v)
     }
 }

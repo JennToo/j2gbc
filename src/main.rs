@@ -9,6 +9,7 @@ pub mod mem;
 pub mod lcd;
 pub mod debug;
 pub mod alu;
+pub mod mbc;
 
 fn main() {
     let mut args = std::env::args();

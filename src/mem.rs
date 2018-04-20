@@ -122,6 +122,7 @@ pub struct Mmu {
 const RNG_INT_RAM: AddressRange = AddressRange(Address(0xC000), Address(0xE000));
 const RNG_INT_TINY_RAM: AddressRange = AddressRange(Address(0xFF80), Address(0xFFFF));
 pub const RNG_ROM_BANK0: AddressRange = AddressRange(Address(0x0000), Address(0x4000));
+pub const RNG_ROM_BANK1: AddressRange = AddressRange(Address(0x4000), Address(0x8000));
 const OFF_INTR_ENABLE_REG: Address = Address(0xFFFF);
 const RNG_LCD_MM_REG: AddressRange = AddressRange(Address(0xFF40), Address(0xFF6C));
 pub const RNG_LCD_BGDD1: AddressRange = AddressRange(Address(0x9800), Address(0x9C00));
@@ -143,7 +144,7 @@ impl MemDevice for Mmu {
     fn read(&self, a: Address) -> Result<u8, ()> {
         if a.in_(RNG_INT_RAM) {
             self.internal_ram.read(a - RNG_INT_RAM.0)
-        } else if a.in_(RNG_ROM_BANK0) {
+        } else if a.in_(RNG_ROM_BANK0) || a.in_(RNG_ROM_BANK1) {
             self.cart.read(a)
         } else if a.in_(RNG_INT_TINY_RAM) {
             self.tiny_ram.read(a - RNG_INT_TINY_RAM.0)
@@ -160,7 +161,7 @@ impl MemDevice for Mmu {
     fn write(&mut self, a: Address, v: u8) -> Result<(), ()> {
         if a.in_(RNG_INT_RAM) {
             self.internal_ram.write(a - RNG_INT_RAM.0, v)
-        } else if a.in_(RNG_ROM_BANK0) {
+        } else if a.in_(RNG_ROM_BANK0) || a.in_(RNG_ROM_BANK1) {
             self.cart.write(a, v)
         } else if a.in_(RNG_INT_TINY_RAM) {
             self.tiny_ram.write(a - RNG_INT_TINY_RAM.0, v)
