@@ -18,7 +18,7 @@ impl Mbc1 {
 impl MemDevice for Mbc1 {
     fn read(&self, a: Address) -> Result<u8, ()> {
         if a.in_(RNG_ROM_BANK1) {
-            let index = RNG_ROM_BANK1.len() * self.rom_bank;
+            let index = RNG_ROM_BANK1.len() * (self.rom_bank - 1) + a.0 as usize;
             Ok(self.rom[index])
         } else {
             unreachable!();
