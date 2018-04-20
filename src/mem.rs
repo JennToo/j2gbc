@@ -124,6 +124,8 @@ const RNG_INT_TINY_RAM: AddressRange = AddressRange(Address(0xFF80), Address(0xF
 pub const RNG_ROM_BANK0: AddressRange = AddressRange(Address(0x0000), Address(0x4000));
 const OFF_INTR_ENABLE_REG: Address = Address(0xFFFF);
 const RNG_LCD_MM_REG: AddressRange = AddressRange(Address(0xFF40), Address(0xFF6C));
+pub const RNG_LCD_BGDD1: AddressRange = AddressRange(Address(0x9800), Address(0x9C00));
+pub const RNG_LCD_BGDD2: AddressRange = AddressRange(Address(0x9C00), Address(0xA000));
 
 impl Mmu {
     pub fn new(cart: Cart) -> Mmu {
@@ -147,7 +149,7 @@ impl MemDevice for Mmu {
             self.tiny_ram.read(a - RNG_INT_TINY_RAM.0)
         } else if a == OFF_INTR_ENABLE_REG {
             Ok(self.interrupt_enable)
-        } else if a.in_(RNG_LCD_MM_REG) {
+        } else if a.in_(RNG_LCD_MM_REG) || a.in_(RNG_LCD_BGDD1) || a.in_(RNG_LCD_BGDD2) {
             self.lcd.read(a)
         } else {
             println!("MMU: Unimplemented memory read at address {:?}", a);

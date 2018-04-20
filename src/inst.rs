@@ -31,6 +31,8 @@ pub enum Load {
     LdRM(Register8, Address),
     LdMR(Address, Register8),
     LdRR(Register8, Register8),
+    LdRI(Register8, u8),
+    LdNA(i8),
     LdRI16(Register16, u16),
 }
 
@@ -101,6 +103,14 @@ impl Instruction {
                 3,
             )),
 
+            0x06 => Ok((Instruction::Load(Load::LdRI(Register8::B, bytes[1])), 2)),
+            0x16 => Ok((Instruction::Load(Load::LdRI(Register8::D, bytes[1])), 2)),
+            0x26 => Ok((Instruction::Load(Load::LdRI(Register8::H, bytes[1])), 2)),
+            0x0E => Ok((Instruction::Load(Load::LdRI(Register8::C, bytes[1])), 2)),
+            0x1E => Ok((Instruction::Load(Load::LdRI(Register8::E, bytes[1])), 2)),
+            0x2E => Ok((Instruction::Load(Load::LdRI(Register8::L, bytes[1])), 2)),
+            0x3E => Ok((Instruction::Load(Load::LdRI(Register8::A, bytes[1])), 2)),
+
             0x40 => Ok((Instruction::Load(Load::LdRR(Register8::B, Register8::B)), 1)),
             0x41 => Ok((Instruction::Load(Load::LdRR(Register8::B, Register8::C)), 1)),
             0x42 => Ok((Instruction::Load(Load::LdRR(Register8::B, Register8::D)), 1)),
@@ -143,6 +153,9 @@ impl Instruction {
             0x7B => Ok((Instruction::Load(Load::LdRR(Register8::A, Register8::E)), 1)),
             0x7C => Ok((Instruction::Load(Load::LdRR(Register8::A, Register8::H)), 1)),
             0x7D => Ok((Instruction::Load(Load::LdRR(Register8::A, Register8::L)), 1)),
+
+            0x22 => Ok((Instruction::Load(Load::LdNA(1)), 1)),
+            0x32 => Ok((Instruction::Load(Load::LdNA(-1)), 1)),
 
             0xFE => Ok((Instruction::CpI(bytes[1]), 2)),
             0x20 => Ok((Instruction::Control(Control::JrNZI(bytes[1] as i8)), 2)),
@@ -203,6 +216,8 @@ impl Load {
         match self {
             Load::LdRM(_, _) | Load::LdRI16(_, _) | Load::LdMR(_, _) => 12,
             Load::LdRR(_, _) => 4,
+            Load::LdRI(_, _) => 8,
+            Load::LdNA(_) => 8,
         }
     }
 }

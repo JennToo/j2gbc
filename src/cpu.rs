@@ -125,12 +125,20 @@ impl Cpu {
                 let v = self[r];
                 try!(self.mmu.write(a, v));
             }
-            Load::LdRI16(r, i) => {
-                self.write_r16(r, i);
-            }
             Load::LdRR(d, s) => {
                 let v = self[s];
                 self[d] = v;
+            }
+            Load::LdRI(r, i) => {
+                self[r] = i;
+            }
+            Load::LdNA(d) => {
+                let a = self.read_r16(Register16::HL);
+                self[Register8::A] = try!(self.mmu.read(Address(a)));
+                self.write_r16(Register16::HL, (Wrapping(a) + Wrapping(d as u16)).0);
+            }
+            Load::LdRI16(r, i) => {
+                self.write_r16(r, i);
             }
         }
 
