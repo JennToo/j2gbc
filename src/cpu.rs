@@ -143,6 +143,16 @@ impl Cpu {
                 self[Register8::A] = try!(self.mmu.read(Address(a)));
                 self.write_r16(Register16::HL, (Wrapping(a) + Wrapping(d as u16)).0);
             }
+            Load::LdNCA => {
+                let a = Address(self[Register8::C] as u16 + 0xFF00);
+                let v = self[Register8::A];
+                try!(self.mmu.write(a, v));
+            }
+            Load::LdANC => {
+                let a = Address(self[Register8::C] as u16 + 0xFF00);
+                let v = try!(self.mmu.read(a));
+                self[Register8::A] = v;
+            }
             Load::LdRI16(r, i) => {
                 self.write_r16(r, i);
             }
