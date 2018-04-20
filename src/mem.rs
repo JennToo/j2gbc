@@ -168,7 +168,7 @@ impl MemDevice for Mmu {
         } else if a == OFF_INTR_ENABLE_REG {
             self.interrupt_enable = v;
             Ok(())
-        } else if a.in_(RNG_LCD_MM_REG) {
+        } else if a.in_(RNG_LCD_MM_REG) || a.in_(RNG_LCD_BGDD1) || a.in_(RNG_LCD_BGDD2) {
             self.lcd.write(a, v)
         } else {
             println!("MMU: Unimplemented memory write at address {:?}", a);
