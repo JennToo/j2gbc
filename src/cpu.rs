@@ -1,7 +1,7 @@
 use std::ops::{Index, IndexMut};
 use std::num::Wrapping;
 
-use alu::{and, hi, hi_lo, lo, or, sub, xor, MASK_FLAG_Z};
+use alu::{and, hi, hi_lo, inc, lo, or, sub, xor, Flags, MASK_FLAG_Z};
 use inst::{Arith, Control, Instruction, Load, Logic};
 use mem::{Address, MemDevice, Mmu};
 use cart::Cart;
@@ -61,8 +61,8 @@ impl Cpu {
                 self[r] = v;
             }
             Instruction::CpI(v) => {
-                let (flags, _) = sub(self[Register8::A], v);
-                self[Register8::F] = flags;
+                let (_, flags) = sub(self[Register8::A], v);
+                self[Register8::F] = flags.0;
             }
             Instruction::Arith(a) => {
                 try!(self.execute_arith(a));
@@ -83,6 +83,12 @@ impl Cpu {
 
     fn execute_arith(&mut self, a: Arith) -> Result<(), ()> {
         match a {
+            Arith::IncR(r) => {
+                let f = Flags(self[Register8::F]);
+                let (v, flags) = inc(self[r], 1, f);
+                self[r] = v;
+                self[Register8::F] = flags.0;
+            }
             Arith::DecR16(r) => {
                 let v = Wrapping(self.read_r16(r));
                 self.write_r16(r, (v - Wrapping(1)).0);
@@ -168,19 +174,19 @@ impl Cpu {
     fn execute_logic(&mut self, l: Logic) -> Result<(), ()> {
         match l {
             Logic::AndI(v) => {
-                let (flags, value) = and(self[Register8::A], v);
+                let (value, flags) = and(self[Register8::A], v);
                 self[Register8::A] = value;
-                self[Register8::F] = flags;
+                self[Register8::F] = flags.0;
             }
             Logic::OrR(r) => {
-                let (flags, value) = or(self[Register8::A], self[r]);
+                let (value, flags) = or(self[Register8::A], self[r]);
                 self[Register8::A] = value;
-                self[Register8::F] = flags;
+                self[Register8::F] = flags.0;
             }
             Logic::XorR(r) => {
-                let (flags, value) = xor(self[Register8::A], self[r]);
+                let (value, flags) = xor(self[Register8::A], self[r]);
                 self[Register8::A] = value;
-                self[Register8::F] = flags;
+                self[Register8::F] = flags.0;
             }
         }
 
