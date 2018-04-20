@@ -134,6 +134,12 @@ impl Cpu {
             }
             Load::LdNA(d) => {
                 let a = self.read_r16(Register16::HL);
+                let v = self[Register8::A];
+                try!(self.mmu.write(Address(a), v));
+                self.write_r16(Register16::HL, (Wrapping(a) + Wrapping(d as u16)).0);
+            }
+            Load::LdAN(d) => {
+                let a = self.read_r16(Register16::HL);
                 self[Register8::A] = try!(self.mmu.read(Address(a)));
                 self.write_r16(Register16::HL, (Wrapping(a) + Wrapping(d as u16)).0);
             }
