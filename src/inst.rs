@@ -34,6 +34,7 @@ pub enum Load {
     LdRI(Register8, u8),
     LdNA(i8),
     LdRI16(Register16, u16),
+    LdNI16(Address),
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -100,6 +101,11 @@ impl Instruction {
             )),
             0x31 => Ok((
                 Instruction::Load(Load::LdRI16(Register16::SP, hi_lo(bytes[2], bytes[1]))),
+                3,
+            )),
+
+            0xEA => Ok((
+                Instruction::Load(Load::LdNI16(Address(hi_lo(bytes[2], bytes[1])))),
                 3,
             )),
 
@@ -218,6 +224,7 @@ impl Load {
             Load::LdRR(_, _) => 4,
             Load::LdRI(_, _) => 8,
             Load::LdNA(_) => 8,
+            Load::LdNI16(_) => 16,
         }
     }
 }
