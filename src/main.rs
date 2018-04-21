@@ -2,16 +2,6 @@ extern crate linenoise;
 
 use std::fs::File;
 
-pub mod cpu;
-pub mod inst;
-pub mod cart;
-pub mod mem;
-pub mod lcd;
-pub mod debug;
-pub mod alu;
-pub mod mbc;
-pub mod audio;
-
 fn main() {
     let mut args = std::env::args();
     let cart_path = args.nth(1).unwrap();
