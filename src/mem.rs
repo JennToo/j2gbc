@@ -116,12 +116,15 @@ pub struct Mmu {
     cart: Cart,
     // TODO: Actually implement IE register
     interrupt_enable: u8,
+    interrupt_table: Ram,
     lcd: Lcd,
 }
 
+pub const RNG_EXT_RAM: AddressRange = AddressRange(Address(0xA000), Address(0xC000));
 const RNG_INT_RAM: AddressRange = AddressRange(Address(0xC000), Address(0xE000));
 const RNG_INT_TINY_RAM: AddressRange = AddressRange(Address(0xFF80), Address(0xFFFF));
-pub const RNG_ROM_BANK0: AddressRange = AddressRange(Address(0x0000), Address(0x4000));
+pub const RNG_INTR_TABLE: AddressRange = AddressRange(Address(0x0000), Address(0x0100));
+pub const RNG_ROM_BANK0: AddressRange = AddressRange(Address(0x0100), Address(0x4000));
 pub const RNG_ROM_BANK1: AddressRange = AddressRange(Address(0x4000), Address(0x8000));
 const OFF_INTR_ENABLE_REG: Address = Address(0xFFFF);
 const RNG_LCD_MM_REG: AddressRange = AddressRange(Address(0xFF40), Address(0xFF6C));
@@ -135,6 +138,7 @@ impl Mmu {
             internal_ram: Ram::new(RNG_INT_RAM.len()),
             tiny_ram: Ram::new(RNG_INT_TINY_RAM.len()),
             interrupt_enable: 0,
+            interrupt_table: Ram::new(RNG_INTR_TABLE.len()),
             cart,
             lcd: Lcd::new(),
         }
@@ -143,9 +147,11 @@ impl Mmu {
 
 impl MemDevice for Mmu {
     fn read(&self, a: Address) -> Result<u8, ()> {
-        if a.in_(RNG_INT_RAM) {
+        if a.in_(RNG_INTR_TABLE) {
+            self.interrupt_table.read(a - RNG_INTR_TABLE.0)
+        } else if a.in_(RNG_INT_RAM) {
             self.internal_ram.read(a - RNG_INT_RAM.0)
-        } else if a.in_(RNG_ROM_BANK0) || a.in_(RNG_ROM_BANK1) {
+        } else if a.in_(RNG_ROM_BANK0) || a.in_(RNG_ROM_BANK1) || a.in_(RNG_EXT_RAM) {
             self.cart.read(a)
         } else if a.in_(RNG_INT_TINY_RAM) {
             self.tiny_ram.read(a - RNG_INT_TINY_RAM.0)
@@ -162,9 +168,11 @@ impl MemDevice for Mmu {
     }
 
     fn write(&mut self, a: Address, v: u8) -> Result<(), ()> {
-        if a.in_(RNG_INT_RAM) {
+        if a.in_(RNG_INTR_TABLE) {
+            self.interrupt_table.write(a - RNG_INTR_TABLE.0, v)
+        } else if a.in_(RNG_INT_RAM) {
             self.internal_ram.write(a - RNG_INT_RAM.0, v)
-        } else if a.in_(RNG_ROM_BANK0) || a.in_(RNG_ROM_BANK1) {
+        } else if a.in_(RNG_ROM_BANK0) || a.in_(RNG_ROM_BANK1) || a.in_(RNG_EXT_RAM) {
             self.cart.write(a, v)
         } else if a.in_(RNG_INT_TINY_RAM) {
             self.tiny_ram.write(a - RNG_INT_TINY_RAM.0, v)
