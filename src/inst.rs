@@ -32,6 +32,10 @@ pub enum Control {
     JrCI(i8),
     Ret,
     JpI(Address),
+    JpCI(Address),
+    JpZI(Address),
+    JpNCI(Address),
+    JpNZI(Address),
     CallI(Address),
 }
 
@@ -129,6 +133,23 @@ impl Instruction {
                 Instruction::Control(Control::JpI(Address(hi_lo(bytes[2], bytes[1])))),
                 3,
             )),
+            0xC2 => Ok((
+                Instruction::Control(Control::JpNZI(Address(hi_lo(bytes[2], bytes[1])))),
+                3,
+            )),
+            0xD2 => Ok((
+                Instruction::Control(Control::JpCI(Address(hi_lo(bytes[2], bytes[1])))),
+                3,
+            )),
+            0xCA => Ok((
+                Instruction::Control(Control::JpZI(Address(hi_lo(bytes[2], bytes[1])))),
+                3,
+            )),
+            0xDA => Ok((
+                Instruction::Control(Control::JpCI(Address(hi_lo(bytes[2], bytes[1])))),
+                3,
+            )),
+
             0xCD => Ok((
                 Instruction::Control(Control::CallI(Address(hi_lo(bytes[2], bytes[1])))),
                 3,
@@ -320,7 +341,11 @@ impl Arith {
 impl Control {
     fn cycles(self) -> u8 {
         match self {
-            Control::JpI(_) => 16,
+            Control::JpCI(_)
+            | Control::JpI(_)
+            | Control::JpZI(_)
+            | Control::JpNCI(_)
+            | Control::JpNZI(_) => 16,
             Control::CallI(_) => 24,
             // TODO: This is actually variable
             Control::JrNZI(_)
