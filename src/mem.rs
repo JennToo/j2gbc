@@ -5,6 +5,7 @@ use std::fmt;
 
 use cart::Cart;
 use lcd::Lcd;
+use audio::Audio;
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone)]
 pub struct Address(pub u16);
@@ -132,6 +133,7 @@ pub struct Mmu {
     interrupt_enable: u8,
     interrupt_table: Ram,
     lcd: Lcd,
+    audio: Audio,
 }
 
 pub const RNG_EXT_RAM: AddressRange = AddressRange(Address(0xA000), Address(0xC000));
@@ -145,6 +147,8 @@ const RNG_LCD_MM_REG: AddressRange = AddressRange(Address(0xFF40), Address(0xFF6
 pub const RNG_CHAR_DAT: AddressRange = AddressRange(Address(0x8000), Address(0x9800));
 pub const RNG_LCD_BGDD1: AddressRange = AddressRange(Address(0x9800), Address(0x9C00));
 pub const RNG_LCD_BGDD2: AddressRange = AddressRange(Address(0x9C00), Address(0xA000));
+pub const RNG_SND_REGS: AddressRange = AddressRange(Address(0xFF10), Address(0xFF27));
+pub const RNG_SND_WAV_RAM: AddressRange = AddressRange(Address(0xFF30), Address(0xFF3F));
 
 impl Mmu {
     pub fn new(cart: Cart) -> Mmu {
@@ -155,6 +159,7 @@ impl Mmu {
             interrupt_table: Ram::new(RNG_INTR_TABLE.len()),
             cart,
             lcd: Lcd::new(),
+            audio: Audio::new(),
         }
     }
 }
@@ -175,6 +180,8 @@ impl MemDevice for Mmu {
             || a.in_(RNG_LCD_BGDD2)
         {
             self.lcd.read(a)
+        } else if a.in_(RNG_SND_WAV_RAM) || a.in_(RNG_SND_REGS) {
+            self.audio.read(a)
         } else {
             println!("MMU: Unimplemented memory read at address {:?}", a);
             Err(())
@@ -197,6 +204,8 @@ impl MemDevice for Mmu {
             || a.in_(RNG_LCD_BGDD2)
         {
             self.lcd.write(a, v)
+        } else if a.in_(RNG_SND_WAV_RAM) || a.in_(RNG_SND_REGS) {
+            self.audio.write(a, v)
         } else {
             println!("MMU: Unimplemented memory write at address {:?}", a);
             Err(())

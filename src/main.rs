@@ -10,6 +10,7 @@ pub mod lcd;
 pub mod debug;
 pub mod alu;
 pub mod mbc;
+pub mod audio;
 
 fn main() {
     let mut args = std::env::args();
