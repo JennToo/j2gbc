@@ -47,7 +47,8 @@ pub enum Load {
     LdNCA,
     LdANC,
     LdRI16(Register16, u16),
-    LdNI16(Address),
+    LdNIA16(Address),
+    LdANI16(Address),
     LdNR16(Register16),
     LdRN16(Register16),
     Push(Register16),
@@ -163,7 +164,11 @@ impl Instruction {
             )),
 
             0xEA => Ok((
-                Instruction::Load(Load::LdNI16(Address(hi_lo(bytes[2], bytes[1])))),
+                Instruction::Load(Load::LdNIA16(Address(hi_lo(bytes[2], bytes[1])))),
+                3,
+            )),
+            0xFA => Ok((
+                Instruction::Load(Load::LdANI16(Address(hi_lo(bytes[2], bytes[1])))),
                 3,
             )),
 
@@ -328,7 +333,7 @@ impl Load {
             Load::LdNA(_) | Load::LdAN(_) => 8,
             Load::LdNI(_) => 12,
             Load::LdNR16(_) | Load::LdRN16(_) => 8,
-            Load::LdNI16(_) => 16,
+            Load::LdNIA16(_) | Load::LdANI16(_) => 16,
             Load::LdNCA => 8,
             Load::LdANC => 8,
             Load::Push(_) => 16,

@@ -214,9 +214,13 @@ impl Cpu {
             Load::LdRI16(r, i) => {
                 self.write_r16(r, i);
             }
-            Load::LdNI16(a) => {
+            Load::LdNIA16(a) => {
                 let v = self[Register8::A];
                 try!(self.mmu.write(a, v));
+            }
+            Load::LdANI16(a) => {
+                let v = try!(self.mmu.read(a));
+                self[Register8::A] = v;
             }
             Load::Pop(r) => {
                 let v = try!(self.mmu.read16(self.sp));
