@@ -125,6 +125,7 @@ pub const RNG_ROM_BANK0: AddressRange = AddressRange(Address(0x0000), Address(0x
 pub const RNG_ROM_BANK1: AddressRange = AddressRange(Address(0x4000), Address(0x8000));
 const OFF_INTR_ENABLE_REG: Address = Address(0xFFFF);
 const RNG_LCD_MM_REG: AddressRange = AddressRange(Address(0xFF40), Address(0xFF6C));
+pub const RNG_CHAR_DAT: AddressRange = AddressRange(Address(0x8000), Address(0x9800));
 pub const RNG_LCD_BGDD1: AddressRange = AddressRange(Address(0x9800), Address(0x9C00));
 pub const RNG_LCD_BGDD2: AddressRange = AddressRange(Address(0x9C00), Address(0xA000));
 
@@ -150,7 +151,9 @@ impl MemDevice for Mmu {
             self.tiny_ram.read(a - RNG_INT_TINY_RAM.0)
         } else if a == OFF_INTR_ENABLE_REG {
             Ok(self.interrupt_enable)
-        } else if a.in_(RNG_LCD_MM_REG) || a.in_(RNG_LCD_BGDD1) || a.in_(RNG_LCD_BGDD2) {
+        } else if a.in_(RNG_LCD_MM_REG) || a.in_(RNG_CHAR_DAT) || a.in_(RNG_LCD_BGDD1)
+            || a.in_(RNG_LCD_BGDD2)
+        {
             self.lcd.read(a)
         } else {
             println!("MMU: Unimplemented memory read at address {:?}", a);
@@ -168,7 +171,9 @@ impl MemDevice for Mmu {
         } else if a == OFF_INTR_ENABLE_REG {
             self.interrupt_enable = v;
             Ok(())
-        } else if a.in_(RNG_LCD_MM_REG) || a.in_(RNG_LCD_BGDD1) || a.in_(RNG_LCD_BGDD2) {
+        } else if a.in_(RNG_LCD_MM_REG) || a.in_(RNG_CHAR_DAT) || a.in_(RNG_LCD_BGDD1)
+            || a.in_(RNG_LCD_BGDD2)
+        {
             self.lcd.write(a, v)
         } else {
             println!("MMU: Unimplemented memory write at address {:?}", a);

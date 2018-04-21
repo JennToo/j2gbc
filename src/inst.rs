@@ -17,6 +17,7 @@ pub enum Instruction {
 pub enum Arith {
     IncR(Register8),
     DecR(Register8),
+    IncR16(Register16),
     DecR16(Register16),
 }
 
@@ -40,6 +41,8 @@ pub enum Load {
     LdANC,
     LdRI16(Register16, u16),
     LdNI16(Address),
+    LdNR16(Register16),
+    LdRN16(Register16),
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -88,6 +91,11 @@ impl Instruction {
             0x2B => Ok((Instruction::Arith(Arith::DecR16(Register16::HL)), 1)),
             0x3B => Ok((Instruction::Arith(Arith::DecR16(Register16::SP)), 1)),
 
+            0x03 => Ok((Instruction::Arith(Arith::IncR16(Register16::BC)), 1)),
+            0x13 => Ok((Instruction::Arith(Arith::IncR16(Register16::DE)), 1)),
+            0x23 => Ok((Instruction::Arith(Arith::IncR16(Register16::HL)), 1)),
+            0x33 => Ok((Instruction::Arith(Arith::IncR16(Register16::SP)), 1)),
+
             0xC3 => Ok((
                 Instruction::Control(Control::JpI(Address(hi_lo(bytes[2], bytes[1])))),
                 3,
@@ -134,6 +142,12 @@ impl Instruction {
 
             0xE2 => Ok((Instruction::Load(Load::LdNCA), 1)),
             0xF2 => Ok((Instruction::Load(Load::LdANC), 1)),
+
+            0x02 => Ok((Instruction::Load(Load::LdNR16(Register16::BC)), 1)),
+            0x12 => Ok((Instruction::Load(Load::LdNR16(Register16::DE)), 1)),
+
+            0x0A => Ok((Instruction::Load(Load::LdRN16(Register16::BC)), 1)),
+            0x1A => Ok((Instruction::Load(Load::LdRN16(Register16::DE)), 1)),
 
             0x06 => Ok((Instruction::Load(Load::LdRI(Register8::B, bytes[1])), 2)),
             0x16 => Ok((Instruction::Load(Load::LdRI(Register8::D, bytes[1])), 2)),
@@ -229,7 +243,7 @@ impl Instruction {
 impl Arith {
     fn cycles(self) -> u8 {
         match self {
-            Arith::DecR16(_) => 8,
+            Arith::DecR16(_) | Arith::IncR16(_) => 8,
             Arith::IncR(_) | Arith::DecR(_) => 4,
         }
     }
@@ -254,6 +268,7 @@ impl Load {
             Load::LdRR(_, _) => 4,
             Load::LdRI(_, _) => 8,
             Load::LdNA(_) | Load::LdAN(_) => 8,
+            Load::LdNR16(_) | Load::LdRN16(_) => 8,
             Load::LdNI16(_) => 16,
             Load::LdNCA => 8,
             Load::LdANC => 8,

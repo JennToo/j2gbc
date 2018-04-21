@@ -99,6 +99,10 @@ impl Cpu {
                 let v = Wrapping(self.read_r16(r));
                 self.write_r16(r, (v - Wrapping(1)).0);
             }
+            Arith::IncR16(r) => {
+                let v = Wrapping(self.read_r16(r));
+                self.write_r16(r, (v + Wrapping(1)).0);
+            }
         }
         Ok(())
     }
@@ -162,6 +166,16 @@ impl Cpu {
             }
             Load::LdANC => {
                 let a = Address(self[Register8::C] as u16 + 0xFF00);
+                let v = try!(self.mmu.read(a));
+                self[Register8::A] = v;
+            }
+            Load::LdNR16(r) => {
+                let v = self[Register8::A];
+                let a = Address(self.read_r16(r));
+                try!(self.mmu.write(a, v));
+            }
+            Load::LdRN16(r) => {
+                let a = Address(self.read_r16(r));
                 let v = try!(self.mmu.read(a));
                 self[Register8::A] = v;
             }
