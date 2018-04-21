@@ -5,6 +5,8 @@ use cpu::{Register16, Register8};
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Instruction {
     Nop,
+    Ei,
+    Di,
     Res(u8, Register8),
     CpI(u8),
     CpR(Register8),
@@ -72,6 +74,8 @@ impl Instruction {
         // TODO: Audit this list for accuracy
         match self {
             Instruction::Nop => 4,
+            Instruction::Ei => 4,
+            Instruction::Di => 4,
             Instruction::Res(_, _) => 8,
             Instruction::CpI(_) => 8,
             Instruction::CpR(_) => 4,
@@ -85,6 +89,9 @@ impl Instruction {
     pub fn decode(bytes: [u8; 3]) -> Result<(Instruction, u8), ()> {
         match bytes[0] {
             0 => Ok((Instruction::Nop, 1)),
+
+            0xFB => Ok((Instruction::Ei, 1)),
+            0xF3 => Ok((Instruction::Di, 1)),
 
             0x04 => Ok((Instruction::Arith(Arith::IncR(Register8::B)), 1)),
             0x14 => Ok((Instruction::Arith(Arith::IncR(Register8::D)), 1)),

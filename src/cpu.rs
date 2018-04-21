@@ -36,6 +36,7 @@ pub struct Cpu {
     pub sp: Address,
     mmu: Mmu,
     cycle: u64,
+    interupts_enabled: bool,
 }
 
 impl Cpu {
@@ -46,6 +47,7 @@ impl Cpu {
             pc: Address(0x100),
             mmu: Mmu::new(c),
             cycle: 0,
+            interupts_enabled: false,
         }
     }
 
@@ -56,6 +58,12 @@ impl Cpu {
     fn execute(&mut self, i: Instruction) -> Result<(), ()> {
         match i {
             Instruction::Nop => {}
+            Instruction::Ei => {
+                self.interupts_enabled = true;
+            }
+            Instruction::Di => {
+                self.interupts_enabled = false;
+            }
             Instruction::Res(b, r) => {
                 let v = self[r] & !(1 << b);
                 self[r] = v;
