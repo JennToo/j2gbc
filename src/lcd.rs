@@ -4,11 +4,17 @@ const REG_LCDC: Address = Address(0xFF40);
 const REG_LY: Address = Address(0xFF44);
 const REG_OBP0: Address = Address(0xFF48);
 const REG_OBP1: Address = Address(0xFF49);
+const REG_DMA: Address = Address(0xFF46);
+const REG_WY: Address = Address(0xFF4A);
+const REG_WX: Address = Address(0xFF4B);
 
 pub struct Lcd {
     lcdc: u8,
     obp0: u8,
     obp1: u8,
+    dma: u8,
+    wx: u8,
+    wy: u8,
     bgdd1: Ram,
     bgdd2: Ram,
 }
@@ -19,6 +25,9 @@ impl Lcd {
             lcdc: 0x83,
             obp0: 0,
             obp1: 0,
+            dma: 0,
+            wx: 0,
+            wy: 0,
             bgdd1: Ram::new(RNG_LCD_BGDD1.len()),
             bgdd2: Ram::new(RNG_LCD_BGDD2.len()),
         }
@@ -48,6 +57,18 @@ impl MemDevice for Lcd {
                 REG_OBP1 => {
                     println!("Warning: Reading from stub register OBP1");
                     Ok(self.obp1)
+                }
+                REG_DMA => {
+                    println!("DMA register is write-only");
+                    Err(())
+                }
+                REG_WX => {
+                    println!("Warning: Reading from stub register WX");
+                    Ok(self.wx)
+                }
+                REG_WY => {
+                    println!("Warning: Reading from stub register WY");
+                    Ok(self.wy)
                 }
                 _ => {
                     println!("Unimplemented LCD register {:?}", a);
@@ -81,6 +102,21 @@ impl MemDevice for Lcd {
                 REG_OBP1 => {
                     println!("Warning: Writing to stub register OBP1");
                     self.obp1 = v;
+                    Ok(())
+                }
+                REG_DMA => {
+                    println!("Warning: Writing to stub register DMA");
+                    self.dma = v;
+                    Ok(())
+                }
+                REG_WX => {
+                    println!("Warning: Writing to stub register WX");
+                    self.wx = v;
+                    Ok(())
+                }
+                REG_WY => {
+                    println!("Warning: Writing to stub register WY");
+                    self.wy = v;
                     Ok(())
                 }
                 _ => {
