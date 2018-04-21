@@ -1,5 +1,5 @@
-use mem::{Address, AddressRange, MemDevice, RNG_ROM_BANK1, Ram, RNG_EXT_RAM};
-use mbc::Mbc;
+use emu::mem::{Address, AddressRange, MemDevice, RNG_ROM_BANK1, Ram, RNG_EXT_RAM};
+use super::Mbc;
 
 const RNG_BANK_SELECT: AddressRange = AddressRange(Address(0x2000), Address(0x4000));
 const MASK_BANK_SELECT: u8 = 0b00011111;

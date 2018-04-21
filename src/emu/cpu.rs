@@ -1,10 +1,10 @@
 use std::ops::{Index, IndexMut};
 use std::num::Wrapping;
 
-use alu::{and, dec, hi, hi_lo, inc, lo, or, sub, xor, Flags, add16};
-use inst::{Arith, Control, Instruction, Load, Logic};
-use mem::{Address, MemDevice, Mmu};
-use cart::Cart;
+use super::alu::{and, dec, hi, hi_lo, inc, lo, or, sub, xor, Flags, add16};
+use super::inst::{Arith, Control, Instruction, Load, Logic};
+use super::mem::{Address, MemDevice, Mmu};
+use super::cart::Cart;
 
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]

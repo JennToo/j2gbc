@@ -3,9 +3,9 @@ use std::convert::Into;
 use std::fmt::{Debug, Formatter};
 use std::fmt;
 
-use cart::Cart;
-use lcd::Lcd;
-use audio::Audio;
+use super::cart::Cart;
+use super::lcd::Lcd;
+use super::audio::Audio;
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone)]
 pub struct Address(pub u16);

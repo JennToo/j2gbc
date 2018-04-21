@@ -1,4 +1,4 @@
-use mem::{Address, MemDevice, RNG_LCD_BGDD1, RNG_LCD_BGDD2, Ram, RNG_CHAR_DAT};
+use super::mem::{Address, MemDevice, RNG_LCD_BGDD1, RNG_LCD_BGDD2, Ram, RNG_CHAR_DAT};
 
 const REG_LCDC: Address = Address(0xFF40);
 const REG_STAT: Address = Address(0xFF41);

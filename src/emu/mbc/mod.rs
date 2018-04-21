@@ -1,5 +1,5 @@
 pub mod mbc1;
 
-use mem::MemDevice;
+use super::mem::MemDevice;
 
 pub trait Mbc: MemDevice {}

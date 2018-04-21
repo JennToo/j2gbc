@@ -1,6 +1,6 @@
 use linenoise;
 use std;
-use cpu::{Cpu, Register8};
+use super::cpu::{Cpu, Register8};
 
 pub fn debug(cpu: &mut Cpu) {
     println!("Entering debugger");

@@ -1,4 +1,4 @@
-use mem::{Address, MemDevice, Ram, RNG_SND_WAV_RAM};
+use super::mem::{Address, MemDevice, Ram, RNG_SND_WAV_RAM};
 
 const REG_NR50: Address = Address(0xFF24);
 const REG_NR51: Address = Address(0xFF25);

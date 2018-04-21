@@ -1,6 +1,6 @@
-use alu::hi_lo;
-use mem::Address;
-use cpu::{Register16, Register8};
+use super::alu::hi_lo;
+use super::mem::Address;
+use super::cpu::{Register16, Register8};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Instruction {
