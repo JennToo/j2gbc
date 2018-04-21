@@ -245,6 +245,11 @@ impl Cpu {
                 self[Register8::A] = value;
                 self[Register8::F] = flags.0;
             }
+            Logic::AndR(r) => {
+                let (value, flags) = and(self[Register8::A], self[r]);
+                self[Register8::A] = value;
+                self[Register8::F] = flags.0;
+            }
             Logic::OrR(r) => {
                 let (value, flags) = or(self[Register8::A], self[r]);
                 self[Register8::A] = value;

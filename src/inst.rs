@@ -58,6 +58,7 @@ pub enum Load {
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Logic {
     AndI(/* will always love */ u8),
+    AndR(Register8),
     OrR(Register8),
     XorR(Register8),
 }
@@ -268,6 +269,14 @@ impl Instruction {
 
             0xE6 => Ok((Instruction::Logic(Logic::AndI(bytes[1])), 2)),
 
+            0xA0 => Ok((Instruction::Logic(Logic::AndR(Register8::B)), 1)),
+            0xA1 => Ok((Instruction::Logic(Logic::AndR(Register8::C)), 1)),
+            0xA2 => Ok((Instruction::Logic(Logic::AndR(Register8::D)), 1)),
+            0xA3 => Ok((Instruction::Logic(Logic::AndR(Register8::E)), 1)),
+            0xA4 => Ok((Instruction::Logic(Logic::AndR(Register8::H)), 1)),
+            0xA5 => Ok((Instruction::Logic(Logic::AndR(Register8::L)), 1)),
+            0xA7 => Ok((Instruction::Logic(Logic::AndR(Register8::A)), 1)),
+
             0xB0 => Ok((Instruction::Logic(Logic::OrR(Register8::B)), 1)),
             0xB1 => Ok((Instruction::Logic(Logic::OrR(Register8::C)), 1)),
             0xB2 => Ok((Instruction::Logic(Logic::OrR(Register8::D)), 1)),
@@ -346,8 +355,7 @@ impl Logic {
     fn cycles(self) -> u8 {
         match self {
             Logic::AndI(_) => 8,
-            Logic::XorR(_) => 4,
-            Logic::OrR(_) => 4,
+            Logic::XorR(_) | Logic::AndR(_) | Logic::OrR(_) => 4,
         }
     }
 }
