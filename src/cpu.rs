@@ -1,7 +1,7 @@
 use std::ops::{Index, IndexMut};
 use std::num::Wrapping;
 
-use alu::{and, dec, hi, hi_lo, inc, lo, or, sub, xor, Flags, add16, MASK_FLAG_Z};
+use alu::{and, dec, hi, hi_lo, inc, lo, or, sub, xor, Flags, add16};
 use inst::{Arith, Control, Instruction, Load, Logic};
 use mem::{Address, MemDevice, Mmu};
 use cart::Cart;
@@ -89,14 +89,12 @@ impl Cpu {
     fn execute_arith(&mut self, a: Arith) -> Result<(), ()> {
         match a {
             Arith::IncR(r) => {
-                let f = Flags(self[Register8::F]);
-                let (v, flags) = inc(self[r], f);
+                let (v, flags) = inc(self[r], self.flags());
                 self[r] = v;
                 self[Register8::F] = flags.0;
             }
             Arith::DecR(r) => {
-                let f = Flags(self[Register8::F]);
-                let (v, flags) = dec(self[r], f);
+                let (v, flags) = dec(self[r], self.flags());
                 self[r] = v;
                 self[Register8::F] = flags.0;
             }
@@ -109,10 +107,9 @@ impl Cpu {
                 self.write_r16(r, (v + Wrapping(1)).0);
             }
             Arith::AddRR16(d, s) => {
-                let f = Flags(self[Register8::F]);
                 let v1 = self.read_r16(d);
                 let v2 = self.read_r16(s);
-                let (v3, flags) = add16(v1, v2, f);
+                let (v3, flags) = add16(v1, v2, self.flags());
                 self.write_r16(d, v3);
                 self[Register8::F] = flags.0;
             }
@@ -123,8 +120,26 @@ impl Cpu {
     fn execute_control(&mut self, c: Control) -> Result<(), ()> {
         match c {
             Control::JrNZI(o) => {
-                if self[Register8::F] & MASK_FLAG_Z == 0 {
-                    self.pc = Address((self.pc.0 as i32 + o as i32) as u16);
+                if !self.flags().get_zero() {
+                    self.pc += o;
+                }
+            }
+            Control::JrNCI(o) => {
+                if !self.flags().get_carry() {
+                    self.pc += o;
+                }
+            }
+            Control::JrI(o) => {
+                self.pc += o;
+            }
+            Control::JrZI(o) => {
+                if self.flags().get_zero() {
+                    self.pc += o;
+                }
+            }
+            Control::JrCI(o) => {
+                if self.flags().get_carry() {
+                    self.pc += o;
                 }
             }
             Control::Ret => {
@@ -289,6 +304,10 @@ impl Cpu {
             Register16::DE => hi_lo(self[Register8::D], self[Register8::E]),
             Register16::HL => hi_lo(self[Register8::H], self[Register8::L]),
         }
+    }
+
+    fn flags(&self) -> Flags {
+        Flags(self[Register8::F])
     }
 }
 

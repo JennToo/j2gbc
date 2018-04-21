@@ -29,6 +29,20 @@ impl AddAssign<Address> for Address {
     }
 }
 
+impl Add<i8> for Address {
+    type Output = Address;
+
+    fn add(self, o: i8) -> Address {
+        Address((self.0 as i32 + o as i32) as u16)
+    }
+}
+
+impl AddAssign<i8> for Address {
+    fn add_assign(&mut self, o: i8) {
+        self.0 = (*self + o).0;
+    }
+}
+
 impl Sub<Address> for Address {
     type Output = Address;
 

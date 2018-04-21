@@ -26,6 +26,10 @@ pub enum Arith {
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Control {
     JrNZI(i8),
+    JrI(i8),
+    JrNCI(i8),
+    JrZI(i8),
+    JrCI(i8),
     Ret,
     JpI(Address),
     CallI(Address),
@@ -252,6 +256,11 @@ impl Instruction {
             0xBF => Ok((Instruction::CpR(Register8::A), 1)),
 
             0x20 => Ok((Instruction::Control(Control::JrNZI(bytes[1] as i8)), 2)),
+            0x30 => Ok((Instruction::Control(Control::JrNCI(bytes[1] as i8)), 2)),
+            0x18 => Ok((Instruction::Control(Control::JrI(bytes[1] as i8)), 2)),
+            0x28 => Ok((Instruction::Control(Control::JrZI(bytes[1] as i8)), 2)),
+            0x38 => Ok((Instruction::Control(Control::JrCI(bytes[1] as i8)), 2)),
+
             0xE6 => Ok((Instruction::Logic(Logic::AndI(bytes[1])), 2)),
 
             0xB0 => Ok((Instruction::Logic(Logic::OrR(Register8::B)), 1)),
@@ -300,7 +309,11 @@ impl Control {
             Control::JpI(_) => 16,
             Control::CallI(_) => 24,
             // TODO: This is actually variable
-            Control::JrNZI(_) => 8,
+            Control::JrNZI(_)
+            | Control::JrNCI(_)
+            | Control::JrI(_)
+            | Control::JrCI(_)
+            | Control::JrZI(_) => 12,
             Control::Ret => 16,
         }
     }

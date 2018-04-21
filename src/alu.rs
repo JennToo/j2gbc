@@ -41,6 +41,22 @@ impl Flags {
             self.0 &= !MASK_FLAG_H;
         }
     }
+
+    pub fn get_zero(&self) -> bool {
+        self.0 & MASK_FLAG_Z != 0
+    }
+
+    pub fn get_subtract(&self) -> bool {
+        self.0 & MASK_FLAG_N != 0
+    }
+
+    pub fn get_carry(&self) -> bool {
+        self.0 & MASK_FLAG_C != 0
+    }
+
+    pub fn get_halfcarry(&self) -> bool {
+        self.0 & MASK_FLAG_H != 0
+    }
 }
 
 pub fn hi_lo(hi: u8, lo: u8) -> u16 {
