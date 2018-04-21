@@ -65,7 +65,12 @@ pub enum Load {
 pub enum Logic {
     AndI(/* will always love */ u8),
     AndR(Register8),
+    AndN,
+
+    /* hallowed are the */ OrI(u8),
     OrR(Register8),
+    OrN,
+
     XorR(Register8),
 }
 
@@ -296,6 +301,7 @@ impl Instruction {
             0x38 => Ok((Instruction::Control(Control::JrCI(bytes[1] as i8)), 2)),
 
             0xE6 => Ok((Instruction::Logic(Logic::AndI(bytes[1])), 2)),
+            0xA6 => Ok((Instruction::Logic(Logic::AndN), 1)),
 
             0xA0 => Ok((Instruction::Logic(Logic::AndR(Register8::B)), 1)),
             0xA1 => Ok((Instruction::Logic(Logic::AndR(Register8::C)), 1)),
@@ -304,6 +310,9 @@ impl Instruction {
             0xA4 => Ok((Instruction::Logic(Logic::AndR(Register8::H)), 1)),
             0xA5 => Ok((Instruction::Logic(Logic::AndR(Register8::L)), 1)),
             0xA7 => Ok((Instruction::Logic(Logic::AndR(Register8::A)), 1)),
+
+            0xF6 => Ok((Instruction::Logic(Logic::OrI(bytes[1])), 2)),
+            0xB6 => Ok((Instruction::Logic(Logic::OrN), 1)),
 
             0xB0 => Ok((Instruction::Logic(Logic::OrR(Register8::B)), 1)),
             0xB1 => Ok((Instruction::Logic(Logic::OrR(Register8::C)), 1)),
@@ -386,8 +395,9 @@ impl Load {
 impl Logic {
     fn cycles(self) -> u8 {
         match self {
-            Logic::AndI(_) => 8,
+            Logic::AndI(_) | Logic::OrI(_) => 8,
             Logic::XorR(_) | Logic::AndR(_) | Logic::OrR(_) => 4,
+            Logic::AndN | Logic::OrN => 8,
         }
     }
 }

@@ -226,17 +226,14 @@ impl Cpu {
                 self[Register8::A] = v;
             }
             Load::LdNI(v) => {
-                let a = Address(self.read_r16(Register16::HL));
-                try!(self.mmu.write(a, v));
+                try!(self.write_indirect(Register16::HL, v));
             }
             Load::LdNR16(r) => {
                 let v = self[Register8::A];
-                let a = Address(self.read_r16(r));
-                try!(self.mmu.write(a, v));
+                try!(self.write_indirect(r, v))
             }
             Load::LdRN16(r) => {
-                let a = Address(self.read_r16(r));
-                let v = try!(self.mmu.read(a));
+                let v = try!(self.read_indirect(r));
                 self[Register8::A] = v;
             }
             Load::LdRI16(r, i) => {
@@ -278,8 +275,25 @@ impl Cpu {
                 self[Register8::A] = value;
                 self[Register8::F] = flags.0;
             }
+            Logic::AndN => {
+                let v = try!(self.read_indirect(Register16::HL));
+                let (value, flags) = and(self[Register8::A], v);
+                self[Register8::A] = value;
+                self[Register8::F] = flags.0;
+            }
+            Logic::OrI(v) => {
+                let (value, flags) = or(self[Register8::A], v);
+                self[Register8::A] = value;
+                self[Register8::F] = flags.0;
+            }
             Logic::OrR(r) => {
                 let (value, flags) = or(self[Register8::A], self[r]);
+                self[Register8::A] = value;
+                self[Register8::F] = flags.0;
+            }
+            Logic::OrN => {
+                let v = try!(self.read_indirect(Register16::HL));
+                let (value, flags) = or(self[Register8::A], v);
                 self[Register8::A] = value;
                 self[Register8::F] = flags.0;
             }
@@ -341,6 +355,16 @@ impl Cpu {
             Register16::DE => hi_lo(self[Register8::D], self[Register8::E]),
             Register16::HL => hi_lo(self[Register8::H], self[Register8::L]),
         }
+    }
+
+    fn read_indirect(&self, r: Register16) -> Result<u8, ()> {
+        let a = Address(self.read_r16(r));
+        self.mmu.read(a)
+    }
+
+    fn write_indirect(&mut self, r: Register16, v: u8) -> Result<(), ()> {
+        let a = Address(self.read_r16(r));
+        self.mmu.write(a, v)
     }
 
     fn flags(&self) -> Flags {
