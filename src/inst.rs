@@ -44,6 +44,8 @@ pub enum Load {
     LdNI16(Address),
     LdNR16(Register16),
     LdRN16(Register16),
+    Push(Register16),
+    Pop(Register16),
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -224,6 +226,16 @@ impl Instruction {
             0x2A => Ok((Instruction::Load(Load::LdAN(1)), 1)),
             0x3A => Ok((Instruction::Load(Load::LdAN(-1)), 1)),
 
+            0xC5 => Ok((Instruction::Load(Load::Push(Register16::BC)), 1)),
+            0xD5 => Ok((Instruction::Load(Load::Push(Register16::DE)), 1)),
+            0xE5 => Ok((Instruction::Load(Load::Push(Register16::HL)), 1)),
+            0xF5 => Ok((Instruction::Load(Load::Push(Register16::AF)), 1)),
+
+            0xC1 => Ok((Instruction::Load(Load::Pop(Register16::BC)), 1)),
+            0xD1 => Ok((Instruction::Load(Load::Pop(Register16::DE)), 1)),
+            0xE1 => Ok((Instruction::Load(Load::Pop(Register16::HL)), 1)),
+            0xF1 => Ok((Instruction::Load(Load::Pop(Register16::AF)), 1)),
+
             0xFE => Ok((Instruction::CpI(bytes[1]), 2)),
             0x20 => Ok((Instruction::Control(Control::JrNZI(bytes[1] as i8)), 2)),
             0xE6 => Ok((Instruction::Logic(Logic::AndI(bytes[1])), 2)),
@@ -291,6 +303,8 @@ impl Load {
             Load::LdNI16(_) => 16,
             Load::LdNCA => 8,
             Load::LdANC => 8,
+            Load::Push(_) => 16,
+            Load::Pop(_) => 12,
         }
     }
 }

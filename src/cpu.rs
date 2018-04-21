@@ -194,6 +194,17 @@ impl Cpu {
                 let v = self[Register8::A];
                 try!(self.mmu.write(a, v));
             }
+            Load::Pop(r) => {
+                let v = try!(self.mmu.read16(self.sp));
+                self.write_r16(r, v);
+                self.sp += Address(2);
+            }
+            Load::Push(r) => {
+                let nsp = self.sp - Address(2);
+                let v = self.read_r16(r);
+                try!(self.mmu.write16(nsp, v));
+                self.sp = nsp;
+            }
         }
 
         Ok(())
