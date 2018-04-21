@@ -321,7 +321,7 @@ impl Instruction {
             0xB4 => Ok((Instruction::Logic(Logic::OrR(Register8::H)), 1)),
             0xB5 => Ok((Instruction::Logic(Logic::OrR(Register8::L)), 1)),
 
-            0xAF => Ok((Instruction::Logic(Logic::XorR(Register8::A)), 2)),
+            0xAF => Ok((Instruction::Logic(Logic::XorR(Register8::A)), 1)),
             0xC9 => Ok((Instruction::Control(Control::Ret), 1)),
             0xCB => match bytes[1] {
                 0x87 => Ok((Instruction::Res(0, Register8::A), 2)),

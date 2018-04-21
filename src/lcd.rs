@@ -4,6 +4,7 @@ const REG_LCDC: Address = Address(0xFF40);
 const REG_STAT: Address = Address(0xFF41);
 const REG_LY: Address = Address(0xFF44);
 const REG_LYC: Address = Address(0xFF45);
+const REG_BGP: Address = Address(0xFF47);
 const REG_OBP0: Address = Address(0xFF48);
 const REG_OBP1: Address = Address(0xFF49);
 const REG_DMA: Address = Address(0xFF46);
@@ -13,6 +14,7 @@ const REG_WX: Address = Address(0xFF4B);
 pub struct Lcd {
     lcdc: u8,
     stat: u8,
+    bgp: u8,
     obp0: u8,
     obp1: u8,
     dma: u8,
@@ -29,6 +31,7 @@ impl Lcd {
         Lcd {
             lcdc: 0x83,
             stat: 0,
+            bgp: 0,
             obp0: 0,
             obp1: 0,
             dma: 0,
@@ -71,6 +74,10 @@ impl MemDevice for Lcd {
                 REG_OBP0 => {
                     println!("Warning: Reading from stub register OBP0");
                     Ok(self.obp0)
+                }
+                REG_BGP => {
+                    println!("Error: BGP is a write-only register");
+                    Err(())
                 }
                 REG_OBP1 => {
                     println!("Warning: Reading from stub register OBP1");
@@ -122,6 +129,11 @@ impl MemDevice for Lcd {
                 REG_STAT => {
                     println!("Warning: Writing to stub register STAT");
                     self.stat = v;
+                    Ok(())
+                }
+                REG_BGP => {
+                    println!("Warning: Writing to stub register BGP");
+                    self.bgp = v;
                     Ok(())
                 }
                 REG_OBP0 => {
