@@ -7,6 +7,7 @@ pub enum Instruction {
     Nop,
     Res(u8, Register8),
     CpI(u8),
+    CpR(Register8),
     Arith(Arith),
     Control(Control),
     Load(Load),
@@ -63,6 +64,7 @@ impl Instruction {
             Instruction::Nop => 4,
             Instruction::Res(_, _) => 8,
             Instruction::CpI(_) => 8,
+            Instruction::CpR(_) => 4,
             Instruction::Arith(a) => a.cycles(),
             Instruction::Load(l) => l.cycles(),
             Instruction::Control(c) => c.cycles(),
@@ -240,6 +242,15 @@ impl Instruction {
             0xF1 => Ok((Instruction::Load(Load::Pop(Register16::AF)), 1)),
 
             0xFE => Ok((Instruction::CpI(bytes[1]), 2)),
+
+            0xB8 => Ok((Instruction::CpR(Register8::B), 1)),
+            0xB9 => Ok((Instruction::CpR(Register8::C), 1)),
+            0xBA => Ok((Instruction::CpR(Register8::D), 1)),
+            0xBB => Ok((Instruction::CpR(Register8::E), 1)),
+            0xBC => Ok((Instruction::CpR(Register8::H), 1)),
+            0xBD => Ok((Instruction::CpR(Register8::L), 1)),
+            0xBF => Ok((Instruction::CpR(Register8::A), 1)),
+
             0x20 => Ok((Instruction::Control(Control::JrNZI(bytes[1] as i8)), 2)),
             0xE6 => Ok((Instruction::Logic(Logic::AndI(bytes[1])), 2)),
 

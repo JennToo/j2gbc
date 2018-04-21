@@ -1,4 +1,4 @@
-use mem::{Address, AddressRange, MemDevice, Ram, RNG_ROM_BANK1, RNG_EXT_RAM};
+use mem::{Address, AddressRange, MemDevice, RNG_ROM_BANK1, Ram, RNG_EXT_RAM};
 use mbc::Mbc;
 
 const RNG_BANK_SELECT: AddressRange = AddressRange(Address(0x2000), Address(0x4000));
@@ -12,7 +12,11 @@ pub struct Mbc1 {
 
 impl Mbc1 {
     pub fn new(rom: Vec<u8>) -> Mbc1 {
-        Mbc1 { rom, rom_bank: 1, ram: Ram::new(RNG_EXT_RAM.len()) }
+        Mbc1 {
+            rom,
+            rom_bank: 1,
+            ram: Ram::new(RNG_EXT_RAM.len()),
+        }
     }
 }
 

@@ -64,6 +64,11 @@ impl Cpu {
                 let (_, flags) = sub(self[Register8::A], v);
                 self[Register8::F] = flags.0;
             }
+            Instruction::CpR(r) => {
+                let v = self[r];
+                let (_, flags) = sub(self[Register8::A], v);
+                self[Register8::F] = flags.0;
+            }
             Instruction::Arith(a) => {
                 try!(self.execute_arith(a));
             }
