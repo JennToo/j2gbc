@@ -16,6 +16,7 @@ pub enum Instruction {
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Arith {
     IncR(Register8),
+    DecR(Register8),
     DecR16(Register16),
 }
 
@@ -73,6 +74,14 @@ impl Instruction {
             0x1C => Ok((Instruction::Arith(Arith::IncR(Register8::E)), 1)),
             0x2C => Ok((Instruction::Arith(Arith::IncR(Register8::L)), 1)),
             0x3C => Ok((Instruction::Arith(Arith::IncR(Register8::A)), 1)),
+
+            0x05 => Ok((Instruction::Arith(Arith::DecR(Register8::B)), 1)),
+            0x15 => Ok((Instruction::Arith(Arith::DecR(Register8::D)), 1)),
+            0x25 => Ok((Instruction::Arith(Arith::DecR(Register8::H)), 1)),
+            0x0D => Ok((Instruction::Arith(Arith::DecR(Register8::C)), 1)),
+            0x1D => Ok((Instruction::Arith(Arith::DecR(Register8::E)), 1)),
+            0x2D => Ok((Instruction::Arith(Arith::DecR(Register8::L)), 1)),
+            0x3D => Ok((Instruction::Arith(Arith::DecR(Register8::A)), 1)),
 
             0x0B => Ok((Instruction::Arith(Arith::DecR16(Register16::BC)), 1)),
             0x1B => Ok((Instruction::Arith(Arith::DecR16(Register16::DE)), 1)),
@@ -221,7 +230,7 @@ impl Arith {
     fn cycles(self) -> u8 {
         match self {
             Arith::DecR16(_) => 8,
-            Arith::IncR(_) => 4,
+            Arith::IncR(_) | Arith::DecR(_) => 4,
         }
     }
 }

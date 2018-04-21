@@ -1,7 +1,7 @@
 use std::ops::{Index, IndexMut};
 use std::num::Wrapping;
 
-use alu::{and, hi, hi_lo, inc, lo, or, sub, xor, Flags, MASK_FLAG_Z};
+use alu::{and, dec, hi, hi_lo, inc, lo, or, sub, xor, Flags, MASK_FLAG_Z};
 use inst::{Arith, Control, Instruction, Load, Logic};
 use mem::{Address, MemDevice, Mmu};
 use cart::Cart;
@@ -85,7 +85,13 @@ impl Cpu {
         match a {
             Arith::IncR(r) => {
                 let f = Flags(self[Register8::F]);
-                let (v, flags) = inc(self[r], 1, f);
+                let (v, flags) = inc(self[r], f);
+                self[r] = v;
+                self[Register8::F] = flags.0;
+            }
+            Arith::DecR(r) => {
+                let f = Flags(self[Register8::F]);
+                let (v, flags) = dec(self[r], f);
                 self[r] = v;
                 self[Register8::F] = flags.0;
             }

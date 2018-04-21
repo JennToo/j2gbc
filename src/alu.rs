@@ -76,11 +76,20 @@ pub fn add(l: u8, r: u8, mut f: Flags) -> (u8, Flags) {
     (v, f)
 }
 
-pub fn inc(l: u8, r: u8, mut f: Flags) -> (u8, Flags) {
-    let v = (Wrapping(l) + Wrapping(r)).0;
+pub fn inc(l: u8, mut f: Flags) -> (u8, Flags) {
+    let v = (Wrapping(l) + Wrapping(1)).0;
     f.set_zero(v == 0);
-    f.set_halfcarry(((l & 0x0F) + (r & 0x0F)) > 0x0F);
+    f.set_halfcarry(l == 0xFF);
     f.set_subtract(false);
+
+    (v, f)
+}
+
+pub fn dec(l: u8, mut f: Flags) -> (u8, Flags) {
+    let v = (Wrapping(l) - Wrapping(1)).0;
+    f.set_zero(v == 0);
+    f.set_halfcarry(l == 0);
+    f.set_subtract(true);
 
     (v, f)
 }
