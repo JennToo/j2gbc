@@ -70,9 +70,17 @@ pub fn sub(l: u8, r: u8) -> (u8, Flags) {
 pub fn add(l: u8, r: u8, mut f: Flags) -> (u8, Flags) {
     let v = (Wrapping(l) + Wrapping(r)).0;
     f.set_zero(v == 0);
-    f.set_halfcarry(((l & 0x0F) + (r & 0x0F)) > 0x0F);
-    f.set_carry(((l as u16) + (r as u16)) > 0xFF);
+    f.set_halfcarry((l & 0x0F) + (r & 0x0F) > 0x0F);
+    f.set_carry((l as u16) + (r as u16) > 0xFF);
     f.set_subtract(false);
+    (v, f)
+}
+
+pub fn add16(l: u16, r: u16, mut f: Flags) -> (u16, Flags) {
+    let v = ((Wrapping(l) + Wrapping(r))).0;
+    f.set_subtract(false);
+    f.set_halfcarry((l & 0x0FFF) + (r & 0x0FFF) > 0x0FFF);
+    f.set_carry((l as u32) + (r as u32) > 0xFF);
     (v, f)
 }
 

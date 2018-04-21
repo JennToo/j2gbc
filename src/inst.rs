@@ -19,6 +19,7 @@ pub enum Arith {
     DecR(Register8),
     IncR16(Register16),
     DecR16(Register16),
+    AddRR16(Register16, Register16),
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -95,6 +96,23 @@ impl Instruction {
             0x13 => Ok((Instruction::Arith(Arith::IncR16(Register16::DE)), 1)),
             0x23 => Ok((Instruction::Arith(Arith::IncR16(Register16::HL)), 1)),
             0x33 => Ok((Instruction::Arith(Arith::IncR16(Register16::SP)), 1)),
+
+            0x09 => Ok((
+                Instruction::Arith(Arith::AddRR16(Register16::HL, Register16::BC)),
+                1,
+            )),
+            0x19 => Ok((
+                Instruction::Arith(Arith::AddRR16(Register16::HL, Register16::DE)),
+                1,
+            )),
+            0x29 => Ok((
+                Instruction::Arith(Arith::AddRR16(Register16::HL, Register16::HL)),
+                1,
+            )),
+            0x39 => Ok((
+                Instruction::Arith(Arith::AddRR16(Register16::HL, Register16::SP)),
+                1,
+            )),
 
             0xC3 => Ok((
                 Instruction::Control(Control::JpI(Address(hi_lo(bytes[2], bytes[1])))),
@@ -245,6 +263,7 @@ impl Arith {
         match self {
             Arith::DecR16(_) | Arith::IncR16(_) => 8,
             Arith::IncR(_) | Arith::DecR(_) => 4,
+            Arith::AddRR16(_, _) => 16,
         }
     }
 }

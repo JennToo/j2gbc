@@ -1,7 +1,7 @@
 use std::ops::{Index, IndexMut};
 use std::num::Wrapping;
 
-use alu::{and, dec, hi, hi_lo, inc, lo, or, sub, xor, Flags, MASK_FLAG_Z};
+use alu::{and, dec, hi, hi_lo, inc, lo, or, sub, xor, Flags, add16, MASK_FLAG_Z};
 use inst::{Arith, Control, Instruction, Load, Logic};
 use mem::{Address, MemDevice, Mmu};
 use cart::Cart;
@@ -102,6 +102,14 @@ impl Cpu {
             Arith::IncR16(r) => {
                 let v = Wrapping(self.read_r16(r));
                 self.write_r16(r, (v + Wrapping(1)).0);
+            }
+            Arith::AddRR16(d, s) => {
+                let f = Flags(self[Register8::F]);
+                let v1 = self.read_r16(d);
+                let v2 = self.read_r16(s);
+                let (v3, flags) = add16(v1, v2, f);
+                self.write_r16(d, v3);
+                self[Register8::F] = flags.0;
             }
         }
         Ok(())
