@@ -36,7 +36,8 @@ pub struct Cpu {
     pub sp: Address,
     mmu: Mmu,
     cycle: u64,
-    interupts_enabled: bool,
+    interrupt_master_enable: bool,
+    halted: bool,
 }
 
 impl Cpu {
@@ -47,7 +48,8 @@ impl Cpu {
             pc: Address(0x100),
             mmu: Mmu::new(c),
             cycle: 0,
-            interupts_enabled: false,
+            interrupt_master_enable: false,
+            halted: false,
         }
     }
 
@@ -59,10 +61,13 @@ impl Cpu {
         match i {
             Instruction::Nop => {}
             Instruction::Ei => {
-                self.interupts_enabled = true;
+                self.interrupt_master_enable = true;
             }
             Instruction::Di => {
-                self.interupts_enabled = false;
+                self.interrupt_master_enable = false;
+            }
+            Instruction::Halt => {
+                self.halted = true;
             }
             Instruction::Res(b, r) => {
                 let v = self[r] & !(1 << b);
@@ -308,6 +313,11 @@ impl Cpu {
     }
 
     pub fn run_cycle(&mut self) -> Result<(), ()> {
+        if self.halted {
+            println!("Halted");
+            return Err(());
+        }
+
         let (instruction, len) = try!(self.fetch_instruction());
         println!("Running {:?}: {:?}", self.pc, instruction);
         self.pc += Address(len as u16);

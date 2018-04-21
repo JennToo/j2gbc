@@ -7,6 +7,7 @@ pub enum Instruction {
     Nop,
     Ei,
     Di,
+    Halt,
     Res(u8, Register8),
     CpI(u8),
     CpR(Register8),
@@ -81,6 +82,7 @@ impl Instruction {
             Instruction::Nop => 4,
             Instruction::Ei => 4,
             Instruction::Di => 4,
+            Instruction::Halt => 4,
             Instruction::Res(_, _) => 8,
             Instruction::CpI(_) => 8,
             Instruction::CpR(_) => 4,
@@ -97,6 +99,8 @@ impl Instruction {
 
             0xFB => Ok((Instruction::Ei, 1)),
             0xF3 => Ok((Instruction::Di, 1)),
+
+            0x76 => Ok((Instruction::Halt, 1)),
 
             0x04 => Ok((Instruction::Arith(Arith::IncR(Register8::B)), 1)),
             0x14 => Ok((Instruction::Arith(Arith::IncR(Register8::D)), 1)),
