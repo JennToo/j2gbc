@@ -3,7 +3,7 @@ use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use std::time::Instant;
 
-use emu;
+use emu::system::System;
 use emu::lcd::SCREEN_SIZE;
 
 pub struct Window {
@@ -33,7 +33,7 @@ impl Window {
         Ok(Window { ctx, window_canvas })
     }
 
-    pub fn run(&mut self, mut cpu: emu::cpu::Cpu) -> Result<(), String> {
+    pub fn run(&mut self, mut system: System) -> Result<(), String> {
         let texture_creator = self.window_canvas.texture_creator();
         let gb_screen = try!(
             texture_creator
@@ -60,7 +60,7 @@ impl Window {
             }
 
             let elapsed = dt.elapsed();
-            cpu.run_for_duration(&elapsed);
+            system.run_for_duration(&elapsed);
             dt = Instant::now();
 
             self.window_canvas.clear();

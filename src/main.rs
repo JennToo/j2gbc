@@ -21,5 +21,7 @@ fn main() {
     println!("ROM Size: {} bytes", c.rom_size());
     println!("RAM Size: {} bytes", c.ram_size());
 
-    window.run(emu::cpu::Cpu::new(c)).unwrap();
+    let cpu = emu::cpu::Cpu::new(c);
+    let system = emu::system::System::new(cpu);
+    window.run(system).unwrap();
 }

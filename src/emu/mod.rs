@@ -7,3 +7,4 @@ pub mod debug;
 pub mod alu;
 pub mod mbc;
 pub mod audio;
+pub mod system;
