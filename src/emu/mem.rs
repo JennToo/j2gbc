@@ -132,7 +132,7 @@ pub struct Mmu {
     // TODO: Actually implement IE register
     interrupt_enable: u8,
     interrupt_table: Ram,
-    lcd: Lcd,
+    pub lcd: Lcd,
     audio: Audio,
 }
 

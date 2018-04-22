@@ -37,7 +37,7 @@ pub struct Cpu {
     registers: [u8; 8],
     pub pc: Address,
     pub sp: Address,
-    mmu: Mmu,
+    pub mmu: Mmu,
     cycle: u64,
     interrupt_master_enable: bool,
     halted: bool,

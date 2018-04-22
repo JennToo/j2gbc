@@ -11,7 +11,14 @@ const REG_DMA: Address = Address(0xFF46);
 const REG_WY: Address = Address(0xFF4A);
 const REG_WX: Address = Address(0xFF4B);
 
-pub const SCREEN_SIZE: (u32, u32) = (160, 144);
+pub const SCREEN_SIZE: (usize, usize) = (160, 144);
+
+#[derive(Copy, Clone, Eq, PartialEq, Debug)]
+pub struct Pixel(pub u8, pub u8, pub u8, pub u8);
+
+const COLOR_WHITE: Pixel = Pixel(234, 255, 186, 255);
+
+pub type Framebuffer = [[Pixel; SCREEN_SIZE.0]; SCREEN_SIZE.1];
 
 pub struct Lcd {
     lcdc: u8,
@@ -26,6 +33,8 @@ pub struct Lcd {
     cdata: Ram,
     bgdd1: Ram,
     bgdd2: Ram,
+
+    pub framebuffer: Framebuffer,
 }
 
 impl Lcd {
@@ -43,6 +52,7 @@ impl Lcd {
             cdata: Ram::new(RNG_CHAR_DAT.len()),
             bgdd1: Ram::new(RNG_LCD_BGDD1.len()),
             bgdd2: Ram::new(RNG_LCD_BGDD2.len()),
+            framebuffer: [[COLOR_WHITE; SCREEN_SIZE.0]; SCREEN_SIZE.1],
         }
     }
 }

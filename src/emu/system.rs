@@ -1,6 +1,7 @@
 use std::time::Duration;
 
 use super::cpu::Cpu;
+use super::lcd::Framebuffer;
 
 pub struct System {
     cpu: Cpu,
@@ -13,5 +14,9 @@ impl System {
 
     pub fn run_for_duration(&mut self, duration: &Duration) {
         self.cpu.run_for_duration(duration);
+    }
+
+    pub fn get_framebuffer(&self) -> &Framebuffer {
+        &self.cpu.mmu.lcd.framebuffer
     }
 }

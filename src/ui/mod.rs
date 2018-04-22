@@ -17,7 +17,7 @@ impl Window {
         let video = try!(ctx.video());
         let window = try!(
             video
-                .window("j2gbc", 800, 800 * SCREEN_SIZE.1 / SCREEN_SIZE.0)
+                .window("j2gbc", 800, (800 * SCREEN_SIZE.1 / SCREEN_SIZE.0) as u32)
                 .position_centered()
                 .build()
                 .map_err(|e| format!("{}", e))
@@ -35,12 +35,12 @@ impl Window {
 
     pub fn run(&mut self, mut system: System) -> Result<(), String> {
         let texture_creator = self.window_canvas.texture_creator();
-        let gb_screen = try!(
+        let mut gb_screen = try!(
             texture_creator
-                .create_texture_target(
-                    sdl2::pixels::PixelFormatEnum::RGB24,
-                    SCREEN_SIZE.0,
-                    SCREEN_SIZE.1
+                .create_texture_streaming(
+                    sdl2::pixels::PixelFormatEnum::RGBA8888,
+                    SCREEN_SIZE.0 as u32,
+                    SCREEN_SIZE.1 as u32
                 )
                 .map_err(|e| format!("{}", e))
         );
@@ -59,11 +59,29 @@ impl Window {
                 }
             }
 
+            self.window_canvas.clear();
+
             let elapsed = dt.elapsed();
             system.run_for_duration(&elapsed);
             dt = Instant::now();
 
-            self.window_canvas.clear();
+            let fb = system.get_framebuffer();
+            try!(
+                gb_screen
+                    .with_lock(None, |outfb, _| for y in 0..SCREEN_SIZE.1 {
+                        for x in 0..SCREEN_SIZE.0 {
+                            let index = 4 * x + 4 * y * SCREEN_SIZE.0;
+
+                            let pixel = fb[y][x];
+                            outfb[index] = pixel.3;
+                            outfb[index + 1] = pixel.2;
+                            outfb[index + 2] = pixel.1;
+                            outfb[index + 3] = pixel.0;
+                        }
+                    })
+                    .map_err(|e| format!("{}", e))
+            );
+
             try!(self.window_canvas.copy(&gb_screen, None, None));
             self.window_canvas.present();
         }
