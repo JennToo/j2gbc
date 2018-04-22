@@ -5,3 +5,4 @@ authors = ["Jennifer Wilcox <jennifer@nitori.nl>"]
 
 [dependencies]
 linenoise-rust = "*"
+sdl2 = "*"

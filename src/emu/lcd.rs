@@ -11,6 +11,8 @@ const REG_DMA: Address = Address(0xFF46);
 const REG_WY: Address = Address(0xFF4A);
 const REG_WX: Address = Address(0xFF4B);
 
+pub const SCREEN_SIZE: (u32, u32) = (160, 144);
+
 pub struct Lcd {
     lcdc: u8,
     stat: u8,

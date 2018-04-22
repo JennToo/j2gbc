@@ -1,9 +1,12 @@
 use std::ops::{Index, IndexMut};
 use std::num::Wrapping;
+use std::time::Duration;
+use std::collections::VecDeque;
 
 use super::alu::{and, dec, hi, hi_lo, inc, lo, or, sub, xor, Flags, add16};
 use super::inst::{Arith, Control, Instruction, Load, Logic};
 use super::mem::{Address, MemDevice, Mmu};
+use super::debug::debug;
 use super::cart::Cart;
 
 #[repr(u8)]
@@ -38,6 +41,8 @@ pub struct Cpu {
     cycle: u64,
     interrupt_master_enable: bool,
     halted: bool,
+
+    last_instructions: VecDeque<(Address, Instruction)>,
 }
 
 impl Cpu {
@@ -50,6 +55,8 @@ impl Cpu {
             cycle: 0,
             interrupt_master_enable: false,
             halted: false,
+
+            last_instructions: VecDeque::new(),
         }
     }
 
@@ -319,9 +326,30 @@ impl Cpu {
         }
 
         let (instruction, len) = try!(self.fetch_instruction());
-        println!("Running {:?}: {:?}", self.pc, instruction);
+        if self.last_instructions.len() > 9 {
+            self.last_instructions.pop_front();
+        }
+        self.last_instructions.push_back((self.pc, instruction));
         self.pc += Address(len as u16);
         self.execute(instruction)
+    }
+
+    pub fn run_for_duration(&mut self, duration: &Duration) {
+        let cycles_to_run = self.duration_to_cycle_count(&duration);
+        let stop_at_cycle = self.cycle() + cycles_to_run;
+        while self.cycle() < stop_at_cycle {
+            if self.halted {
+                return;
+            }
+
+            if self.run_cycle().is_err() {
+                println!("Previous instructions ran:");
+                for &(a, i) in self.last_instructions.iter() {
+                    println!("{:?}: {:?}", a, i);
+                }
+                debug(self);
+            }
+        }
     }
 
     fn fetch_instruction(&self) -> Result<(Instruction, u8), ()> {
@@ -379,6 +407,15 @@ impl Cpu {
 
     fn flags(&self) -> Flags {
         Flags(self[Register8::F])
+    }
+
+    fn duration_to_cycle_count(&self, duration: &Duration) -> u64 {
+        // Clock for the CPU is 4.19 MHz
+        const RATE: u64 = 4_190_000;
+        const NSEC_PER_SEC: u64 = 1_000_000_000;
+        let scount = duration.as_secs() * RATE;
+        let ncount = (RATE * duration.subsec_nanos() as u64) / NSEC_PER_SEC;
+        scount + ncount
     }
 }
 

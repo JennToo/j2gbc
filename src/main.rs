@@ -1,10 +1,14 @@
 extern crate linenoise;
+extern crate sdl2;
 
 use std::fs::File;
 
 pub mod emu;
+pub mod ui;
 
 fn main() {
+    let mut window = ui::Window::new().unwrap();
+
     let mut args = std::env::args();
     let cart_path = args.nth(1).unwrap();
     let cart_file = File::open(cart_path.clone()).unwrap();
@@ -17,10 +21,5 @@ fn main() {
     println!("ROM Size: {} bytes", c.rom_size());
     println!("RAM Size: {} bytes", c.ram_size());
 
-    let mut runner = emu::cpu::Cpu::new(c);
-    loop {
-        if runner.run_cycle().is_err() {
-            emu::debug::debug(&mut runner);
-        }
-    }
+    window.run(emu::cpu::Cpu::new(c)).unwrap();
 }
