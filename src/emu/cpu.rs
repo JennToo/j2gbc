@@ -341,7 +341,7 @@ impl Cpu {
         self.last_instructions.push_back((self.pc, instruction));
         self.pc += Address(len as u16);
         try!(self.execute(instruction));
-        self.mmu.lcd.pump_cycle(self.cycle);
+        self.drive_peripherals();
         Ok(())
     }
 
@@ -359,8 +359,24 @@ impl Cpu {
 
             if self.halted {
                 self.cycle = min(self.mmu.lcd.get_next_event_cycle(), stop_at_cycle);
-                self.mmu.lcd.pump_cycle(self.cycle);
+                self.drive_peripherals();
             }
+        }
+    }
+
+    fn drive_peripherals(&mut self) {
+        if let Some(i) = self.mmu.lcd.pump_cycle(self.cycle) {
+            self.handle_interrupt(i);
+        }        
+    }
+
+    fn handle_interrupt(&mut self, int: Interrupt) {
+        if self.interrupt_master_enable {
+            // TODO: Actually call the interrupt
+        }
+
+        if self.halted {
+            self.halted = false;
         }
     }
 
