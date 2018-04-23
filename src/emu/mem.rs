@@ -100,6 +100,7 @@ pub trait MemDevice {
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct Ram {
     data: Vec<u8>,
 }
@@ -130,8 +131,8 @@ pub struct Mmu {
     tiny_ram: Ram,
     cart: Cart,
     // TODO: Actually implement IE register
-    interrupt_enable: u8,
-    interrupt_table: Ram,
+    pub interrupt_enable: u8,
+    pub interrupt_table: Ram,
     pub lcd: Box<Lcd>,
     audio: Audio,
 }

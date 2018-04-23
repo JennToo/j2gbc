@@ -39,7 +39,29 @@ pub enum Register16 {
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Interrupt {
     VBlank,
-    HBlank,
+    LCDC,
+    Timer,
+    Controller,
+}
+
+impl Interrupt {
+    pub fn is_enabled(self, reg: u8) -> bool {
+        match self {
+            Interrupt::VBlank => (reg & 0b0000_0001) != 0,
+            Interrupt::LCDC => (reg & 0b0000_0010) != 0,
+            Interrupt::Timer => (reg & 0b0000_0100) != 0,
+            Interrupt::Controller => (reg & 0b0001_0000) != 0,
+        }
+    }
+
+    pub fn table_address(self) -> Address {
+        match self {
+            Interrupt::VBlank => Address(0x0040),
+            Interrupt::LCDC => Address(0x0048),
+            Interrupt::Timer => Address(0x0050),
+            Interrupt::Controller => Address(0x0060),
+        }        
+    }
 }
 
 pub struct Cpu {
@@ -335,14 +357,14 @@ impl Cpu {
         }
 
         let (instruction, len) = try!(self.fetch_instruction());
-        if self.last_instructions.len() > 9 {
+        if self.last_instructions.len() > 50 {
             self.last_instructions.pop_front();
         }
         self.last_instructions.push_back((self.pc, instruction));
         self.pc += Address(len as u16);
+        // println!("{:?}", instruction);
         try!(self.execute(instruction));
-        self.drive_peripherals();
-        Ok(())
+        self.drive_peripherals()
     }
 
     pub fn run_for_duration(&mut self, duration: &Duration) {
@@ -364,20 +386,26 @@ impl Cpu {
         }
     }
 
-    fn drive_peripherals(&mut self) {
+    fn drive_peripherals(&mut self) -> Result<(), ()> {
         if let Some(i) = self.mmu.lcd.pump_cycle(self.cycle) {
-            self.handle_interrupt(i);
-        }        
+            try!(self.handle_interrupt(i));
+        }
+        Ok(())
     }
 
-    fn handle_interrupt(&mut self, int: Interrupt) {
-        if self.interrupt_master_enable {
-            // TODO: Actually call the interrupt
+    fn handle_interrupt(&mut self, int: Interrupt) -> Result<(), ()> {
+        if self.interrupt_master_enable && int.is_enabled(self.mmu.interrupt_enable) {
+            let nsp = self.sp - Address(2);
+            try!(self.mmu.write16(nsp, self.pc.into()));
+            self.sp = nsp;
+            self.pc = Address(try!(self.mmu.read16(int.table_address())));
         }
 
         if self.halted {
             self.halted = false;
         }
+
+        Ok(())
     }
 
     fn fetch_instruction(&self) -> Result<(Instruction, u8), ()> {

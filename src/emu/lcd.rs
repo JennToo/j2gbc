@@ -107,7 +107,9 @@ impl Lcd {
     pub fn pump_cycle(&mut self, cycle: u64) -> Option<Interrupt> {
         if cycle >= self.next_hblank_cycle {
             self.do_hblank(cycle);
-            Some(Interrupt::HBlank)
+            //Some(Interrupt::HBlank)
+            // TODO: Check stat reg
+            None
         } else if cycle >= self.next_vblank_cycle {
             self.do_vblank(cycle);
             Some(Interrupt::VBlank)
