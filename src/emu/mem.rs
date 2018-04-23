@@ -147,8 +147,10 @@ const RNG_LCD_MM_REG: AddressRange = AddressRange(Address(0xFF40), Address(0xFF6
 pub const RNG_CHAR_DAT: AddressRange = AddressRange(Address(0x8000), Address(0x9800));
 pub const RNG_LCD_BGDD1: AddressRange = AddressRange(Address(0x9800), Address(0x9C00));
 pub const RNG_LCD_BGDD2: AddressRange = AddressRange(Address(0x9C00), Address(0xA000));
+pub const RNG_LCD_OAM: AddressRange = AddressRange(Address(0xFE00), Address(0xFEA0));
 pub const RNG_SND_REGS: AddressRange = AddressRange(Address(0xFF10), Address(0xFF27));
 pub const RNG_SND_WAV_RAM: AddressRange = AddressRange(Address(0xFF30), Address(0xFF3F));
+const REG_DMA: Address = Address(0xFF46);
 
 impl Mmu {
     pub fn new(cart: Cart) -> Mmu {
@@ -161,6 +163,19 @@ impl Mmu {
             lcd: Box::new(Lcd::new()),
             audio: Audio::new(),
         }
+    }
+
+    fn dma(&mut self, mut src: Address) -> Result<(), ()> {
+        // TODO: This should actually take 160us worth of cycles
+        let mut dst = RNG_LCD_OAM.0;
+        while dst < RNG_LCD_OAM.1 {
+            let v = try!(self.read(src));
+            try!(self.write(dst, v));
+            dst += Address(1);
+            src += Address(1);
+        }
+
+        Ok(())
     }
 }
 
@@ -177,7 +192,7 @@ impl MemDevice for Mmu {
         } else if a == OFF_INTR_ENABLE_REG {
             Ok(self.interrupt_enable)
         } else if a.in_(RNG_LCD_MM_REG) || a.in_(RNG_CHAR_DAT) || a.in_(RNG_LCD_BGDD1)
-            || a.in_(RNG_LCD_BGDD2)
+            || a.in_(RNG_LCD_BGDD2) || a.in_(RNG_LCD_OAM)
         {
             self.lcd.read(a)
         } else if a.in_(RNG_SND_WAV_RAM) || a.in_(RNG_SND_REGS) {
@@ -189,7 +204,9 @@ impl MemDevice for Mmu {
     }
 
     fn write(&mut self, a: Address, v: u8) -> Result<(), ()> {
-        if a.in_(RNG_INTR_TABLE) {
+        if a == REG_DMA {
+            self.dma(Address((v as u16) << 8))
+        } else if a.in_(RNG_INTR_TABLE) {
             self.interrupt_table.write(a - RNG_INTR_TABLE.0, v)
         } else if a.in_(RNG_INT_RAM) {
             self.internal_ram.write(a - RNG_INT_RAM.0, v)
@@ -201,7 +218,7 @@ impl MemDevice for Mmu {
             self.interrupt_enable = v;
             Ok(())
         } else if a.in_(RNG_LCD_MM_REG) || a.in_(RNG_CHAR_DAT) || a.in_(RNG_LCD_BGDD1)
-            || a.in_(RNG_LCD_BGDD2)
+            || a.in_(RNG_LCD_BGDD2) || a.in_(RNG_LCD_OAM)
         {
             self.lcd.write(a, v)
         } else if a.in_(RNG_SND_WAV_RAM) || a.in_(RNG_SND_REGS) {

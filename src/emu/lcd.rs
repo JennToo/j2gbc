@@ -1,6 +1,6 @@
 use std::cmp::min;
 
-use super::mem::{Address, MemDevice, RNG_LCD_BGDD1, RNG_LCD_BGDD2, Ram, RNG_CHAR_DAT};
+use super::mem::{Address, MemDevice, RNG_LCD_BGDD1, RNG_LCD_BGDD2, Ram, RNG_CHAR_DAT, RNG_LCD_OAM};
 use super::cpu::{Interrupt, CLOCK_RATE};
 
 const REG_LCDC: Address = Address(0xFF40);
@@ -46,6 +46,7 @@ pub struct Lcd {
     cdata: Ram,
     bgdd1: Ram,
     bgdd2: Ram,
+    oam: Ram,
 
     fbs: [Framebuffer; 2],
     fbi: usize,
@@ -69,6 +70,7 @@ impl Lcd {
             cdata: Ram::new(RNG_CHAR_DAT.len()),
             bgdd1: Ram::new(RNG_LCD_BGDD1.len()),
             bgdd2: Ram::new(RNG_LCD_BGDD2.len()),
+            oam: Ram::new(RNG_LCD_OAM.len()),
             fbs: [[[COLOR_WHITE; SCREEN_SIZE.0]; SCREEN_SIZE.1]; 2],
             fbi: 0,
 
@@ -172,6 +174,8 @@ impl MemDevice for Lcd {
             self.bgdd2.read(a - RNG_LCD_BGDD2.0)
         } else if a.in_(RNG_CHAR_DAT) {
             self.cdata.read(a - RNG_CHAR_DAT.0)
+        } else if a.in_(RNG_LCD_OAM) {
+            self.oam.read(a - RNG_LCD_OAM.0)
         } else {
             match a {
                 REG_LY => Ok(self.ly),
@@ -205,6 +209,8 @@ impl MemDevice for Lcd {
             self.bgdd2.write(a - RNG_LCD_BGDD2.0, v)
         } else if a.in_(RNG_CHAR_DAT) {
             self.cdata.write(a - RNG_CHAR_DAT.0, v)
+        } else if a.in_(RNG_LCD_OAM) {
+            self.oam.write(a - RNG_LCD_OAM.0, v)
         } else {
             match a {
                 REG_LY => {
