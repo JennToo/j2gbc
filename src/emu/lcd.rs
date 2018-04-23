@@ -1,4 +1,7 @@
+use std::cmp::min;
+
 use super::mem::{Address, MemDevice, RNG_LCD_BGDD1, RNG_LCD_BGDD2, Ram, RNG_CHAR_DAT};
+use super::cpu::{Interrupt, CLOCK_RATE};
 
 const REG_LCDC: Address = Address(0xFF40);
 const REG_STAT: Address = Address(0xFF41);
@@ -17,6 +20,7 @@ pub const SCREEN_SIZE: (usize, usize) = (160, 144);
 pub struct Pixel(pub u8, pub u8, pub u8, pub u8);
 
 const COLOR_WHITE: Pixel = Pixel(234, 255, 186, 255);
+const LINE_CYCLE_TIME: u64 = CLOCK_RATE * 180_700 / 1_000_000_000;
 
 pub type Framebuffer = [[Pixel; SCREEN_SIZE.0]; SCREEN_SIZE.1];
 
@@ -30,11 +34,16 @@ pub struct Lcd {
     wx: u8,
     wy: u8,
     lyc: u8,
+    ly: u8,
     cdata: Ram,
     bgdd1: Ram,
     bgdd2: Ram,
 
-    pub framebuffer: Framebuffer,
+    fbs: [Framebuffer; 2],
+    fbi: usize,
+
+    next_hblank_cycle: u64,
+    next_vblank_cycle: u64,
 }
 
 impl Lcd {
@@ -52,8 +61,60 @@ impl Lcd {
             cdata: Ram::new(RNG_CHAR_DAT.len()),
             bgdd1: Ram::new(RNG_LCD_BGDD1.len()),
             bgdd2: Ram::new(RNG_LCD_BGDD2.len()),
-            framebuffer: [[COLOR_WHITE; SCREEN_SIZE.0]; SCREEN_SIZE.1],
+            fbs: [[[COLOR_WHITE; SCREEN_SIZE.0]; SCREEN_SIZE.1]; 2],
+            fbi: 0,
+
+            next_hblank_cycle: 0,
+            next_vblank_cycle: 0,
+            ly: 0,
         }
+    }
+
+    pub fn get_framebuffer(&self) -> &Framebuffer {
+        &self.fbs[self.fbi]
+    }
+
+    fn get_back_framebuffer(&mut self) -> &mut Framebuffer {
+        if self.fbi == 0 {
+            &mut self.fbs[1]
+        } else {
+            &mut self.fbs[0]
+        }
+    }
+
+    fn swap(&mut self) {
+        if self.fbi == 0 {
+            self.fbi = 1;
+        } else {
+            self.fbi = 0;
+        }
+    }
+
+    pub fn get_next_event_cycle(&self) -> u64 {
+        min(self.next_hblank_cycle, self.next_vblank_cycle)
+    }
+
+    pub fn pump_cycle(&mut self, cycle: u64) -> Option<Interrupt> {
+        if cycle >= self.next_hblank_cycle {
+            self.do_hblank(cycle);
+            Some(Interrupt::HBlank)
+        } else if cycle >= self.next_vblank_cycle {
+            self.do_vblank(cycle);
+            Some(Interrupt::VBlank)
+        } else {
+            None
+        }
+    }
+
+    pub fn do_hblank(&mut self, cycle: u64) {
+        self.ly += 1;
+        self.next_hblank_cycle = LINE_CYCLE_TIME + cycle;
+    }
+
+    pub fn do_vblank(&mut self, cycle: u64) {
+        self.swap();
+        self.ly = 0;
+        self.next_vblank_cycle = 154 * LINE_CYCLE_TIME + cycle;
     }
 }
 
@@ -67,45 +128,21 @@ impl MemDevice for Lcd {
             self.cdata.read(a - RNG_CHAR_DAT.0)
         } else {
             match a {
-                REG_LY => {
-                    println!("Warning: Reading from stub register LY");
-                    Ok(145)
-                }
-                REG_LYC => {
-                    println!("Warning: Reading from stub register LYC");
-                    Ok(self.lyc)
-                }
-                REG_STAT => {
-                    println!("Warning: Reading from stub register STAT");
-                    Ok(self.stat)
-                }
-                REG_LCDC => {
-                    println!("Warning: Reading from stub register LCDC");
-                    Ok(self.lcdc)
-                }
-                REG_OBP0 => {
-                    println!("Warning: Reading from stub register OBP0");
-                    Ok(self.obp0)
-                }
+                REG_LY => Ok(self.ly),
+                REG_LYC => Ok(self.lyc),
+                REG_STAT => Ok(self.stat),
+                REG_LCDC => Ok(self.lcdc),
+                REG_OBP0 => Ok(self.obp0),
+                REG_OBP1 => Ok(self.obp1),
+                REG_WX => Ok(self.wx),
+                REG_WY => Ok(self.wy),
                 REG_BGP => {
                     println!("Error: BGP is a write-only register");
                     Err(())
                 }
-                REG_OBP1 => {
-                    println!("Warning: Reading from stub register OBP1");
-                    Ok(self.obp1)
-                }
                 REG_DMA => {
                     println!("DMA register is write-only");
                     Err(())
-                }
-                REG_WX => {
-                    println!("Warning: Reading from stub register WX");
-                    Ok(self.wx)
-                }
-                REG_WY => {
-                    println!("Warning: Reading from stub register WY");
-                    Ok(self.wy)
                 }
                 _ => {
                     println!("Unimplemented LCD register {:?}", a);
@@ -129,47 +166,38 @@ impl MemDevice for Lcd {
                     Err(())
                 }
                 REG_LYC => {
-                    println!("Warning: Writing to stub register LYC");
                     self.lyc = v;
                     Ok(())
                 }
                 REG_LCDC => {
-                    println!("Warning: Writing to stub register LCDC");
                     self.lcdc = v;
                     Ok(())
                 }
                 REG_STAT => {
-                    println!("Warning: Writing to stub register STAT");
                     self.stat = v;
                     Ok(())
                 }
                 REG_BGP => {
-                    println!("Warning: Writing to stub register BGP");
                     self.bgp = v;
                     Ok(())
                 }
                 REG_OBP0 => {
-                    println!("Warning: Writing to stub register OBP0");
                     self.obp0 = v;
                     Ok(())
                 }
                 REG_OBP1 => {
-                    println!("Warning: Writing to stub register OBP1");
                     self.obp1 = v;
                     Ok(())
                 }
                 REG_DMA => {
-                    println!("Warning: Writing to stub register DMA");
                     self.dma = v;
                     Ok(())
                 }
                 REG_WX => {
-                    println!("Warning: Writing to stub register WX");
                     self.wx = v;
                     Ok(())
                 }
                 REG_WY => {
-                    println!("Warning: Writing to stub register WY");
                     self.wy = v;
                     Ok(())
                 }

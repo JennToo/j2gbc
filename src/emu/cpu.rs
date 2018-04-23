@@ -2,12 +2,15 @@ use std::ops::{Index, IndexMut};
 use std::num::Wrapping;
 use std::time::Duration;
 use std::collections::VecDeque;
+use std::cmp::min;
 
 use super::alu::{and, dec, hi, hi_lo, inc, lo, or, sub, xor, Flags, add16};
 use super::inst::{Arith, Control, Instruction, Load, Logic};
 use super::mem::{Address, MemDevice, Mmu};
 use super::debug::debug;
 use super::cart::Cart;
+
+pub const CLOCK_RATE: u64 = 4_190_000;
 
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -31,6 +34,12 @@ pub enum Register16 {
     HL,
     SP,
     PC,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum Interrupt {
+    VBlank,
+    HBlank,
 }
 
 pub struct Cpu {
@@ -74,6 +83,7 @@ impl Cpu {
                 self.interrupt_master_enable = false;
             }
             Instruction::Halt => {
+                println!("Halting");
                 self.halted = true;
             }
             Instruction::Res(b, r) => {
@@ -321,8 +331,7 @@ impl Cpu {
 
     pub fn run_cycle(&mut self) -> Result<(), ()> {
         if self.halted {
-            println!("Halted");
-            return Err(());
+            return Ok(());
         }
 
         let (instruction, len) = try!(self.fetch_instruction());
@@ -331,23 +340,26 @@ impl Cpu {
         }
         self.last_instructions.push_back((self.pc, instruction));
         self.pc += Address(len as u16);
-        self.execute(instruction)
+        try!(self.execute(instruction));
+        self.mmu.lcd.pump_cycle(self.cycle);
+        Ok(())
     }
 
     pub fn run_for_duration(&mut self, duration: &Duration) {
-        let cycles_to_run = self.duration_to_cycle_count(&duration);
+        let cycles_to_run = duration_to_cycle_count(&duration);
         let stop_at_cycle = self.cycle() + cycles_to_run;
         while self.cycle() < stop_at_cycle {
-            if self.halted {
-                return;
-            }
-
             if self.run_cycle().is_err() {
                 println!("Previous instructions ran:");
                 for &(a, i) in self.last_instructions.iter() {
                     println!("{:?}: {:?}", a, i);
                 }
                 debug(self);
+            }
+
+            if self.halted {
+                self.cycle = min(self.mmu.lcd.get_next_event_cycle(), stop_at_cycle);
+                self.mmu.lcd.pump_cycle(self.cycle);
             }
         }
     }
@@ -408,15 +420,14 @@ impl Cpu {
     fn flags(&self) -> Flags {
         Flags(self[Register8::F])
     }
+}
 
-    fn duration_to_cycle_count(&self, duration: &Duration) -> u64 {
-        // Clock for the CPU is 4.19 MHz
-        const RATE: u64 = 4_190_000;
-        const NSEC_PER_SEC: u64 = 1_000_000_000;
-        let scount = duration.as_secs() * RATE;
-        let ncount = (RATE * duration.subsec_nanos() as u64) / NSEC_PER_SEC;
-        scount + ncount
-    }
+pub fn duration_to_cycle_count(duration: &Duration) -> u64 {
+    // Clock for the CPU is 4.19 MHz
+    const NSEC_PER_SEC: u64 = 1_000_000_000;
+    let scount = duration.as_secs() * CLOCK_RATE;
+    let ncount = (CLOCK_RATE * duration.subsec_nanos() as u64) / NSEC_PER_SEC;
+    scount + ncount
 }
 
 impl Index<Register8> for Cpu {

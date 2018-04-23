@@ -25,7 +25,7 @@ impl Window {
         let window_canvas = try!(
             window
                 .into_canvas()
-                .software()
+                .present_vsync()
                 .build()
                 .map_err(|e| format!("{}", e))
         );

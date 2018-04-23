@@ -17,6 +17,6 @@ impl System {
     }
 
     pub fn get_framebuffer(&self) -> &Framebuffer {
-        &self.cpu.mmu.lcd.framebuffer
+        self.cpu.mmu.lcd.get_framebuffer()
     }
 }

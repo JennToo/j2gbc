@@ -132,7 +132,7 @@ pub struct Mmu {
     // TODO: Actually implement IE register
     interrupt_enable: u8,
     interrupt_table: Ram,
-    pub lcd: Lcd,
+    pub lcd: Box<Lcd>,
     audio: Audio,
 }
 
@@ -158,7 +158,7 @@ impl Mmu {
             interrupt_enable: 0,
             interrupt_table: Ram::new(RNG_INTR_TABLE.len()),
             cart,
-            lcd: Lcd::new(),
+            lcd: Box::new(Lcd::new()),
             audio: Audio::new(),
         }
     }
