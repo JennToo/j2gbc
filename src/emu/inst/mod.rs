@@ -5,6 +5,16 @@ use super::alu::hi_lo;
 use super::mem::Address;
 use super::cpu::{Register16, Register8};
 
+mod arith;
+mod control;
+mod logic;
+mod load;
+
+pub use self::arith::Arith;
+pub use self::control::Control;
+pub use self::logic::Logic;
+pub use self::load::Load;
+
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Instruction {
     Nop,
@@ -18,64 +28,6 @@ pub enum Instruction {
     Control(Control),
     Load(Load),
     Logic(Logic),
-}
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum Arith {
-    IncR(Register8),
-    DecR(Register8),
-    IncR16(Register16),
-    DecR16(Register16),
-    AddRR16(Register16, Register16),
-}
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum Control {
-    JrNZI(i8),
-    JrI(i8),
-    JrNCI(i8),
-    JrZI(i8),
-    JrCI(i8),
-    Ret,
-    JpI(Address),
-    JpCI(Address),
-    JpZI(Address),
-    JpNCI(Address),
-    JpNZI(Address),
-    CallI(Address),
-}
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum Load {
-    LdRM(Register8, Address),
-    LdMR(Address, Register8),
-    LdRR(Register8, Register8),
-    LdRI(Register8, u8),
-    LdNA(i8),
-    LdAN(i8),
-    LdNI(u8),
-    LdNCA,
-    LdANC,
-    LdRI16(Register16, u16),
-    LdNIA16(Address),
-    LdANI16(Address),
-    LdNR16(Register16),
-    LdRN16(Register16),
-    Push(Register16),
-    Pop(Register16),
-}
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum Logic {
-    AndI(/* will always love */ u8),
-    AndR(Register8),
-    AndN,
-
-    /* hallowed are the */ OrI(u8),
-    OrR(Register8),
-    OrN,
-
-    XorR(Register8),
 }
 
 impl Instruction {
@@ -365,143 +317,6 @@ impl Display for Instruction {
             Instruction::Load(l) => l.fmt(f),
             Instruction::Control(c) => c.fmt(f),
             Instruction::Logic(l) => l.fmt(f),
-        }
-    }
-}
-
-impl Arith {
-    fn cycles(self) -> u8 {
-        match self {
-            Arith::DecR16(_) | Arith::IncR16(_) => 8,
-            Arith::IncR(_) | Arith::DecR(_) => 4,
-            Arith::AddRR16(_, _) => 16,
-        }
-    }
-}
-
-impl Display for Arith {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            Arith::DecR(r) => write!(f, "dec {}", r),
-            Arith::IncR(r) => write!(f, "inc {}", r),
-            Arith::DecR16(r) => write!(f, "dec {}", r),
-            Arith::IncR16(r) => write!(f, "inc {}", r),
-            Arith::AddRR16(r1, r2) => write!(f, "add {},{}", r1, r2),
-        }
-    }
-}
-
-impl Control {
-    fn cycles(self) -> u8 {
-        match self {
-            Control::JpCI(_)
-            | Control::JpI(_)
-            | Control::JpZI(_)
-            | Control::JpNCI(_)
-            | Control::JpNZI(_) => 16,
-            Control::CallI(_) => 24,
-            // TODO: This is actually variable
-            Control::JrNZI(_)
-            | Control::JrNCI(_)
-            | Control::JrI(_)
-            | Control::JrCI(_)
-            | Control::JrZI(_) => 12,
-            Control::Ret => 16,
-        }
-    }
-}
-impl Display for Control {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            Control::JrNZI(i) => write!(f, "jrnz {}", i),
-            Control::JrI(i) => write!(f, "jr {}", i),
-            Control::JrNCI(i) => write!(f, "jrnc {}", i),
-            Control::JrZI(i) => write!(f, "jrz {}", i),
-            Control::JrCI(i) => write!(f, "jrc {}", i),
-            Control::Ret => write!(f, "ret"),
-            Control::JpI(a) => write!(f, "jmp {}", a),
-            Control::JpCI(a) => write!(f, "jmpc {}", a),
-            Control::JpZI(a) => write!(f, "jmpz {}", a),
-            Control::JpNCI(a) => write!(f, "jmpnc {}", a),
-            Control::JpNZI(a) => write!(f, "jmpnz {}", a),
-            Control::CallI(a) => write!(f, "call {}", a),
-        }
-    }
-}
-
-impl Load {
-    fn cycles(self) -> u8 {
-        match self {
-            Load::LdRM(_, _) | Load::LdRI16(_, _) | Load::LdMR(_, _) => 12,
-            Load::LdRR(_, _) => 4,
-            Load::LdRI(_, _) => 8,
-            Load::LdNA(_) | Load::LdAN(_) => 8,
-            Load::LdNI(_) => 12,
-            Load::LdNR16(_) | Load::LdRN16(_) => 8,
-            Load::LdNIA16(_) | Load::LdANI16(_) => 16,
-            Load::LdNCA => 8,
-            Load::LdANC => 8,
-            Load::Push(_) => 16,
-            Load::Pop(_) => 12,
-        }
-    }
-}
-
-impl Display for Load {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            Load::LdRM(r, a) => write!(f, "ld {},[{}]", r, a),
-            Load::LdMR(a, r) => write!(f, "ld [{}],{}", a, r),
-            Load::LdRR(r1, r2) => write!(f, "ld {},{}", r1, r2),
-            Load::LdRI(r, v) => write!(f, "ld {},{:#x}", r, v),
-            Load::LdNA(i) => {
-                if i > 0 {
-                    write!(f, "ld [hl+],a")
-                } else {
-                    write!(f, "ld [hl-],a")
-                }
-            }
-            Load::LdAN(i) => {
-                if i > 0 {
-                    write!(f, "ld a,[hl+]")
-                } else {
-                    write!(f, "ld a,[hl-]")
-                }
-            }
-            Load::LdNI(v) => write!(f, "ld [hl],{:#x}", v),
-            Load::LdNCA => write!(f, "ld [c+0xff00],a"),
-            Load::LdANC => write!(f, "ld a,[c+0xff00]"),
-            Load::LdRI16(r, v) => write!(f, "ld {},{:#x}", r, v),
-            Load::LdNIA16(a) => write!(f, "ld [{}],a", a),
-            Load::LdANI16(a) => write!(f, "ld a,[{}]", a),
-            Load::LdNR16(r) => write!(f, "ld [{}],a", r),
-            Load::LdRN16(r) => write!(f, "ld a,[{}]", r),
-            Load::Push(r) => write!(f, "push {}", r),
-            Load::Pop(r) => write!(f, "pop {}", r),
-        }
-    }
-}
-
-impl Logic {
-    fn cycles(self) -> u8 {
-        match self {
-            Logic::AndI(_) | Logic::OrI(_) => 8,
-            Logic::XorR(_) | Logic::AndR(_) | Logic::OrR(_) => 4,
-            Logic::AndN | Logic::OrN => 8,
-        }
-    }
-}
-
-impl Display for Logic {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            Logic::AndI(i) => write!(f, "and {:#x}", i),
-            Logic::OrI(i) => write!(f, "or {:#x}", i),
-            Logic::XorR(r) => write!(f, "xor {}", r),
-            Logic::AndR(r) => write!(f, "and {}", r),
-            Logic::OrR(r) => write!(f, "or {}", r),
-            Logic::AndN => write!(f, "and [hl]"),
-            Logic::OrN => write!(f, "or [hl]"),
         }
     }
 }
