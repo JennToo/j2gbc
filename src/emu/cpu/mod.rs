@@ -6,7 +6,8 @@ use std::cmp::min;
 
 use super::alu::{and, dec, hi, hi_lo, inc, lo, or, sub, xor, Flags, add16};
 use super::inst::{Arith, Control, Instruction, Load, Logic};
-use super::mem::{Address, MemDevice, Mmu};
+use super::mem::{Address, MemDevice};
+use super::mmu::Mmu;
 use super::debug::debug;
 use super::cart::Cart;
 
