@@ -181,9 +181,8 @@ impl Cpu {
                 }
             }
             Control::CallI(a) => {
-                let nsp = self.sp - Address(2);
-                try!(self.mmu.write16(nsp, self.pc.into()));
-                self.sp = nsp;
+                let v = self.pc.into();
+                try!(self.push16(v));
                 self.pc = a;
             }
         }
@@ -251,15 +250,12 @@ impl Cpu {
                 self[Register8::A] = v;
             }
             Load::Pop(r) => {
-                let v = try!(self.mmu.read16(self.sp));
+                let v = try!(self.pop16());
                 self.write_r16(r, v);
-                self.sp += Address(2);
             }
             Load::Push(r) => {
-                let nsp = self.sp - Address(2);
                 let v = self.read_r16(r);
-                try!(self.mmu.write16(nsp, v));
-                self.sp = nsp;
+                try!(self.push16(v));
             }
         }
 
@@ -360,9 +356,9 @@ impl Cpu {
 
     fn handle_interrupt(&mut self, int: Interrupt) -> Result<(), ()> {
         if self.interrupt_master_enable && int.is_enabled(self.mmu.interrupt_enable) {
-            let nsp = self.sp - Address(2);
-            try!(self.mmu.write16(nsp, self.pc.into()));
-            self.sp = nsp;
+            let v = self.pc.into();
+            try!(self.push16(v));
+
             self.pc = Address(try!(self.mmu.read16(int.table_address())));
             if self.pc == Address(0) {
                 panic!("Set PC to 0 is bad news");
@@ -418,6 +414,19 @@ impl Cpu {
             Register16::DE => hi_lo(self[Register8::D], self[Register8::E]),
             Register16::HL => hi_lo(self[Register8::H], self[Register8::L]),
         }
+    }
+
+    fn push16(&mut self, v: u16) -> Result<(), ()> {
+        let nsp = self.sp - Address(2);
+        try!(self.mmu.write16(nsp, v));
+        self.sp = nsp;
+        Ok(())
+    }
+
+    fn pop16(&mut self) -> Result<u16, ()> {
+        let v = try!(self.mmu.read16(self.sp));
+        self.sp += Address(2);
+        Ok(v)
     }
 
     fn read_indirect(&self, r: Register16) -> Result<u8, ()> {
