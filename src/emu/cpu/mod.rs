@@ -25,7 +25,7 @@ pub struct Cpu {
     pub sp: Address,
     pub mmu: Mmu,
     cycle: u64,
-    interrupt_master_enable: bool,
+    pub interrupt_master_enable: bool,
     halted: bool,
 
     pub last_instructions: VecDeque<(Address, Instruction)>,
