@@ -1,8 +1,10 @@
 use std::ops::{Index, IndexMut};
 use std::num::Wrapping;
 use std::time::Duration;
-use std::collections::{VecDeque, HashSet};
+use std::collections::{HashSet, VecDeque};
 use std::cmp::min;
+use std::fmt::Display;
+use std::fmt;
 
 use super::alu::{and, dec, hi, hi_lo, inc, lo, or, sub, xor, Flags, add16};
 use super::inst::{Arith, Control, Instruction, Load, Logic};
@@ -25,6 +27,21 @@ pub enum Register8 {
     F,
 }
 
+impl Display for Register8 {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            Register8::A => write!(f, "a"),
+            Register8::B => write!(f, "b"),
+            Register8::C => write!(f, "c"),
+            Register8::D => write!(f, "d"),
+            Register8::E => write!(f, "e"),
+            Register8::F => write!(f, "f"),
+            Register8::H => write!(f, "h"),
+            Register8::L => write!(f, "l"),
+        }
+    }
+}
+
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Register16 {
@@ -34,6 +51,19 @@ pub enum Register16 {
     HL,
     SP,
     PC,
+}
+
+impl Display for Register16 {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            Register16::AF => write!(f, "af"),
+            Register16::BC => write!(f, "bc"),
+            Register16::DE => write!(f, "de"),
+            Register16::HL => write!(f, "hl"),
+            Register16::SP => write!(f, "sp"),
+            Register16::PC => write!(f, "pc"),
+        }
+    }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -60,7 +90,7 @@ impl Interrupt {
             Interrupt::LCDC => Address(0x0048),
             Interrupt::Timer => Address(0x0050),
             Interrupt::Controller => Address(0x0060),
-        }        
+        }
     }
 }
 
@@ -91,7 +121,7 @@ impl Cpu {
             halted: false,
 
             last_instructions: VecDeque::new(),
-            breakpoints: initial_breakpoints,            
+            breakpoints: initial_breakpoints,
         }
     }
 
@@ -371,7 +401,7 @@ impl Cpu {
             self.last_instructions.pop_front();
         }
         self.last_instructions.push_back((self.pc, instruction));
-        println!("{:?}: {:?}", self.pc, instruction);
+        println!("{}: {}", self.pc, instruction);
         self.pc += Address(len as u16);
         try!(self.execute(instruction));
         self.drive_peripherals()

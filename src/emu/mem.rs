@@ -1,6 +1,6 @@
 use std::ops::{Add, AddAssign, Sub, SubAssign};
 use std::convert::Into;
-use std::fmt::{Debug, Formatter};
+use std::fmt::{Debug, Display, Formatter};
 use std::fmt;
 use std::collections::HashSet;
 
@@ -14,6 +14,12 @@ pub struct Address(pub u16);
 impl Debug for Address {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(f, "Address({:#X})", self.0)
+    }
+}
+
+impl Display for Address {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "0x{:04x}", self.0)
     }
 }
 
@@ -190,8 +196,7 @@ impl MemDevice for Mmu {
         if self.watchpoints.contains(&a) {
             println!("Read watchpoint for {:?}", a);
             Err(())
-        }
-        else if a.in_(RNG_INTR_TABLE) {
+        } else if a.in_(RNG_INTR_TABLE) {
             self.interrupt_table.read(a - RNG_INTR_TABLE.0)
         } else if a.in_(RNG_INT_RAM) {
             self.internal_ram.read(a - RNG_INT_RAM.0)
@@ -217,8 +222,7 @@ impl MemDevice for Mmu {
         if self.watchpoints.contains(&a) {
             println!("Write watchpoint for {:?}", a);
             Err(())
-        }
-        else if a == REG_DMA {
+        } else if a == REG_DMA {
             self.dma(Address((v as u16) << 8))
         } else if a.in_(RNG_INTR_TABLE) {
             self.interrupt_table.write(a - RNG_INTR_TABLE.0, v)
