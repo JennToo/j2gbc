@@ -28,7 +28,7 @@ pub struct Cpu {
     interrupt_master_enable: bool,
     halted: bool,
 
-    last_instructions: VecDeque<(Address, Instruction)>,
+    pub last_instructions: VecDeque<(Address, Instruction)>,
     pub breakpoints: HashSet<Address>,
 }
 
@@ -321,10 +321,9 @@ impl Cpu {
         if self.last_instructions.len() > 50 {
             self.last_instructions.pop_front();
         }
-        self.last_instructions.push_back((self.pc, instruction));
-        println!("{}: {}", self.pc, instruction);
         self.pc += Address(len as u16);
         try!(self.execute(instruction));
+        self.last_instructions.push_back((self.pc, instruction));
         self.drive_peripherals()
     }
 
@@ -333,16 +332,14 @@ impl Cpu {
         let stop_at_cycle = self.cycle() + cycles_to_run;
         while self.cycle() < stop_at_cycle {
             if self.run_cycle().is_err() {
-                println!("Previous instructions ran:");
-                for &(a, i) in self.last_instructions.iter() {
-                    println!("{:?}: {:?}", a, i);
-                }
                 debug(self);
             }
 
             if self.halted {
                 self.cycle = min(self.mmu.lcd.get_next_event_cycle(), stop_at_cycle);
-                self.drive_peripherals();
+                if self.drive_peripherals().is_err() {
+                    debug(self);
+                }
             }
         }
     }
@@ -361,7 +358,11 @@ impl Cpu {
 
             self.pc = Address(try!(self.mmu.read16(int.table_address())));
             if self.pc == Address(0) {
-                panic!("Set PC to 0 is bad news");
+                println!(
+                    "Error: Interrupt handler not properly initialized for {:?} (which is enabled)",
+                    int
+                );
+                return Err(());
             }
             self.interrupt_master_enable = false;
         }
@@ -373,7 +374,7 @@ impl Cpu {
         Ok(())
     }
 
-    fn fetch_instruction(&self) -> Result<(Instruction, u8), ()> {
+    pub fn fetch_instruction(&self) -> Result<(Instruction, u8), ()> {
         let bytes = [
             try!(self.mmu.read(self.pc)),
             try!(self.mmu.read(self.pc + Address(1))),

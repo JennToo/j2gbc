@@ -7,7 +7,12 @@ use super::mem::Address;
 
 pub fn debug(cpu: &mut Cpu) {
     println!("Entering debugger");
+    for &(a, i) in cpu.last_instructions.iter() {
+        println!("    {}: {}", a, i);
+    }
+
     loop {
+        print_next_instruction(cpu);
         if let Some(input) = linenoise::input("> ") {
             let mut pieces = input.as_str().split(' ');
             match pieces.next().unwrap() {
@@ -32,6 +37,13 @@ pub fn debug(cpu: &mut Cpu) {
                 _ => println!("Unrecognized command: {}", input),
             }
         }
+    }
+}
+
+fn print_next_instruction(cpu: &mut Cpu) {
+    match cpu.fetch_instruction() {
+        Result::Ok((i, _)) => println!(" => {}: {}", cpu.pc, i),
+        Result::Err(()) => println!("    FAILED TO READ NEXT INSTRUCTION"),
     }
 }
 
