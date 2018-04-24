@@ -1,7 +1,7 @@
 use std::ops::{Index, IndexMut};
 use std::num::Wrapping;
 use std::time::Duration;
-use std::collections::VecDeque;
+use std::collections::{VecDeque, HashSet};
 use std::cmp::min;
 
 use super::alu::{and, dec, hi, hi_lo, inc, lo, or, sub, xor, Flags, add16};
@@ -74,10 +74,13 @@ pub struct Cpu {
     halted: bool,
 
     last_instructions: VecDeque<(Address, Instruction)>,
+    pub breakpoints: HashSet<Address>,
 }
 
 impl Cpu {
     pub fn new(c: Cart) -> Cpu {
+        let mut initial_breakpoints = HashSet::new();
+        initial_breakpoints.insert(Address(0x0100));
         Cpu {
             registers: [0, 0, 0, 0, 0, 0, 0, 0],
             sp: Address(0xFFFE),
@@ -88,6 +91,7 @@ impl Cpu {
             halted: false,
 
             last_instructions: VecDeque::new(),
+            breakpoints: initial_breakpoints,            
         }
     }
 
@@ -356,13 +360,19 @@ impl Cpu {
             return Ok(());
         }
 
+        if self.breakpoints.contains(&self.pc) {
+            self.breakpoints.remove(&self.pc);
+            println!("Breakpoint");
+            return Err(());
+        }
+
         let (instruction, len) = try!(self.fetch_instruction());
         if self.last_instructions.len() > 50 {
             self.last_instructions.pop_front();
         }
         self.last_instructions.push_back((self.pc, instruction));
+        println!("{:?}: {:?}", self.pc, instruction);
         self.pc += Address(len as u16);
-        // println!("{:?}", instruction);
         try!(self.execute(instruction));
         self.drive_peripherals()
     }
@@ -399,6 +409,10 @@ impl Cpu {
             try!(self.mmu.write16(nsp, self.pc.into()));
             self.sp = nsp;
             self.pc = Address(try!(self.mmu.read16(int.table_address())));
+            if self.pc == Address(0) {
+                panic!("Set PC to 0 is bad news");
+            }
+            self.interrupt_master_enable = false;
         }
 
         if self.halted {

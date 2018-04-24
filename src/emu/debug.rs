@@ -1,17 +1,33 @@
 use linenoise;
 use std;
+use std::u16;
+
 use super::cpu::{Cpu, Register8};
+use super::mem::Address;
 
 pub fn debug(cpu: &mut Cpu) {
     println!("Entering debugger");
     loop {
         if let Some(input) = linenoise::input("> ") {
-            match input.as_str() {
+            let mut pieces = input.as_str().split(' ');
+            match pieces.next().unwrap() {
                 "exit" => std::process::exit(0),
                 "r" => dump_regs(cpu),
                 "c" => return,
                 "s" => {
                     let _ret = cpu.run_cycle();
+                }
+                "w" => {
+                    let address = Address(u16::from_str_radix(pieces.next().unwrap(), 16).unwrap());
+                    cpu.mmu.watchpoints.insert(address);
+                }
+                "uw" => {
+                    let address = Address(u16::from_str_radix(pieces.next().unwrap(), 16).unwrap());
+                    cpu.mmu.watchpoints.remove(&address);
+                }
+                "b" => {
+                    let address = Address(u16::from_str_radix(pieces.next().unwrap(), 16).unwrap());
+                    cpu.breakpoints.insert(address);
                 }
                 _ => println!("Unrecognized command: {}", input),
             }

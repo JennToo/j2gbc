@@ -2,12 +2,13 @@ use std::ops::{Add, AddAssign, Sub, SubAssign};
 use std::convert::Into;
 use std::fmt::{Debug, Formatter};
 use std::fmt;
+use std::collections::HashSet;
 
 use super::cart::Cart;
 use super::lcd::Lcd;
 use super::audio::Audio;
 
-#[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone)]
+#[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone, Hash)]
 pub struct Address(pub u16);
 
 impl Debug for Address {
@@ -70,7 +71,7 @@ impl Into<u16> for Address {
     }
 }
 
-#[derive(Eq, PartialEq, Ord, PartialOrd, Debug, Copy, Clone)]
+#[derive(Eq, PartialEq, Ord, PartialOrd, Debug, Copy, Clone, Hash)]
 pub struct AddressRange(pub Address, pub Address);
 
 impl Address {
@@ -135,6 +136,8 @@ pub struct Mmu {
     pub interrupt_table: Ram,
     pub lcd: Box<Lcd>,
     audio: Audio,
+
+    pub watchpoints: HashSet<Address>,
 }
 
 pub const RNG_EXT_RAM: AddressRange = AddressRange(Address(0xA000), Address(0xC000));
@@ -163,6 +166,8 @@ impl Mmu {
             cart,
             lcd: Box::new(Lcd::new()),
             audio: Audio::new(),
+
+            watchpoints: HashSet::new(),
         }
     }
 
@@ -182,7 +187,11 @@ impl Mmu {
 
 impl MemDevice for Mmu {
     fn read(&self, a: Address) -> Result<u8, ()> {
-        if a.in_(RNG_INTR_TABLE) {
+        if self.watchpoints.contains(&a) {
+            println!("Read watchpoint for {:?}", a);
+            Err(())
+        }
+        else if a.in_(RNG_INTR_TABLE) {
             self.interrupt_table.read(a - RNG_INTR_TABLE.0)
         } else if a.in_(RNG_INT_RAM) {
             self.internal_ram.read(a - RNG_INT_RAM.0)
@@ -205,7 +214,11 @@ impl MemDevice for Mmu {
     }
 
     fn write(&mut self, a: Address, v: u8) -> Result<(), ()> {
-        if a == REG_DMA {
+        if self.watchpoints.contains(&a) {
+            println!("Write watchpoint for {:?}", a);
+            Err(())
+        }
+        else if a == REG_DMA {
             self.dma(Address((v as u16) << 8))
         } else if a.in_(RNG_INTR_TABLE) {
             self.interrupt_table.write(a - RNG_INTR_TABLE.0, v)
