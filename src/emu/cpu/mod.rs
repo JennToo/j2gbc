@@ -3,8 +3,6 @@ use std::num::Wrapping;
 use std::time::Duration;
 use std::collections::{HashSet, VecDeque};
 use std::cmp::min;
-use std::fmt::Display;
-use std::fmt;
 
 use super::alu::{and, dec, hi, hi_lo, inc, lo, or, sub, xor, Flags, add16};
 use super::inst::{Arith, Control, Instruction, Load, Logic};
@@ -14,85 +12,11 @@ use super::cart::Cart;
 
 pub const CLOCK_RATE: u64 = 4_190_000;
 
-#[repr(u8)]
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum Register8 {
-    A,
-    B,
-    C,
-    D,
-    E,
-    H,
-    L,
-    F,
-}
+mod register;
+mod interrupt;
 
-impl Display for Register8 {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            Register8::A => write!(f, "a"),
-            Register8::B => write!(f, "b"),
-            Register8::C => write!(f, "c"),
-            Register8::D => write!(f, "d"),
-            Register8::E => write!(f, "e"),
-            Register8::F => write!(f, "f"),
-            Register8::H => write!(f, "h"),
-            Register8::L => write!(f, "l"),
-        }
-    }
-}
-
-#[repr(u8)]
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum Register16 {
-    AF,
-    BC,
-    DE,
-    HL,
-    SP,
-    PC,
-}
-
-impl Display for Register16 {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            Register16::AF => write!(f, "af"),
-            Register16::BC => write!(f, "bc"),
-            Register16::DE => write!(f, "de"),
-            Register16::HL => write!(f, "hl"),
-            Register16::SP => write!(f, "sp"),
-            Register16::PC => write!(f, "pc"),
-        }
-    }
-}
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum Interrupt {
-    VBlank,
-    LCDC,
-    Timer,
-    Controller,
-}
-
-impl Interrupt {
-    pub fn is_enabled(self, reg: u8) -> bool {
-        match self {
-            Interrupt::VBlank => (reg & 0b0000_0001) != 0,
-            Interrupt::LCDC => (reg & 0b0000_0010) != 0,
-            Interrupt::Timer => (reg & 0b0000_0100) != 0,
-            Interrupt::Controller => (reg & 0b0001_0000) != 0,
-        }
-    }
-
-    pub fn table_address(self) -> Address {
-        match self {
-            Interrupt::VBlank => Address(0x0040),
-            Interrupt::LCDC => Address(0x0048),
-            Interrupt::Timer => Address(0x0050),
-            Interrupt::Controller => Address(0x0060),
-        }
-    }
-}
+pub use self::register::{Register16, Register8};
+pub use self::interrupt::Interrupt;
 
 pub struct Cpu {
     registers: [u8; 8],
