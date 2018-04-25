@@ -74,16 +74,15 @@ pub fn lo(v: u16) -> u8 {
 pub fn sub(l: u8, r: u8) -> (u8, Flags) {
     let mut f = Flags(0);
     let v = (Wrapping(l) - Wrapping(r)).0;
-
+    f.set_zero(v == 0);
     f.set_subtract(true);
-    f.set_carry(l < r);
-    f.set_halfcarry(l > r);
-    f.set_zero(l == r);
-
+    f.set_carry((l as i8) < (r as i8));
+    f.set_halfcarry((l as i8) & 0x0F < (r as i8) & 0x0F);
     (v, f)
 }
 
-pub fn add(l: u8, r: u8, mut f: Flags) -> (u8, Flags) {
+pub fn add(l: u8, r: u8) -> (u8, Flags) {
+    let mut f = Flags(0);
     let v = (Wrapping(l) + Wrapping(r)).0;
     f.set_zero(v == 0);
     f.set_halfcarry((l & 0x0F) + (r & 0x0F) > 0x0F);
@@ -103,7 +102,7 @@ pub fn add16(l: u16, r: u16, mut f: Flags) -> (u16, Flags) {
 pub fn inc(l: u8, mut f: Flags) -> (u8, Flags) {
     let v = (Wrapping(l) + Wrapping(1)).0;
     f.set_zero(v == 0);
-    f.set_halfcarry(l == 0xFF);
+    f.set_halfcarry((l & 0x0F) + 1 == 0x10);
     f.set_subtract(false);
 
     (v, f)
@@ -112,7 +111,7 @@ pub fn inc(l: u8, mut f: Flags) -> (u8, Flags) {
 pub fn dec(l: u8, mut f: Flags) -> (u8, Flags) {
     let v = (Wrapping(l) - Wrapping(1)).0;
     f.set_zero(v == 0);
-    f.set_halfcarry(l == 0);
+    f.set_halfcarry((l as i8) & 0x0F < (1 as i8) & 0x0F);
     f.set_subtract(true);
 
     (v, f)
@@ -138,4 +137,59 @@ pub fn xor(l: u8, r: u8) -> (u8, Flags) {
     let v = l ^ r;
     f.set_zero(v == 0);
     (v, f)
+}
+
+#[test]
+fn test_add() {
+    let (v, f) = add(0x3A, 0xC6);
+    assert_eq!(v, 0);
+    assert!(f.get_zero());
+    assert!(f.get_halfcarry());
+    assert!(f.get_carry());
+    assert!(!f.get_subtract());
+
+    let (v, f) = add(0x3C, 0xFF);
+    assert_eq!(v, 0x3B);
+    assert!(!f.get_zero());
+    assert!(f.get_halfcarry());
+    assert!(f.get_carry());
+    assert!(!f.get_subtract());
+
+    let (v, f) = add(0x3C, 0x12);
+    assert_eq!(v, 0x4E);
+    assert!(!f.get_zero());
+    assert!(!f.get_halfcarry());
+    assert!(!f.get_carry());
+    assert!(!f.get_subtract());
+
+    let (v, f) = add(0xAF, 0xA1);
+    assert_eq!(v, 0x50);
+    assert!(!f.get_zero());
+    assert!(f.get_halfcarry());
+    assert!(f.get_carry());
+    assert!(!f.get_subtract());
+}
+
+#[test]
+fn test_sub() {
+    let (v, f) = sub(0x3E, 0x3E);
+    assert_eq!(v, 0);
+    assert!(f.get_zero());
+    assert!(!f.get_halfcarry());
+    assert!(!f.get_carry());
+    assert!(f.get_subtract());
+
+    let (v, f) = sub(0x3E, 0x0F);
+    assert_eq!(v, 0x2F);
+    assert!(!f.get_zero());
+    assert!(f.get_halfcarry());
+    assert!(!f.get_carry());
+    assert!(f.get_subtract());
+
+    let (v, f) = sub(0x3E, 0x40);
+    assert_eq!(v, 0xFE);
+    assert!(!f.get_zero());
+    assert!(!f.get_halfcarry());
+    assert!(f.get_carry());
+    assert!(f.get_subtract());
 }
