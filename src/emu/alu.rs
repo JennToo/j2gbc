@@ -95,7 +95,7 @@ pub fn add16(l: u16, r: u16, mut f: Flags) -> (u16, Flags) {
     let v = ((Wrapping(l) + Wrapping(r))).0;
     f.set_subtract(false);
     f.set_halfcarry((l & 0x0FFF) + (r & 0x0FFF) > 0x0FFF);
-    f.set_carry((l as u32) + (r as u32) > 0xFF);
+    f.set_carry((l as u32) + (r as u32) > 0xFFFF);
     (v, f)
 }
 
@@ -192,4 +192,160 @@ fn test_sub() {
     assert!(!f.get_halfcarry());
     assert!(f.get_carry());
     assert!(f.get_subtract());
+
+    // Examples for CP which is the same as SUB essentially
+    let (_, f) = sub(0x3C, 0x2F);
+    assert!(!f.get_zero());
+    assert!(f.get_halfcarry());
+    assert!(!f.get_carry());
+    assert!(f.get_subtract());
+
+    let (_, f) = sub(0x3C, 0x3C);
+    assert!(f.get_zero());
+    assert!(!f.get_halfcarry());
+    assert!(!f.get_carry());
+    assert!(f.get_subtract());
+
+    let (_, f) = sub(0x3C, 0x40);
+    assert!(!f.get_zero());
+    assert!(!f.get_halfcarry());
+    assert!(f.get_carry());
+    assert!(f.get_subtract());
+}
+
+#[test]
+fn test_and() {
+    let (v, f) = and(0x5A, 0x3F);
+    assert_eq!(v, 0x1A);
+    assert!(!f.get_carry());
+    assert!(!f.get_subtract());
+    assert!(f.get_halfcarry());
+    assert!(!f.get_zero());
+
+    let (v, f) = and(0x5A, 0x38);
+    assert_eq!(v, 0x18);
+    assert!(!f.get_carry());
+    assert!(!f.get_subtract());
+    assert!(f.get_halfcarry());
+    assert!(!f.get_zero());
+
+    let (v, f) = and(0x5A, 0x00);
+    assert_eq!(v, 0x00);
+    assert!(!f.get_carry());
+    assert!(!f.get_subtract());
+    assert!(f.get_halfcarry());
+    assert!(f.get_zero());
+}
+
+#[test]
+fn test_or() {
+    let (v, f) = or(0x5A, 0x5A);
+    assert_eq!(v, 0x5A);
+    assert!(!f.get_carry());
+    assert!(!f.get_subtract());
+    assert!(!f.get_halfcarry());
+    assert!(!f.get_zero());
+
+    let (v, f) = or(0x00, 0x00);
+    assert_eq!(v, 0x00);
+    assert!(!f.get_carry());
+    assert!(!f.get_subtract());
+    assert!(!f.get_halfcarry());
+    assert!(f.get_zero());
+
+    let (v, f) = or(0x5A, 0x03);
+    assert_eq!(v, 0x5B);
+    assert!(!f.get_carry());
+    assert!(!f.get_subtract());
+    assert!(!f.get_halfcarry());
+    assert!(!f.get_zero());
+
+    let (v, f) = or(0x5A, 0x0);
+    assert_eq!(v, 0x5A);
+    assert!(!f.get_carry());
+    assert!(!f.get_subtract());
+    assert!(!f.get_halfcarry());
+    assert!(!f.get_zero());
+}
+
+#[test]
+fn test_xor() {
+    let (v, f) = xor(0xFF, 0xFF);
+    assert_eq!(v, 0x00);
+    assert!(!f.get_carry());
+    assert!(!f.get_subtract());
+    assert!(!f.get_halfcarry());
+    assert!(f.get_zero());
+
+    let (v, f) = xor(0xFF, 0x0F);
+    assert_eq!(v, 0xF0);
+    assert!(!f.get_carry());
+    assert!(!f.get_subtract());
+    assert!(!f.get_halfcarry());
+    assert!(!f.get_zero());
+
+    let (v, f) = xor(0xFF, 0x8A);
+    assert_eq!(v, 0x75);
+    assert!(!f.get_carry());
+    assert!(!f.get_subtract());
+    assert!(!f.get_halfcarry());
+    assert!(!f.get_zero());
+}
+
+#[test]
+fn test_inc() {
+    let (v, f) = inc(0xFF, Flags(0));
+    assert_eq!(v, 0x00);
+    assert!(!f.get_carry());
+    assert!(!f.get_subtract());
+    assert!(f.get_halfcarry());
+    assert!(f.get_zero());
+
+    let (v, f) = inc(0x50, Flags(0));
+    assert_eq!(v, 0x51);
+    assert!(!f.get_carry());
+    assert!(!f.get_subtract());
+    assert!(!f.get_halfcarry());
+    assert!(!f.get_zero());
+}
+
+#[test]
+fn test_dec() {
+    let (v, f) = dec(0x01, Flags(0));
+    assert_eq!(v, 0x00);
+    assert!(!f.get_carry());
+    assert!(f.get_subtract());
+    assert!(!f.get_halfcarry());
+    assert!(f.get_zero());
+
+    let (v, f) = dec(0x00, Flags(0));
+    assert_eq!(v, 0xFF);
+    assert!(!f.get_carry());
+    assert!(f.get_subtract());
+    assert!(f.get_halfcarry());
+    assert!(!f.get_zero());
+}
+
+#[test]
+fn test_add16() {
+    let (v, f) = add16(0x8A23, 0x0605, Flags(0));
+    assert_eq!(v, 0x9028);
+    assert!(!f.get_zero());
+    assert!(f.get_halfcarry());
+    assert!(!f.get_carry());
+    assert!(!f.get_subtract());
+
+    let (v, f) = add16(0x8A23, 0x8A23, Flags(0));
+    assert_eq!(v, 0x1446);
+    assert!(!f.get_zero());
+    assert!(f.get_halfcarry());
+    assert!(f.get_carry());
+    assert!(!f.get_subtract());
+
+    let (v, f) = add16(0xFFFF, 0x0001, Flags(0));
+    assert_eq!(v, 0);
+    assert!(!f.get_zero());
+    assert!(f.get_halfcarry());
+    assert!(f.get_carry());
+    assert!(!f.get_subtract());
 }
