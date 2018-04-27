@@ -5,6 +5,8 @@ use super::cpu::{Interrupt, CLOCK_RATE};
 
 const REG_LCDC: Address = Address(0xFF40);
 const REG_STAT: Address = Address(0xFF41);
+const REG_SCY: Address = Address(0xFF42);
+const REG_SCX: Address = Address(0xFF43);
 const REG_LY: Address = Address(0xFF44);
 const REG_LYC: Address = Address(0xFF45);
 const REG_BGP: Address = Address(0xFF47);
@@ -41,6 +43,8 @@ pub struct Lcd {
     dma: u8,
     wx: u8,
     wy: u8,
+    sx: u8,
+    sy: u8,
     lyc: u8,
     ly: u8,
     cdata: Ram,
@@ -66,6 +70,8 @@ impl Lcd {
             dma: 0,
             wx: 0,
             wy: 0,
+            sx: 0,
+            sy: 0,
             lyc: 0,
             cdata: Ram::new(RNG_CHAR_DAT.len()),
             bgdd1: Ram::new(RNG_LCD_BGDD1.len()),
@@ -188,6 +194,8 @@ impl MemDevice for Lcd {
                 REG_OBP1 => Ok(self.obp1),
                 REG_WX => Ok(self.wx),
                 REG_WY => Ok(self.wy),
+                REG_SCX => Ok(self.sx),
+                REG_SCY => Ok(self.sy),
                 REG_BGP => {
                     println!("Error: BGP is a write-only register");
                     Err(())
@@ -253,6 +261,14 @@ impl MemDevice for Lcd {
                 }
                 REG_WY => {
                     self.wy = v;
+                    Ok(())
+                }
+                REG_SCX => {
+                    self.sx = v;
+                    Ok(())
+                }
+                REG_SCY => {
+                    self.sy = v;
                     Ok(())
                 }
                 _ => {
