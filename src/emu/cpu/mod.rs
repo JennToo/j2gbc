@@ -4,7 +4,7 @@ use std::time::Duration;
 use std::collections::{HashSet, VecDeque};
 use std::cmp::min;
 
-use super::alu::{and, dec, hi, hi_lo, inc, lo, or, sub, xor, Flags, add16};
+use super::alu::{add, and, dec, hi, hi_lo, inc, lo, or, sub, xor, Flags, add16};
 use super::inst::{Arith, Control, Instruction, Load, Logic};
 use super::mem::{Address, MemDevice};
 use super::mmu::Mmu;
@@ -99,6 +99,20 @@ impl Cpu {
 
     fn execute_arith(&mut self, a: Arith) -> Result<(), ()> {
         match a {
+            Arith::AddN => {
+                let v1 = try!(self.read_indirect(Register16::HL));
+                let v2 = self[Register8::A];
+                let (v, flags) = add(v1, v2);
+                self[Register8::A] = v;
+                self[Register8::F] = flags.0;
+            }
+            Arith::AddR(r) => {
+                let v1 = self[r];
+                let v2 = self[Register8::A];
+                let (v, flags) = add(v1, v2);
+                self[Register8::A] = v;
+                self[Register8::F] = flags.0;
+            }
             Arith::IncR(r) => {
                 let (v, flags) = inc(self[r], self.flags());
                 self[r] = v;
@@ -156,6 +170,11 @@ impl Cpu {
             Control::Ret => {
                 self.pc = Address(try!(self.mmu.read16(self.sp)));
                 self.sp += Address(2);
+            }
+            Control::Reti => {
+                self.pc = Address(try!(self.mmu.read16(self.sp)));
+                self.sp += Address(2);
+                self.interrupt_master_enable = true;
             }
             Control::JpI(a) => {
                 self.pc = a;
@@ -321,9 +340,11 @@ impl Cpu {
         if self.last_instructions.len() > 50 {
             self.last_instructions.pop_front();
         }
+        self.last_instructions.push_back((self.pc, instruction));
+
         self.pc += Address(len as u16);
         try!(self.execute(instruction));
-        self.last_instructions.push_back((self.pc, instruction));
+
         self.drive_peripherals()
     }
 
@@ -356,14 +377,7 @@ impl Cpu {
             let v = self.pc.into();
             try!(self.push16(v));
 
-            self.pc = Address(try!(self.mmu.read16(int.table_address())));
-            if self.pc == Address(0) {
-                println!(
-                    "Error: Interrupt handler not properly initialized for {:?} (which is enabled)",
-                    int
-                );
-                return Err(());
-            }
+            self.pc = int.table_address();
             self.interrupt_master_enable = false;
         }
 

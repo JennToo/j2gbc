@@ -259,6 +259,15 @@ impl Instruction {
             0x28 => Ok((Instruction::Control(Control::JrZI(bytes[1] as i8)), 2)),
             0x38 => Ok((Instruction::Control(Control::JrCI(bytes[1] as i8)), 2)),
 
+            0x80 => Ok((Instruction::Arith(Arith::AddR(Register8::B)), 1)),
+            0x81 => Ok((Instruction::Arith(Arith::AddR(Register8::C)), 1)),
+            0x82 => Ok((Instruction::Arith(Arith::AddR(Register8::D)), 1)),
+            0x83 => Ok((Instruction::Arith(Arith::AddR(Register8::E)), 1)),
+            0x84 => Ok((Instruction::Arith(Arith::AddR(Register8::H)), 1)),
+            0x85 => Ok((Instruction::Arith(Arith::AddR(Register8::L)), 1)),
+            0x86 => Ok((Instruction::Arith(Arith::AddN), 1)),
+            0x87 => Ok((Instruction::Arith(Arith::AddR(Register8::A)), 1)),
+
             0xE6 => Ok((Instruction::Logic(Logic::AndI(bytes[1])), 2)),
             0xA6 => Ok((Instruction::Logic(Logic::AndN), 1)),
 
@@ -281,7 +290,10 @@ impl Instruction {
             0xB5 => Ok((Instruction::Logic(Logic::OrR(Register8::L)), 1)),
 
             0xAF => Ok((Instruction::Logic(Logic::XorR(Register8::A)), 1)),
+
             0xC9 => Ok((Instruction::Control(Control::Ret), 1)),
+            0xD9 => Ok((Instruction::Control(Control::Ret), 1)),
+
             0xCB => match bytes[1] {
                 0x87 => Ok((Instruction::Res(0, Register8::A), 2)),
                 _ => {
