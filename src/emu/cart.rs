@@ -1,6 +1,6 @@
 use std::io::Read;
 use std::io;
-use super::mem::{Address, MemDevice, RNG_ROM_BANK0};
+use super::mem::{Address, MemDevice, RNG_ROM_BANK0, RNG_INTR_TABLE};
 use super::mbc::Mbc;
 use super::mbc::mbc1::Mbc1;
 
@@ -52,7 +52,7 @@ impl Cart {
 
 impl MemDevice for Cart {
     fn read(&self, a: Address) -> Result<u8, ()> {
-        if a.in_(RNG_ROM_BANK0) {
+        if a.in_(RNG_ROM_BANK0) || a.in_(RNG_INTR_TABLE) {
             Ok(self.data[a.0 as usize])
         } else {
             self.mbc.read(a)

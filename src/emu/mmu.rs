@@ -10,7 +10,6 @@ pub struct Mmu {
     tiny_ram: Ram,
     cart: Cart,
     pub interrupt_enable: u8,
-    pub interrupt_table: Ram,
     pub lcd: Box<Lcd>,
     audio: Audio,
 
@@ -23,7 +22,6 @@ impl Mmu {
             internal_ram: Ram::new(RNG_INT_RAM.len()),
             tiny_ram: Ram::new(RNG_INT_TINY_RAM.len()),
             interrupt_enable: 0,
-            interrupt_table: Ram::new(RNG_INTR_TABLE.len()),
             cart,
             lcd: Box::new(Lcd::new()),
             audio: Audio::new(),
@@ -51,11 +49,11 @@ impl MemDevice for Mmu {
         if self.watchpoints.contains(&a) {
             println!("Read watchpoint for {:?}", a);
             Err(())
-        } else if a.in_(RNG_INTR_TABLE) {
-            self.interrupt_table.read(a - RNG_INTR_TABLE.0)
         } else if a.in_(RNG_INT_RAM) {
             self.internal_ram.read(a - RNG_INT_RAM.0)
-        } else if a.in_(RNG_ROM_BANK0) || a.in_(RNG_ROM_BANK1) || a.in_(RNG_EXT_RAM) {
+        } else if a.in_(RNG_ROM_BANK0) || a.in_(RNG_ROM_BANK1) || a.in_(RNG_EXT_RAM)
+            || a.in_(RNG_INTR_TABLE)
+        {
             self.cart.read(a)
         } else if a.in_(RNG_INT_TINY_RAM) {
             self.tiny_ram.read(a - RNG_INT_TINY_RAM.0)
@@ -79,11 +77,11 @@ impl MemDevice for Mmu {
             Err(())
         } else if a == REG_DMA {
             self.dma(Address((v as u16) << 8))
-        } else if a.in_(RNG_INTR_TABLE) {
-            self.interrupt_table.write(a - RNG_INTR_TABLE.0, v)
         } else if a.in_(RNG_INT_RAM) {
             self.internal_ram.write(a - RNG_INT_RAM.0, v)
-        } else if a.in_(RNG_ROM_BANK0) || a.in_(RNG_ROM_BANK1) || a.in_(RNG_EXT_RAM) {
+        } else if a.in_(RNG_ROM_BANK0) || a.in_(RNG_ROM_BANK1) || a.in_(RNG_EXT_RAM)
+            || a.in_(RNG_INTR_TABLE)
+        {
             self.cart.write(a, v)
         } else if a.in_(RNG_INT_TINY_RAM) {
             self.tiny_ram.write(a - RNG_INT_TINY_RAM.0, v)
