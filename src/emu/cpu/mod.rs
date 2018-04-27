@@ -242,6 +242,10 @@ impl Cpu {
                 self[Register8::A] = try!(self.mmu.read(Address(a)));
                 self.write_r16(Register16::HL, (Wrapping(a) + Wrapping(d as u16)).0);
             }
+            Load::LdRN(r) => {
+                let v = try!(self.read_indirect(Register16::HL));
+                self[r] = v;
+            }
             Load::LdNCA => {
                 let a = Address(self[Register8::C] as u16 + 0xFF00);
                 let v = self[Register8::A];

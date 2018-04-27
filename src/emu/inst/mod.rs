@@ -235,6 +235,14 @@ impl Instruction {
             0x22 => Ok((Instruction::Load(Load::LdNA(1)), 1)),
             0x32 => Ok((Instruction::Load(Load::LdNA(-1)), 1)),
 
+            0x46 => Ok((Instruction::Load(Load::LdRN(Register8::B)), 1)),
+            0x56 => Ok((Instruction::Load(Load::LdRN(Register8::D)), 1)),
+            0x66 => Ok((Instruction::Load(Load::LdRN(Register8::H)), 1)),
+            0x4E => Ok((Instruction::Load(Load::LdRN(Register8::C)), 1)),
+            0x5E => Ok((Instruction::Load(Load::LdRN(Register8::E)), 1)),
+            0x6E => Ok((Instruction::Load(Load::LdRN(Register8::L)), 1)),
+            0x7E => Ok((Instruction::Load(Load::LdRN(Register8::A)), 1)),
+
             0x2A => Ok((Instruction::Load(Load::LdAN(1)), 1)),
             0x3A => Ok((Instruction::Load(Load::LdAN(-1)), 1)),
 
