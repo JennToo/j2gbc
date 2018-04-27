@@ -118,6 +118,12 @@ impl Cpu {
                 self[r] = v;
                 self[Register8::F] = flags.0;
             }
+            Arith::IncN => {
+                let s = try!(self.read_indirect(Register16::HL));
+                let (v, flags) = inc(s, self.flags());
+                try!(self.write_indirect(Register16::HL, v));
+                self[Register8::F] = flags.0;
+            }
             Arith::DecR(r) => {
                 let (v, flags) = dec(self[r], self.flags());
                 self[r] = v;

@@ -57,6 +57,7 @@ impl Instruction {
 
             0x76 => Ok((Instruction::Halt, 1)),
 
+            0x34 => Ok((Instruction::Arith(Arith::IncN), 1)),
             0x04 => Ok((Instruction::Arith(Arith::IncR(Register8::B)), 1)),
             0x14 => Ok((Instruction::Arith(Arith::IncR(Register8::D)), 1)),
             0x24 => Ok((Instruction::Arith(Arith::IncR(Register8::H)), 1)),

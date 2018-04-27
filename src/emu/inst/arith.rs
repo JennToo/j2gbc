@@ -5,6 +5,7 @@ use emu::cpu::{Register16, Register8};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Arith {
+    IncN,
     IncR(Register8),
     DecR(Register8),
     AddN,
@@ -20,6 +21,7 @@ impl Arith {
             Arith::AddR(_) => 4,
             Arith::AddN => 8,
             Arith::DecR16(_) | Arith::IncR16(_) => 8,
+            Arith::IncN => 12,
             Arith::IncR(_) | Arith::DecR(_) => 4,
             Arith::AddRR16(_, _) => 16,
         }
@@ -33,6 +35,7 @@ impl Display for Arith {
             Arith::AddR(r) => write!(f, "add {}", r),
             Arith::DecR(r) => write!(f, "dec {}", r),
             Arith::IncR(r) => write!(f, "inc {}", r),
+            Arith::IncN => write!(f, "inc [hl]"),
             Arith::DecR16(r) => write!(f, "dec {}", r),
             Arith::IncR16(r) => write!(f, "inc {}", r),
             Arith::AddRR16(r1, r2) => write!(f, "add {},{}", r1, r2),
