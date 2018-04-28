@@ -145,6 +145,16 @@ pub fn swap(v: u8) -> (u8, Flags) {
     (v << 4 | v >> 4, f)
 }
 
+pub fn sla(v: u8) -> (u8, Flags) {
+    let mut f = Flags(0);
+    let r = v << 1;
+    f.set_carry(v & 0b1000_0000 != 0);
+    f.set_halfcarry(false);
+    f.set_subtract(false);
+    f.set_zero(r == 0);
+    (r, f)
+}
+
 #[test]
 fn test_add() {
     let (v, f) = add(0x3A, 0xC6);
@@ -370,5 +380,22 @@ fn test_swap() {
     assert!(!f.get_zero());
     assert!(!f.get_halfcarry());
     assert!(!f.get_carry());
+    assert!(!f.get_subtract());
+}
+
+#[test]
+fn test_sla() {
+    let (v, f) = sla(0x80);
+    assert_eq!(v, 0x00);
+    assert!(f.get_zero());
+    assert!(!f.get_halfcarry());
+    assert!(f.get_carry());
+    assert!(!f.get_subtract());
+
+    let (v, f) = sla(0xFF);
+    assert_eq!(v, 0xFE);
+    assert!(!f.get_zero());
+    assert!(!f.get_halfcarry());
+    assert!(f.get_carry());
     assert!(!f.get_subtract());
 }
