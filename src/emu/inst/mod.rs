@@ -21,6 +21,7 @@ pub enum Instruction {
     Ei,
     Di,
     Halt,
+    Scf,
     Res(u8, Register8),
     CpI(u8),
     CpR(Register8),
@@ -38,6 +39,7 @@ impl Instruction {
             Instruction::Ei => 4,
             Instruction::Di => 4,
             Instruction::Halt => 4,
+            Instruction::Scf => 4,
             Instruction::Res(_, _) => 8,
             Instruction::CpI(_) => 8,
             Instruction::CpR(_) => 4,
@@ -56,6 +58,8 @@ impl Instruction {
             0xF3 => Ok((Instruction::Di, 1)),
 
             0x76 => Ok((Instruction::Halt, 1)),
+
+            0x37 => Ok((Instruction::Scf, 1)),
 
             0x34 => Ok((Instruction::Arith(Arith::IncN), 1)),
             0x04 => Ok((Instruction::Arith(Arith::IncR(Register8::B)), 1)),
@@ -350,6 +354,7 @@ impl Display for Instruction {
             Instruction::Ei => write!(f, "ei"),
             Instruction::Di => write!(f, "di"),
             Instruction::Halt => write!(f, "halt"),
+            Instruction::Scf => write!(f, "scf"),
             Instruction::Res(b, r) => write!(f, "res {},{}", b, r),
             Instruction::CpI(b) => write!(f, "cp {:#x}", b),
             Instruction::CpR(r) => write!(f, "cp {}", r),

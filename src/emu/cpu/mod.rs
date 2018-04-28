@@ -67,6 +67,13 @@ impl Cpu {
                 println!("Halting");
                 self.halted = true;
             }
+            Instruction::Scf => {
+                let mut f = self.flags();
+                f.set_subtract(false);
+                f.set_halfcarry(false);
+                f.set_carry(true);
+                self[Register8::F] = f.0;
+            }
             Instruction::Res(b, r) => {
                 let v = self[r] & !(1 << b);
                 self[r] = v;
