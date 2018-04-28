@@ -236,6 +236,10 @@ impl Cpu {
                     self.sp += Address(2);
                 }
             }
+            Control::JpN => {
+                let a = Address(self.read_r16(Register16::HL));
+                self.pc = a;
+            }
             Control::JpI(a) => {
                 self.pc = a;
             }

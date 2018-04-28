@@ -16,6 +16,7 @@ pub enum Control {
     RetNC,
     RetZ,
     RetC,
+    JpN,
     JpI(Address),
     JpCI(Address),
     JpZI(Address),
@@ -29,6 +30,7 @@ impl Control {
     pub fn cycles(self) -> u8 {
         match self {
             Control::Rst(_) => 16,
+            Control::JpN => 4,
             Control::JpCI(_)
             | Control::JpI(_)
             | Control::JpZI(_)
@@ -61,6 +63,7 @@ impl Display for Control {
             Control::RetZ => write!(f, "ret z"),
             Control::RetNC => write!(f, "ret nc"),
             Control::RetNZ => write!(f, "ret nz"),
+            Control::JpN => write!(f, "jmp [hl]"),
             Control::JpI(a) => write!(f, "jmp {}", a),
             Control::JpCI(a) => write!(f, "jmpc {}", a),
             Control::JpZI(a) => write!(f, "jmpz {}", a),

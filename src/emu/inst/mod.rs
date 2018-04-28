@@ -105,6 +105,7 @@ impl Instruction {
                 1,
             )),
 
+            0xE9 => Ok((Instruction::Control(Control::JpN), 1)),
             0xC3 => Ok((
                 Instruction::Control(Control::JpI(Address(hi_lo(bytes[2], bytes[1])))),
                 3,
