@@ -22,11 +22,13 @@ pub enum Control {
     JpNCI(Address),
     JpNZI(Address),
     CallI(Address),
+    Rst(Address),
 }
 
 impl Control {
     pub fn cycles(self) -> u8 {
         match self {
+            Control::Rst(_) => 16,
             Control::JpCI(_)
             | Control::JpI(_)
             | Control::JpZI(_)
@@ -65,6 +67,7 @@ impl Display for Control {
             Control::JpNCI(a) => write!(f, "jmpnc {}", a),
             Control::JpNZI(a) => write!(f, "jmpnz {}", a),
             Control::CallI(a) => write!(f, "call {}", a),
+            Control::Rst(a) => write!(f, "rst {}", a),
         }
     }
 }

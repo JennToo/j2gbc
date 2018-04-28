@@ -249,7 +249,7 @@ impl Cpu {
                     self.pc = a;
                 }
             }
-            Control::CallI(a) => {
+            Control::CallI(a) | Control::Rst(a) => {
                 let v = self.pc.into();
                 try!(self.push16(v));
                 self.pc = a;

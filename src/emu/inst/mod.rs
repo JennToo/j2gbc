@@ -126,6 +126,16 @@ impl Instruction {
                 3,
             )),
 
+            0xC7 => Ok((Instruction::Control(Control::Rst(Address(0x0000))), 1)),
+            0xD7 => Ok((Instruction::Control(Control::Rst(Address(0x0010))), 1)),
+            0xE7 => Ok((Instruction::Control(Control::Rst(Address(0x0020))), 1)),
+            0xF7 => Ok((Instruction::Control(Control::Rst(Address(0x0030))), 1)),
+
+            0xCF => Ok((Instruction::Control(Control::Rst(Address(0x0008))), 1)),
+            0xDF => Ok((Instruction::Control(Control::Rst(Address(0x0018))), 1)),
+            0xEF => Ok((Instruction::Control(Control::Rst(Address(0x0028))), 1)),
+            0xFF => Ok((Instruction::Control(Control::Rst(Address(0x0038))), 1)),
+
             0xCD => Ok((
                 Instruction::Control(Control::CallI(Address(hi_lo(bytes[2], bytes[1])))),
                 3,
