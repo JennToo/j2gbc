@@ -308,6 +308,12 @@ impl Instruction {
             0xB4 => Ok((Instruction::Logic(Logic::OrR(Register8::H)), 1)),
             0xB5 => Ok((Instruction::Logic(Logic::OrR(Register8::L)), 1)),
 
+            0xA8 => Ok((Instruction::Logic(Logic::XorR(Register8::B)), 1)),
+            0xA9 => Ok((Instruction::Logic(Logic::XorR(Register8::C)), 1)),
+            0xAA => Ok((Instruction::Logic(Logic::XorR(Register8::D)), 1)),
+            0xAB => Ok((Instruction::Logic(Logic::XorR(Register8::E)), 1)),
+            0xAC => Ok((Instruction::Logic(Logic::XorR(Register8::H)), 1)),
+            0xAD => Ok((Instruction::Logic(Logic::XorR(Register8::L)), 1)),
             0xAF => Ok((Instruction::Logic(Logic::XorR(Register8::A)), 1)),
 
             0xC9 => Ok((Instruction::Control(Control::Ret), 1)),
