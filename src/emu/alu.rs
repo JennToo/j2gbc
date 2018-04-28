@@ -155,6 +155,18 @@ pub fn sla(v: u8) -> (u8, Flags) {
     (r, f)
 }
 
+pub fn rl(v: u8, mut f: Flags) -> (u8, Flags) {
+    let mut r = v << 1;
+    if f.get_carry() {
+        r |= 1;
+    }
+    f.set_carry(v & 0b1000_0000 != 0);
+    f.set_halfcarry(false);
+    f.set_subtract(false);
+    f.set_zero(r == 0);
+    (r, f)
+}
+
 #[test]
 fn test_add() {
     let (v, f) = add(0x3A, 0xC6);
@@ -397,5 +409,31 @@ fn test_sla() {
     assert!(!f.get_zero());
     assert!(!f.get_halfcarry());
     assert!(f.get_carry());
+    assert!(!f.get_subtract());
+}
+
+#[test]
+fn test_rl() {
+    let (v, f) = rl(0x80, Flags(0));
+    assert_eq!(v, 0x00);
+    assert!(f.get_zero());
+    assert!(!f.get_halfcarry());
+    assert!(f.get_carry());
+    assert!(!f.get_subtract());
+
+    let (v, f) = rl(0x11, Flags(0));
+    assert_eq!(v, 0x22);
+    assert!(!f.get_zero());
+    assert!(!f.get_halfcarry());
+    assert!(!f.get_carry());
+    assert!(!f.get_subtract());
+
+    let mut f = Flags(0);
+    f.set_carry(true);
+    let (v, f) = rl(0x00, f);
+    assert_eq!(v, 0x01);
+    assert!(!f.get_zero());
+    assert!(!f.get_halfcarry());
+    assert!(!f.get_carry());
     assert!(!f.get_subtract());
 }

@@ -351,6 +351,14 @@ impl Instruction {
                 0x25 => Ok((Instruction::Arith(Arith::SlaR(Register8::L)), 1)),
                 0x27 => Ok((Instruction::Arith(Arith::SlaR(Register8::A)), 1)),
 
+                0x10 => Ok((Instruction::Arith(Arith::RlR(Register8::B)), 1)),
+                0x11 => Ok((Instruction::Arith(Arith::RlR(Register8::C)), 1)),
+                0x12 => Ok((Instruction::Arith(Arith::RlR(Register8::D)), 1)),
+                0x13 => Ok((Instruction::Arith(Arith::RlR(Register8::E)), 1)),
+                0x14 => Ok((Instruction::Arith(Arith::RlR(Register8::H)), 1)),
+                0x15 => Ok((Instruction::Arith(Arith::RlR(Register8::L)), 1)),
+                0x17 => Ok((Instruction::Arith(Arith::RlR(Register8::A)), 1)),
+
                 0x87 => Ok((Instruction::Res(0, Register8::A), 2)),
                 _ => {
                     println!(

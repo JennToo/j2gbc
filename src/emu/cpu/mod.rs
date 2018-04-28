@@ -169,6 +169,11 @@ impl Cpu {
                 self[r] = v;
                 self[Register8::F] = flags.0;
             }
+            Arith::RlR(r) => {
+                let (v, flags) = rl(self[r], self.flags());
+                self[r] = v;
+                self[Register8::F] = flags.0;
+            }
         }
         Ok(())
     }
