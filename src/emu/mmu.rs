@@ -65,6 +65,8 @@ impl MemDevice for Mmu {
             self.lcd.read(a)
         } else if a.in_(RNG_SND_WAV_RAM) || a.in_(RNG_SND_REGS) {
             self.audio.read(a)
+        } else if a == REG_P1 {
+            Ok(0)
         } else {
             println!("MMU: Unimplemented memory read at address {:?}", a);
             Err(())
@@ -94,6 +96,8 @@ impl MemDevice for Mmu {
             self.lcd.write(a, v)
         } else if a.in_(RNG_SND_WAV_RAM) || a.in_(RNG_SND_REGS) {
             self.audio.write(a, v)
+        } else if a == REG_P1 {
+            Ok(())
         } else {
             println!("MMU: Unimplemented memory write at address {:?}", a);
             Err(())

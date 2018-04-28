@@ -18,6 +18,7 @@ pub const RNG_LCD_MM_REG: AddressRange = AddressRange(Address(0xFF40), Address(0
 pub const RNG_INT_TINY_RAM: AddressRange = AddressRange(Address(0xFF80), Address(0xFFFF));
 
 pub const REG_INTR_ENABLE: Address = Address(0xFFFF);
+pub const REG_P1: Address = Address(0xFF00);
 pub const REG_DMA: Address = Address(0xFF46);
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone, Hash)]
