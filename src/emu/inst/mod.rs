@@ -157,6 +157,8 @@ impl Instruction {
                 3,
             )),
 
+            0x2F => Ok((Instruction::Arith(Arith::Cpl), 1)),
+
             0xEA => Ok((
                 Instruction::Load(Load::LdNIA16(Address(hi_lo(bytes[2], bytes[1])))),
                 3,

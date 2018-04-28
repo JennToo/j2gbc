@@ -5,6 +5,7 @@ use emu::cpu::{Register16, Register8};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Arith {
+    Cpl,
     IncN,
     IncR(Register8),
     DecR(Register8),
@@ -18,6 +19,7 @@ pub enum Arith {
 impl Arith {
     pub fn cycles(self) -> u8 {
         match self {
+            Arith::Cpl => 4,
             Arith::AddR(_) => 4,
             Arith::AddN => 8,
             Arith::DecR16(_) | Arith::IncR16(_) => 8,
@@ -31,6 +33,7 @@ impl Arith {
 impl Display for Arith {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
+            Arith::Cpl => write!(f, "cpl"),
             Arith::AddN => write!(f, "add [hl]"),
             Arith::AddR(r) => write!(f, "add {}", r),
             Arith::DecR(r) => write!(f, "dec {}", r),

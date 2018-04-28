@@ -144,6 +144,14 @@ impl Cpu {
                 self.write_r16(d, v3);
                 self[Register8::F] = flags.0;
             }
+            Arith::Cpl => {
+                let mut f = self.flags();
+                f.set_subtract(true);
+                f.set_halfcarry(true);
+                let v = self[Register8::A];
+                self[Register8::A] = !v;
+                self[Register8::F] = f.0;
+            }
         }
         Ok(())
     }
