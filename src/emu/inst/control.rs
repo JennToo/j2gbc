@@ -12,6 +12,10 @@ pub enum Control {
     JrCI(i8),
     Ret,
     Reti,
+    RetNZ,
+    RetNC,
+    RetZ,
+    RetC,
     JpI(Address),
     JpCI(Address),
     JpZI(Address),
@@ -36,6 +40,7 @@ impl Control {
             | Control::JrCI(_)
             | Control::JrZI(_) => 12,
             Control::Ret | Control::Reti => 16,
+            Control::RetC | Control::RetZ | Control::RetNC | Control::RetNZ => 8,
         }
     }
 }
@@ -50,6 +55,10 @@ impl Display for Control {
             Control::JrCI(i) => write!(f, "jrc {}", i),
             Control::Ret => write!(f, "ret"),
             Control::Reti => write!(f, "reti"),
+            Control::RetC => write!(f, "ret c"),
+            Control::RetZ => write!(f, "ret z"),
+            Control::RetNC => write!(f, "ret nc"),
+            Control::RetNZ => write!(f, "ret nz"),
             Control::JpI(a) => write!(f, "jmp {}", a),
             Control::JpCI(a) => write!(f, "jmpc {}", a),
             Control::JpZI(a) => write!(f, "jmpz {}", a),

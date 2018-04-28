@@ -307,6 +307,11 @@ impl Instruction {
             0xC9 => Ok((Instruction::Control(Control::Ret), 1)),
             0xD9 => Ok((Instruction::Control(Control::Ret), 1)),
 
+            0xC0 => Ok((Instruction::Control(Control::RetNZ), 1)),
+            0xD0 => Ok((Instruction::Control(Control::RetNC), 1)),
+            0xC8 => Ok((Instruction::Control(Control::RetZ), 1)),
+            0xD8 => Ok((Instruction::Control(Control::RetC), 1)),
+
             0xCB => match bytes[1] {
                 0x87 => Ok((Instruction::Res(0, Register8::A), 2)),
                 _ => {
