@@ -14,6 +14,7 @@ pub enum Arith {
     IncR16(Register16),
     DecR16(Register16),
     AddRR16(Register16, Register16),
+    SwapR(Register8),
 }
 
 impl Arith {
@@ -26,6 +27,7 @@ impl Arith {
             Arith::IncN => 12,
             Arith::IncR(_) | Arith::DecR(_) => 4,
             Arith::AddRR16(_, _) => 16,
+            Arith::SwapR(_) => 8,
         }
     }
 }
@@ -42,6 +44,7 @@ impl Display for Arith {
             Arith::DecR16(r) => write!(f, "dec {}", r),
             Arith::IncR16(r) => write!(f, "inc {}", r),
             Arith::AddRR16(r1, r2) => write!(f, "add {},{}", r1, r2),
+            Arith::SwapR(r) => write!(f, "swap {}", r),
         }
     }
 }

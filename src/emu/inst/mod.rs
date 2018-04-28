@@ -315,6 +315,14 @@ impl Instruction {
             0xD8 => Ok((Instruction::Control(Control::RetC), 1)),
 
             0xCB => match bytes[1] {
+                0x30 => Ok((Instruction::Arith(Arith::SwapR(Register8::B)), 1)),
+                0x31 => Ok((Instruction::Arith(Arith::SwapR(Register8::C)), 1)),
+                0x32 => Ok((Instruction::Arith(Arith::SwapR(Register8::D)), 1)),
+                0x33 => Ok((Instruction::Arith(Arith::SwapR(Register8::E)), 1)),
+                0x34 => Ok((Instruction::Arith(Arith::SwapR(Register8::H)), 1)),
+                0x35 => Ok((Instruction::Arith(Arith::SwapR(Register8::L)), 1)),
+                0x37 => Ok((Instruction::Arith(Arith::SwapR(Register8::A)), 1)),
+
                 0x87 => Ok((Instruction::Res(0, Register8::A), 2)),
                 _ => {
                     println!(

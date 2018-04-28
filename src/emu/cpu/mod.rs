@@ -4,7 +4,7 @@ use std::time::Duration;
 use std::collections::{HashSet, VecDeque};
 use std::cmp::min;
 
-use super::alu::{add, and, dec, hi, hi_lo, inc, lo, or, sub, xor, Flags, add16};
+use super::alu::*;
 use super::inst::{Arith, Control, Instruction, Load, Logic};
 use super::mem::{Address, MemDevice};
 use super::mmu::Mmu;
@@ -151,6 +151,11 @@ impl Cpu {
                 let v = self[Register8::A];
                 self[Register8::A] = !v;
                 self[Register8::F] = f.0;
+            }
+            Arith::SwapR(r) => {
+                let (v, flags) = swap(self[r]);
+                self[r] = v;
+                self[Register8::F] = flags.0;
             }
         }
         Ok(())
