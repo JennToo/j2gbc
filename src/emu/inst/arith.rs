@@ -17,6 +17,8 @@ pub enum Arith {
     SwapR(Register8),
     SlaR(Register8),
     RlR(Register8),
+    Rra,
+    Rla,
 }
 
 impl Arith {
@@ -31,6 +33,7 @@ impl Arith {
             Arith::AddRR16(_, _) => 16,
             Arith::SwapR(_) => 8,
             Arith::RlR(_) | Arith::SlaR(_) => 8,
+            Arith::Rra | Arith::Rla => 4,
         }
     }
 }
@@ -50,6 +53,8 @@ impl Display for Arith {
             Arith::SwapR(r) => write!(f, "swap {}", r),
             Arith::SlaR(r) => write!(f, "sla {}", r),
             Arith::RlR(r) => write!(f, "rl {}", r),
+            Arith::Rra => write!(f, "rra"),
+            Arith::Rla => write!(f, "rla"),
         }
     }
 }

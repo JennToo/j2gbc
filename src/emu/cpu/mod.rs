@@ -174,6 +174,18 @@ impl Cpu {
                 self[r] = v;
                 self[Register8::F] = flags.0;
             }
+            Arith::Rra => {
+                let (v, mut flags) = rr(self[Register8::A], self.flags());
+                flags.set_zero(false);
+                self[Register8::A] = v;
+                self[Register8::F] = flags.0;
+            }
+            Arith::Rla => {
+                let (v, mut flags) = rl(self[Register8::A], self.flags());
+                flags.set_zero(false);
+                self[Register8::A] = v;
+                self[Register8::F] = flags.0;
+            }
         }
         Ok(())
     }

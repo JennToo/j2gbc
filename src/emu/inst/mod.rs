@@ -335,6 +335,9 @@ impl Instruction {
             0xC8 => Ok((Instruction::Control(Control::RetZ), 1)),
             0xD8 => Ok((Instruction::Control(Control::RetC), 1)),
 
+            0x17 => Ok((Instruction::Arith(Arith::Rla), 1)),
+            0x1F => Ok((Instruction::Arith(Arith::Rra), 1)),
+
             0xCB => match bytes[1] {
                 0x30 => Ok((Instruction::Arith(Arith::SwapR(Register8::B)), 1)),
                 0x31 => Ok((Instruction::Arith(Arith::SwapR(Register8::C)), 1)),
