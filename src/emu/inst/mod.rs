@@ -358,6 +358,8 @@ impl Instruction {
 
             0x17 => Ok((Instruction::Arith(Arith::Rla), 1)),
             0x1F => Ok((Instruction::Arith(Arith::Rra), 1)),
+            0x07 => Ok((Instruction::Arith(Arith::Rlca), 1)),
+            0x0F => Ok((Instruction::Arith(Arith::Rrca), 1)),
 
             0xCB => match bytes[1] {
                 0x30 => Ok((Instruction::Arith(Arith::SwapR(Register8::B)), 1)),

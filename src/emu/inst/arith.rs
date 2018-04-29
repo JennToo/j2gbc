@@ -23,7 +23,9 @@ pub enum Arith {
     SlaR(Register8),
     RlR(Register8),
     Rra,
+    Rrca,
     Rla,
+    Rlca,
 }
 
 impl Arith {
@@ -39,7 +41,7 @@ impl Arith {
             Arith::AddRR16(_, _) => 16,
             Arith::SwapR(_) => 8,
             Arith::RlR(_) | Arith::SlaR(_) => 8,
-            Arith::Rra | Arith::Rla => 4,
+            Arith::Rra | Arith::Rrca | Arith::Rla | Arith::Rlca => 4,
         }
     }
 }
@@ -65,7 +67,9 @@ impl Display for Arith {
             Arith::SlaR(r) => write!(f, "sla {}", r),
             Arith::RlR(r) => write!(f, "rl {}", r),
             Arith::Rra => write!(f, "rra"),
+            Arith::Rrca => write!(f, "rrca"),
             Arith::Rla => write!(f, "rla"),
+            Arith::Rlca => write!(f, "rlca"),
         }
     }
 }

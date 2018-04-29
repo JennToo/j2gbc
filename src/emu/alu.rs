@@ -167,11 +167,29 @@ pub fn rl(v: u8, mut f: Flags) -> (u8, Flags) {
     (r, f)
 }
 
+pub fn rlc(v: u8, mut f: Flags) -> (u8, Flags) {
+    let r = v.rotate_left(1);
+    f.set_carry(v & 0b1000_0000 != 0);
+    f.set_halfcarry(false);
+    f.set_subtract(false);
+    f.set_zero(r == 0);
+    (r, f)
+}
+
 pub fn rr(v: u8, mut f: Flags) -> (u8, Flags) {
     let mut r = v >> 1;
     if f.get_carry() {
         r |= 0b1000_0000;
     }
+    f.set_carry(v & 1 != 0);
+    f.set_halfcarry(false);
+    f.set_subtract(false);
+    f.set_zero(r == 0);
+    (r, f)
+}
+
+pub fn rrc(v: u8, mut f: Flags) -> (u8, Flags) {
+    let r = v.rotate_right(1);
     f.set_carry(v & 1 != 0);
     f.set_halfcarry(false);
     f.set_subtract(false);
