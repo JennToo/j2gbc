@@ -5,7 +5,7 @@ use std::collections::{HashSet, VecDeque};
 use std::cmp::min;
 
 use super::alu::*;
-use super::inst::{Arith, Control, Instruction, Load, Logic};
+use super::inst::{Arith, Bits, Control, Instruction, Load, Logic};
 use super::mem::{Address, MemDevice};
 use super::mmu::Mmu;
 use super::debug::debug;
@@ -74,10 +74,6 @@ impl Cpu {
                 f.set_carry(true);
                 self[Register8::F] = f.0;
             }
-            Instruction::Res(b, r) => {
-                let v = self[r] & !(1 << b);
-                self[r] = v;
-            }
             Instruction::CpI(v) => {
                 let (_, flags) = sub(self[Register8::A], v);
                 self[Register8::F] = flags.0;
@@ -89,6 +85,9 @@ impl Cpu {
             }
             Instruction::Arith(a) => {
                 try!(self.execute_arith(a));
+            }
+            Instruction::Bits(b) => {
+                try!(self.execute_bits(b));
             }
             Instruction::Control(c) => {
                 try!(self.execute_control(c));
@@ -183,7 +182,18 @@ impl Cpu {
                 self.write_r16(d, v3);
                 self[Register8::F] = flags.0;
             }
-            Arith::Cpl => {
+            Arith::Daa => {
+                let (v, f) = daa(self[Register8::A], self.flags());
+                self[Register8::A] = v;
+                self[Register8::F] = f.0;
+            }
+        }
+        Ok(())
+    }
+
+    fn execute_bits(&mut self, b: Bits) -> Result<(), ()> {
+        match b {
+            Bits::Cpl => {
                 let mut f = self.flags();
                 f.set_subtract(true);
                 f.set_halfcarry(true);
@@ -191,51 +201,51 @@ impl Cpu {
                 self[Register8::A] = !v;
                 self[Register8::F] = f.0;
             }
-            Arith::Daa => {
-                let (v, f) = daa(self[Register8::A], self.flags());
-                self[Register8::A] = v;
-                self[Register8::F] = f.0;
-            }
-            Arith::SwapR(r) => {
+            Bits::SwapR(r) => {
                 let (v, flags) = swap(self[r]);
                 self[r] = v;
                 self[Register8::F] = flags.0;
             }
-            Arith::SlaR(r) => {
+            Bits::SlaR(r) => {
                 let (v, flags) = sla(self[r]);
                 self[r] = v;
                 self[Register8::F] = flags.0;
             }
-            Arith::RlR(r) => {
+            Bits::RlR(r) => {
                 let (v, flags) = rl(self[r], self.flags());
                 self[r] = v;
                 self[Register8::F] = flags.0;
             }
-            Arith::Rra => {
+            Bits::Rra => {
                 let (v, mut flags) = rr(self[Register8::A], self.flags());
                 flags.set_zero(false);
                 self[Register8::A] = v;
                 self[Register8::F] = flags.0;
             }
-            Arith::Rla => {
+            Bits::Rla => {
                 let (v, mut flags) = rl(self[Register8::A], self.flags());
                 flags.set_zero(false);
                 self[Register8::A] = v;
                 self[Register8::F] = flags.0;
             }
-            Arith::Rrca => {
+            Bits::Rrca => {
                 let (v, mut flags) = rrc(self[Register8::A], self.flags());
                 flags.set_zero(false);
                 self[Register8::A] = v;
                 self[Register8::F] = flags.0;
             }
-            Arith::Rlca => {
+            Bits::Rlca => {
                 let (v, mut flags) = rlc(self[Register8::A], self.flags());
                 flags.set_zero(false);
                 self[Register8::A] = v;
                 self[Register8::F] = flags.0;
             }
+            Bits::Res(b, r) => {
+                let v = self[r] & !(1 << b);
+                self[r] = v;
+            }
         }
+
         Ok(())
     }
 

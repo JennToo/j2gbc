@@ -6,11 +6,13 @@ use super::mem::Address;
 use super::cpu::{Register16, Register8};
 
 mod arith;
+mod bits;
 mod control;
 mod logic;
 mod load;
 
 pub use self::arith::Arith;
+pub use self::bits::Bits;
 pub use self::control::Control;
 pub use self::logic::Logic;
 pub use self::load::Load;
@@ -22,10 +24,10 @@ pub enum Instruction {
     Di,
     Halt,
     Scf,
-    Res(u8, Register8),
     CpI(u8),
     CpR(Register8),
     Arith(Arith),
+    Bits(Bits),
     Control(Control),
     Load(Load),
     Logic(Logic),
@@ -40,10 +42,10 @@ impl Instruction {
             Instruction::Di => 4,
             Instruction::Halt => 4,
             Instruction::Scf => 4,
-            Instruction::Res(_, _) => 8,
             Instruction::CpI(_) => 8,
             Instruction::CpR(_) => 4,
             Instruction::Arith(a) => a.cycles(),
+            Instruction::Bits(b) => b.cycles(),
             Instruction::Load(l) => l.cycles(),
             Instruction::Control(c) => c.cycles(),
             Instruction::Logic(l) => l.cycles(),
@@ -173,7 +175,7 @@ impl Instruction {
                 3,
             )),
 
-            0x2F => Ok((Instruction::Arith(Arith::Cpl), 1)),
+            0x2F => Ok((Instruction::Bits(Bits::Cpl), 1)),
 
             0x27 => Ok((Instruction::Arith(Arith::Daa), 1)),
 
@@ -357,37 +359,37 @@ impl Instruction {
             0xC8 => Ok((Instruction::Control(Control::RetZ), 1)),
             0xD8 => Ok((Instruction::Control(Control::RetC), 1)),
 
-            0x17 => Ok((Instruction::Arith(Arith::Rla), 1)),
-            0x1F => Ok((Instruction::Arith(Arith::Rra), 1)),
-            0x07 => Ok((Instruction::Arith(Arith::Rlca), 1)),
-            0x0F => Ok((Instruction::Arith(Arith::Rrca), 1)),
+            0x17 => Ok((Instruction::Bits(Bits::Rla), 1)),
+            0x1F => Ok((Instruction::Bits(Bits::Rra), 1)),
+            0x07 => Ok((Instruction::Bits(Bits::Rlca), 1)),
+            0x0F => Ok((Instruction::Bits(Bits::Rrca), 1)),
 
             0xCB => match bytes[1] {
-                0x30 => Ok((Instruction::Arith(Arith::SwapR(Register8::B)), 1)),
-                0x31 => Ok((Instruction::Arith(Arith::SwapR(Register8::C)), 1)),
-                0x32 => Ok((Instruction::Arith(Arith::SwapR(Register8::D)), 1)),
-                0x33 => Ok((Instruction::Arith(Arith::SwapR(Register8::E)), 1)),
-                0x34 => Ok((Instruction::Arith(Arith::SwapR(Register8::H)), 1)),
-                0x35 => Ok((Instruction::Arith(Arith::SwapR(Register8::L)), 1)),
-                0x37 => Ok((Instruction::Arith(Arith::SwapR(Register8::A)), 1)),
+                0x30 => Ok((Instruction::Bits(Bits::SwapR(Register8::B)), 1)),
+                0x31 => Ok((Instruction::Bits(Bits::SwapR(Register8::C)), 1)),
+                0x32 => Ok((Instruction::Bits(Bits::SwapR(Register8::D)), 1)),
+                0x33 => Ok((Instruction::Bits(Bits::SwapR(Register8::E)), 1)),
+                0x34 => Ok((Instruction::Bits(Bits::SwapR(Register8::H)), 1)),
+                0x35 => Ok((Instruction::Bits(Bits::SwapR(Register8::L)), 1)),
+                0x37 => Ok((Instruction::Bits(Bits::SwapR(Register8::A)), 1)),
 
-                0x20 => Ok((Instruction::Arith(Arith::SlaR(Register8::B)), 1)),
-                0x21 => Ok((Instruction::Arith(Arith::SlaR(Register8::C)), 1)),
-                0x22 => Ok((Instruction::Arith(Arith::SlaR(Register8::D)), 1)),
-                0x23 => Ok((Instruction::Arith(Arith::SlaR(Register8::E)), 1)),
-                0x24 => Ok((Instruction::Arith(Arith::SlaR(Register8::H)), 1)),
-                0x25 => Ok((Instruction::Arith(Arith::SlaR(Register8::L)), 1)),
-                0x27 => Ok((Instruction::Arith(Arith::SlaR(Register8::A)), 1)),
+                0x20 => Ok((Instruction::Bits(Bits::SlaR(Register8::B)), 1)),
+                0x21 => Ok((Instruction::Bits(Bits::SlaR(Register8::C)), 1)),
+                0x22 => Ok((Instruction::Bits(Bits::SlaR(Register8::D)), 1)),
+                0x23 => Ok((Instruction::Bits(Bits::SlaR(Register8::E)), 1)),
+                0x24 => Ok((Instruction::Bits(Bits::SlaR(Register8::H)), 1)),
+                0x25 => Ok((Instruction::Bits(Bits::SlaR(Register8::L)), 1)),
+                0x27 => Ok((Instruction::Bits(Bits::SlaR(Register8::A)), 1)),
 
-                0x10 => Ok((Instruction::Arith(Arith::RlR(Register8::B)), 1)),
-                0x11 => Ok((Instruction::Arith(Arith::RlR(Register8::C)), 1)),
-                0x12 => Ok((Instruction::Arith(Arith::RlR(Register8::D)), 1)),
-                0x13 => Ok((Instruction::Arith(Arith::RlR(Register8::E)), 1)),
-                0x14 => Ok((Instruction::Arith(Arith::RlR(Register8::H)), 1)),
-                0x15 => Ok((Instruction::Arith(Arith::RlR(Register8::L)), 1)),
-                0x17 => Ok((Instruction::Arith(Arith::RlR(Register8::A)), 1)),
+                0x10 => Ok((Instruction::Bits(Bits::RlR(Register8::B)), 1)),
+                0x11 => Ok((Instruction::Bits(Bits::RlR(Register8::C)), 1)),
+                0x12 => Ok((Instruction::Bits(Bits::RlR(Register8::D)), 1)),
+                0x13 => Ok((Instruction::Bits(Bits::RlR(Register8::E)), 1)),
+                0x14 => Ok((Instruction::Bits(Bits::RlR(Register8::H)), 1)),
+                0x15 => Ok((Instruction::Bits(Bits::RlR(Register8::L)), 1)),
+                0x17 => Ok((Instruction::Bits(Bits::RlR(Register8::A)), 1)),
 
-                0x87 => Ok((Instruction::Res(0, Register8::A), 2)),
+                0x87 => Ok((Instruction::Bits(Bits::Res(0, Register8::A)), 2)),
                 _ => {
                     println!(
                         "Unknown instruction {:#X} {:#X} {:#X}",
@@ -415,10 +417,10 @@ impl Display for Instruction {
             Instruction::Di => write!(f, "di"),
             Instruction::Halt => write!(f, "halt"),
             Instruction::Scf => write!(f, "scf"),
-            Instruction::Res(b, r) => write!(f, "res {},{}", b, r),
             Instruction::CpI(b) => write!(f, "cp {:#x}", b),
             Instruction::CpR(r) => write!(f, "cp {}", r),
             Instruction::Arith(a) => a.fmt(f),
+            Instruction::Bits(b) => b.fmt(f),
             Instruction::Load(l) => l.fmt(f),
             Instruction::Control(c) => c.fmt(f),
             Instruction::Logic(l) => l.fmt(f),
