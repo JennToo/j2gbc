@@ -126,6 +126,20 @@ impl Cpu {
                 self[Register8::A] = v;
                 self[Register8::F] = flags.0;
             }
+            Arith::SubN => {
+                let v1 = try!(self.read_indirect(Register16::HL));
+                let v2 = self[Register8::A];
+                let (v, flags) = sub(v1, v2);
+                self[Register8::A] = v;
+                self[Register8::F] = flags.0;
+            }
+            Arith::SubR(r) => {
+                let v1 = self[r];
+                let v2 = self[Register8::A];
+                let (v, flags) = sub(v1, v2);
+                self[Register8::A] = v;
+                self[Register8::F] = flags.0;
+            }
             Arith::SubI(v1) => {
                 let v2 = self[Register8::A];
                 let (v, flags) = sub(v1, v2);
