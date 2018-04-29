@@ -76,8 +76,8 @@ pub fn sub(l: u8, r: u8) -> (u8, Flags) {
     let v = (Wrapping(l) - Wrapping(r)).0;
     f.set_zero(v == 0);
     f.set_subtract(true);
-    f.set_carry((l as i8) < (r as i8));
-    f.set_halfcarry((l as i8) & 0x0F < (r as i8) & 0x0F);
+    f.set_carry(l < r);
+    f.set_halfcarry(l & 0x0F < r & 0x0F);
     (v, f)
 }
 
@@ -177,6 +177,78 @@ pub fn rr(v: u8, mut f: Flags) -> (u8, Flags) {
     f.set_subtract(false);
     f.set_zero(r == 0);
     (r, f)
+}
+
+// --------------------------------------------------------------------------------
+// |           | C Flag  | HEX value in | H Flag | HEX value in | Number  | C flag|
+// | Operation | Before  | upper digit  | Before | lower digit  | added   | After |
+// |           | DAA     | (bit 7-4)    | DAA    | (bit 3-0)    | to byte | DAA   |
+// |------------------------------------------------------------------------------|
+// |           |    0    |     0-9      |   0    |     0-9      |   00    |   0   |
+// |   ADD     |    0    |     0-8      |   0    |     A-F      |   06    |   0   |
+// |           |    0    |     0-9      |   1    |     0-3      |   06    |   0   |
+// |   ADC     |    0    |     A-F      |   0    |     0-9      |   60    |   1   |
+// |           |    0    |     9-F      |   0    |     A-F      |   66    |   1   |
+// |   INC     |    0    |     A-F      |   1    |     0-3      |   66    |   1   |
+// |           |    1    |     0-2      |   0    |     0-9      |   60    |   1   |
+// |           |    1    |     0-2      |   0    |     A-F      |   66    |   1   |
+// |           |    1    |     0-3      |   1    |     0-3      |   66    |   1   |
+// |------------------------------------------------------------------------------|
+// |   SUB     |    0    |     0-9      |   0    |     0-9      |   00    |   0   |
+// |   SBC     |    0    |     0-8      |   1    |     6-F      |   FA    |   0   |
+// |   DEC     |    1    |     7-F      |   0    |     0-9      |   A0    |   1   |
+// |   NEG     |    1    |     6-F      |   1    |     6-F      |   9A    |   1   |
+// |------------------------------------------------------------------------------|
+pub fn daa(v: u8, mut f: Flags) -> (u8, Flags) {
+    let hi = v >> 4;
+    let lo = v & 0xF;
+    let mut v = Wrapping(v);
+
+    if !f.get_subtract() && !f.get_carry() && hi <= 9 && !f.get_halfcarry() && lo <= 9 {
+        f.set_carry(false);
+        v += Wrapping(0x00);
+    } else if !f.get_subtract() && !f.get_carry() && hi <= 8 && !f.get_halfcarry() && lo >= 10 {
+        f.set_carry(false);
+        v += Wrapping(0x06);
+    } else if !f.get_subtract() && !f.get_carry() && hi <= 9 && f.get_halfcarry() && lo <= 3 {
+        f.set_carry(false);
+        v += Wrapping(0x06);
+    } else if !f.get_subtract() && !f.get_carry() && hi >= 10 && !f.get_halfcarry() && lo <= 9 {
+        f.set_carry(true);
+        v += Wrapping(0x60);
+    } else if !f.get_subtract() && !f.get_carry() && hi >= 9 && !f.get_halfcarry() && lo >= 10 {
+        f.set_carry(true);
+        v += Wrapping(0x66);
+    } else if !f.get_subtract() && !f.get_carry() && hi >= 10 && f.get_halfcarry() && lo <= 3 {
+        f.set_carry(true);
+        v += Wrapping(0x66);
+    } else if !f.get_subtract() && f.get_carry() && hi <= 2 && !f.get_halfcarry() && lo <= 9 {
+        f.set_carry(true);
+        v += Wrapping(0x60);
+    } else if !f.get_subtract() && f.get_carry() && hi <= 2 && !f.get_halfcarry() && lo >= 10 {
+        f.set_carry(true);
+        v += Wrapping(0x66);
+    } else if !f.get_subtract() && f.get_carry() && hi <= 3 && f.get_halfcarry() && lo <= 3 {
+        f.set_carry(true);
+        v += Wrapping(0x66);
+    } else if f.get_subtract() && !f.get_carry() && hi <= 9 && !f.get_halfcarry() && lo <= 9 {
+        f.set_carry(false);
+        v += Wrapping(0x00);
+    } else if f.get_subtract() && !f.get_carry() && hi <= 8 && f.get_halfcarry() && lo >= 6 {
+        f.set_carry(false);
+        v += Wrapping(0xFA);
+    } else if f.get_subtract() && f.get_carry() && hi >= 7 && !f.get_halfcarry() && lo <= 9 {
+        f.set_carry(true);
+        v += Wrapping(0xA0);
+    } else if f.get_subtract() && f.get_carry() && hi >= 6 && f.get_halfcarry() && lo >= 6 {
+        f.set_carry(true);
+        v += Wrapping(0x9A);
+    }
+
+    f.set_zero(v.0 == 0);
+    f.set_halfcarry(false);
+
+    (v.0, f)
 }
 
 #[test]
@@ -472,4 +544,29 @@ fn test_rr() {
     assert!(!f.get_halfcarry());
     assert!(!f.get_carry());
     assert!(!f.get_subtract());
+}
+
+#[test]
+fn test_daa() {
+    let (v, f) = add(0x45, 0x38);
+    assert_eq!(v, 0x7D);
+    let (v, f) = daa(v, f);
+    assert_eq!(v, 0x83);
+    assert!(!f.get_zero());
+    assert!(!f.get_halfcarry());
+    assert!(!f.get_carry());
+    assert!(!f.get_subtract());
+
+    let (v, f) = sub(0x83, 0x38);
+    assert_eq!(v, 0x4B);
+    assert!(!f.get_zero());
+    assert!(f.get_halfcarry());
+    assert!(!f.get_carry());
+    assert!(f.get_subtract());
+    let (v, f) = daa(v, f);
+    assert_eq!(v, 0x45);
+    assert!(!f.get_zero());
+    assert!(!f.get_halfcarry());
+    assert!(!f.get_carry());
+    assert!(f.get_subtract());
 }

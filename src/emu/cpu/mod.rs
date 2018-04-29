@@ -165,6 +165,11 @@ impl Cpu {
                 self[Register8::A] = !v;
                 self[Register8::F] = f.0;
             }
+            Arith::Daa => {
+                let (v, f) = daa(self[Register8::A], self.flags());
+                self[Register8::A] = v;
+                self[Register8::F] = f.0;
+            }
             Arith::SwapR(r) => {
                 let (v, flags) = swap(self[r]);
                 self[r] = v;
