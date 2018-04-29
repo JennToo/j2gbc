@@ -70,6 +70,7 @@ impl Instruction {
             0x2C => Ok((Instruction::Arith(Arith::IncR(Register8::L)), 1)),
             0x3C => Ok((Instruction::Arith(Arith::IncR(Register8::A)), 1)),
 
+            0x35 => Ok((Instruction::Arith(Arith::DecN), 1)),
             0x05 => Ok((Instruction::Arith(Arith::DecR(Register8::B)), 1)),
             0x15 => Ok((Instruction::Arith(Arith::DecR(Register8::D)), 1)),
             0x25 => Ok((Instruction::Arith(Arith::DecR(Register8::H)), 1)),

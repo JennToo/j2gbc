@@ -162,6 +162,12 @@ impl Cpu {
                 self[r] = v;
                 self[Register8::F] = flags.0;
             }
+            Arith::DecN => {
+                let s = try!(self.read_indirect(Register16::HL));
+                let (v, flags) = dec(s, self.flags());
+                try!(self.write_indirect(Register16::HL, v));
+                self[Register8::F] = flags.0;
+            }
             Arith::DecR16(r) => {
                 let v = Wrapping(self.read_r16(r));
                 self.write_r16(r, (v - Wrapping(1)).0);
