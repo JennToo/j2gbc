@@ -244,6 +244,10 @@ impl Cpu {
                 let v = self[r] & !(1 << b);
                 self[r] = v;
             }
+            Bits::Set(b, r) => {
+                let v = self[r] | (1 << b);
+                self[r] = v;
+            }
         }
 
         Ok(())

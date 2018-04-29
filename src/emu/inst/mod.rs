@@ -389,7 +389,64 @@ impl Instruction {
                 0x15 => Ok((Instruction::Bits(Bits::RlR(Register8::L)), 1)),
                 0x17 => Ok((Instruction::Bits(Bits::RlR(Register8::A)), 1)),
 
-                0x87 => Ok((Instruction::Bits(Bits::Res(0, Register8::A)), 2)),
+                0x80 | 0x88 | 0x90 | 0x98 | 0xA0 | 0xA8 | 0xB0 | 0xB8 => Ok((
+                    Instruction::Bits(Bits::Res(get_bits_bit(bytes[1]), Register8::B)),
+                    2,
+                )),
+                0x81 | 0x89 | 0x91 | 0x99 | 0xA1 | 0xA9 | 0xB1 | 0xB9 => Ok((
+                    Instruction::Bits(Bits::Res(get_bits_bit(bytes[1]), Register8::C)),
+                    2,
+                )),
+                0x82 | 0x8A | 0x92 | 0x9A | 0xA2 | 0xAA | 0xB2 | 0xBA => Ok((
+                    Instruction::Bits(Bits::Res(get_bits_bit(bytes[1]), Register8::D)),
+                    2,
+                )),
+                0x83 | 0x8B | 0x93 | 0x9B | 0xA3 | 0xAB | 0xB3 | 0xBB => Ok((
+                    Instruction::Bits(Bits::Res(get_bits_bit(bytes[1]), Register8::E)),
+                    2,
+                )),
+                0x84 | 0x8C | 0x94 | 0x9C | 0xA4 | 0xAC | 0xB4 | 0xBC => Ok((
+                    Instruction::Bits(Bits::Res(get_bits_bit(bytes[1]), Register8::H)),
+                    2,
+                )),
+                0x85 | 0x8D | 0x95 | 0x9D | 0xA5 | 0xAD | 0xB5 | 0xBD => Ok((
+                    Instruction::Bits(Bits::Res(get_bits_bit(bytes[1]), Register8::L)),
+                    2,
+                )),
+                0x87 | 0x8F | 0x97 | 0x9F | 0xA7 | 0xAF | 0xB6 | 0xBF => Ok((
+                    Instruction::Bits(Bits::Res(get_bits_bit(bytes[1]), Register8::A)),
+                    2,
+                )),
+
+                0xC0 | 0xC8 | 0xD0 | 0xD8 | 0xE0 | 0xE8 | 0xF0 | 0xF8 => Ok((
+                    Instruction::Bits(Bits::Set(get_bits_bit(bytes[1]), Register8::B)),
+                    2,
+                )),
+                0xC1 | 0xC9 | 0xD1 | 0xD9 | 0xE1 | 0xE9 | 0xF1 | 0xF9 => Ok((
+                    Instruction::Bits(Bits::Set(get_bits_bit(bytes[1]), Register8::C)),
+                    2,
+                )),
+                0xC2 | 0xCA | 0xD2 | 0xDA | 0xE2 | 0xEA | 0xF2 | 0xFA => Ok((
+                    Instruction::Bits(Bits::Set(get_bits_bit(bytes[1]), Register8::D)),
+                    2,
+                )),
+                0xC3 | 0xCB | 0xD3 | 0xDB | 0xE3 | 0xEB | 0xF3 | 0xFB => Ok((
+                    Instruction::Bits(Bits::Set(get_bits_bit(bytes[1]), Register8::E)),
+                    2,
+                )),
+                0xC4 | 0xCC | 0xD4 | 0xDC | 0xE4 | 0xEC | 0xF4 | 0xFC => Ok((
+                    Instruction::Bits(Bits::Set(get_bits_bit(bytes[1]), Register8::H)),
+                    2,
+                )),
+                0xC5 | 0xCD | 0xD5 | 0xDD | 0xE5 | 0xED | 0xF5 | 0xFD => Ok((
+                    Instruction::Bits(Bits::Set(get_bits_bit(bytes[1]), Register8::L)),
+                    2,
+                )),
+                0xC7 | 0xCF | 0xD7 | 0xDF | 0xE7 | 0xEF | 0xF6 | 0xFF => Ok((
+                    Instruction::Bits(Bits::Set(get_bits_bit(bytes[1]), Register8::A)),
+                    2,
+                )),
+
                 _ => {
                     println!(
                         "Unknown instruction {:#X} {:#X} {:#X}",
@@ -407,6 +464,10 @@ impl Instruction {
             }
         }
     }
+}
+
+fn get_bits_bit(i: u8) -> u8 {
+    (i >> 3) & 0b111
 }
 
 impl Display for Instruction {
