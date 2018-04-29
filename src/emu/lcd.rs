@@ -31,6 +31,8 @@ const LINE_CYCLE_TIME: u64 = CLOCK_RATE * 180_700 / 1_000_000_000;
 const BYTES_PER_CHAR: u16 = 16;
 const BYTES_PER_CHAR_ROW: u16 = 2;
 
+const LYC_MATCH_FLAG: u8 = 0b0000_0100;
+
 pub type Framebuffer = [[Pixel; SCREEN_SIZE.0]; SCREEN_SIZE.1];
 type CharRow = [usize; 8];
 
@@ -127,13 +129,13 @@ impl Lcd {
     pub fn do_hblank(&mut self, cycle: u64) {
         // TODO: This is just a debug hack to display char data on the screen
         const CHARS_PER_ROW: u8 = (SCREEN_SIZE.0 as u8 / 8);
-        let current_char_start = (self.ly as u16 * CHARS_PER_ROW as u16 / 8) as u8;
+        let current_char_start = ((self.ly / 8) as u16 * CHARS_PER_ROW as u16) as u8;
         if current_char_start < (255 - CHARS_PER_ROW) && self.ly < SCREEN_SIZE.1 as u8 {
             for i in 0..CHARS_PER_ROW {
                 let char_ = current_char_start + i;
-                let row = self.read_char_row_at(char_, self.ly % 8, true);
+                let row = self.read_char_row_at(char_, self.ly % 8, false);
                 for j in 0..8 {
-                    let x = (i + j) as usize;
+                    let x = (i * 8 + j) as usize;
                     let y = self.ly as usize;
                     let color_index = row[j as usize] as usize;
                     self.get_back_framebuffer()[y][x] = COLORS[color_index];
@@ -142,13 +144,23 @@ impl Lcd {
         }
 
         self.ly += 1;
+        self.update_lyc();
         self.next_hblank_cycle = LINE_CYCLE_TIME + cycle;
     }
 
     pub fn do_vblank(&mut self, cycle: u64) {
         self.swap();
         self.ly = 0;
+        self.update_lyc();
         self.next_vblank_cycle = 154 * LINE_CYCLE_TIME + cycle;
+    }
+
+    fn update_lyc(&mut self) {
+        if self.ly == self.lyc {
+            self.stat |= LYC_MATCH_FLAG;
+        } else {
+            self.stat &= !LYC_MATCH_FLAG;
+        }
     }
 
     fn read_char_row_at(&self, char_: u8, row: u8, high: bool) -> CharRow {
@@ -163,7 +175,7 @@ impl Lcd {
         let b2 = self.read(row_address + Address(1)).unwrap();
         let mut row = [0; 8];
         for i in 0..8 {
-            row[i] = (read_bit(b1, i as u8) | (read_bit(b2, i as u8) << 1)) as usize;
+            row[i] = (read_bit(b1, (7 - i) as u8) | (read_bit(b2, (7 - i) as u8) << 1)) as usize;
         }
         row
     }
@@ -172,6 +184,12 @@ impl Lcd {
 fn read_bit(value: u8, bit: u8) -> u8 {
     let mask = 1 << bit;
     (value & mask) >> bit
+}
+
+#[test]
+fn test_read_bit() {
+    assert_eq!(read_bit(0b0000_0100, 2), 1);
+    assert_eq!(read_bit(0b0000_0100, 3), 0);
 }
 
 impl MemDevice for Lcd {

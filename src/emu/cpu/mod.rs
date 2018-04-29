@@ -64,7 +64,6 @@ impl Cpu {
                 self.interrupt_master_enable = false;
             }
             Instruction::Halt => {
-                println!("Halting");
                 self.halted = true;
             }
             Instruction::Scf => {

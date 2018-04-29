@@ -1,7 +1,7 @@
 use sdl2;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use emu::system::System;
 use emu::lcd::SCREEN_SIZE;
@@ -62,6 +62,9 @@ impl Window {
             self.window_canvas.clear();
 
             let elapsed = dt.elapsed();
+            if elapsed > Duration::from_millis(17) {
+                println!("Warning: Slow frame {:?}", elapsed);
+            }
             system.run_for_duration(&elapsed);
             dt = Instant::now();
 
