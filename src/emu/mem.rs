@@ -20,6 +20,8 @@ pub const RNG_INT_TINY_RAM: AddressRange = AddressRange(Address(0xFF80), Address
 pub const REG_INTR_ENABLE: Address = Address(0xFFFF);
 pub const REG_P1: Address = Address(0xFF00);
 pub const REG_DMA: Address = Address(0xFF46);
+pub const REG_SB: Address = Address(0xFF01);
+pub const REG_SC: Address = Address(0xFF02);
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone, Hash)]
 pub struct Address(pub u16);
