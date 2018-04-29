@@ -307,6 +307,7 @@ impl Instruction {
             0x85 => Ok((Instruction::Arith(Arith::AddR(Register8::L)), 1)),
             0x86 => Ok((Instruction::Arith(Arith::AddN), 1)),
             0x87 => Ok((Instruction::Arith(Arith::AddR(Register8::A)), 1)),
+            0xC6 => Ok((Instruction::Arith(Arith::AddI(bytes[1])), 2)),
 
             0xD6 => Ok((Instruction::Arith(Arith::SubI(bytes[1])), 2)),
 

@@ -120,6 +120,12 @@ impl Cpu {
                 self[Register8::A] = v;
                 self[Register8::F] = flags.0;
             }
+            Arith::AddI(v1) => {
+                let v2 = self[Register8::A];
+                let (v, flags) = add(v1, v2);
+                self[Register8::A] = v;
+                self[Register8::F] = flags.0;
+            }
             Arith::SubI(v1) => {
                 let v2 = self[Register8::A];
                 let (v, flags) = sub(v1, v2);
