@@ -11,6 +11,7 @@ pub enum Load {
     LdRR(Register8, Register8),
     LdRI(Register8, u8),
     LdRN(Register8),
+    LdNR(Register8),
     LdNA(i8),
     LdAN(i8),
     LdNI(u8),
@@ -31,7 +32,7 @@ impl Load {
             Load::LdRM(_, _) | Load::LdRI16(_, _) | Load::LdMR(_, _) => 12,
             Load::LdRR(_, _) => 4,
             Load::LdRI(_, _) => 8,
-            Load::LdNA(_) | Load::LdAN(_) | Load::LdRN(_) => 8,
+            Load::LdNA(_) | Load::LdAN(_) | Load::LdRN(_) | Load::LdNR(_) => 8,
             Load::LdNI(_) => 12,
             Load::LdNR16(_) | Load::LdRN16(_) => 8,
             Load::LdNIA16(_) | Load::LdANI16(_) => 16,
@@ -51,6 +52,7 @@ impl Display for Load {
             Load::LdRR(r1, r2) => write!(f, "ld {},{}", r1, r2),
             Load::LdRI(r, v) => write!(f, "ld {},{:#x}", r, v),
             Load::LdRN(r) => write!(f, "ld {},[hl]", r),
+            Load::LdNR(r) => write!(f, "ld [hl],{}", r),
             Load::LdNA(i) => {
                 if i > 0 {
                     write!(f, "ld [hl+],a")

@@ -322,6 +322,10 @@ impl Cpu {
                 let v = try!(self.read_indirect(Register16::HL));
                 self[r] = v;
             }
+            Load::LdNR(r) => {
+                let v = self[r];
+                try!(self.write_indirect(Register16::HL, v));
+            }
             Load::LdNCA => {
                 let a = Address(self[Register8::C] as u16 + 0xFF00);
                 let v = self[Register8::A];
