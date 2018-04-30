@@ -34,8 +34,8 @@ pub struct Cpu {
 
 impl Cpu {
     pub fn new(c: Cart) -> Cpu {
-        let mut initial_breakpoints = HashSet::new();
-        initial_breakpoints.insert(Address(0x0100));
+        let initial_breakpoints = HashSet::new();
+        //initial_breakpoints.insert(Address(0x0100));
         Cpu {
             registers: [0, 0, 0, 0, 0, 0, 0, 0],
             sp: Address(0xFFFE),

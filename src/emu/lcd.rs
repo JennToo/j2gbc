@@ -1,4 +1,5 @@
 use std::cmp::min;
+use std::num::Wrapping;
 
 use super::mem::{Address, MemDevice, RNG_LCD_BGDD1, RNG_LCD_BGDD2, Ram, RNG_CHAR_DAT, RNG_LCD_OAM};
 use super::cpu::{Interrupt, CLOCK_RATE};
@@ -30,10 +31,16 @@ const COLORS: [Pixel; 4] = [COLOR_WHITE, COLOR_LIGHT_GRAY, COLOR_DARK_GRAY, COLO
 const LINE_CYCLE_TIME: u64 = CLOCK_RATE * 180_700 / 1_000_000_000;
 const BYTES_PER_CHAR: u16 = 16;
 const BYTES_PER_CHAR_ROW: u16 = 2;
+const BG_CHARS_PER_ROW: u8 = 32;
+const PIXEL_PER_CHAR: u8 = 8;
 
 const LYC_MATCH_FLAG: u8 = 0b0000_0100;
+const BG_ENABLED_FLAG: u8 = 0b0000_0001;
+const BGD_CHAR_DAT_FLAG: u8 = 0b0001_0000;
+const BGD_CODE_DAT_FLAG: u8 = 0b0000_1000;
 
-pub type Framebuffer = [[Pixel; SCREEN_SIZE.0]; SCREEN_SIZE.1];
+pub type Framebuffer = [FrameRow; SCREEN_SIZE.1];
+type FrameRow = [Pixel; SCREEN_SIZE.0];
 type CharRow = [usize; 8];
 
 pub struct Lcd {
@@ -128,19 +135,8 @@ impl Lcd {
 
     pub fn do_hblank(&mut self, cycle: u64) {
         // TODO: This is just a debug hack to display char data on the screen
-        const CHARS_PER_ROW: u8 = (SCREEN_SIZE.0 as u8 / 8);
-        let current_char_start = ((self.ly / 8) as u16 * CHARS_PER_ROW as u16) as u8;
-        if current_char_start < (255 - CHARS_PER_ROW) && self.ly < SCREEN_SIZE.1 as u8 {
-            for i in 0..CHARS_PER_ROW {
-                let char_ = current_char_start + i;
-                let row = self.read_char_row_at(char_, self.ly % 8, false);
-                for j in 0..8 {
-                    let x = (i * 8 + j) as usize;
-                    let y = self.ly as usize;
-                    let color_index = row[j as usize] as usize;
-                    self.get_back_framebuffer()[y][x] = COLORS[color_index];
-                }
-            }
+        if self.ly < SCREEN_SIZE.1 as u8 {
+            self.render_background_row();
         }
 
         self.ly += 1;
@@ -163,12 +159,28 @@ impl Lcd {
         }
     }
 
-    fn read_char_row_at(&self, char_: u8, row: u8, high: bool) -> CharRow {
-        let base_address = if high {
-            Address(0x9000)
-        } else {
-            Address(0x8000)
-        };
+    fn render_background_row(&mut self) {
+        if !self.is_bg_enabled() {
+            return;
+        }
+
+        let screen_y = self.ly;
+        let translated_y = Wrapping(screen_y) + Wrapping(self.sy); // Implicit % 256
+        for screen_x in 0..SCREEN_SIZE.0 {
+            let translated_x = Wrapping(screen_x as u8) + Wrapping(self.sx); // Implicit % 256
+
+            let char_y_offset = Wrapping(translated_y.0 as u16) / Wrapping(PIXEL_PER_CHAR as u16) * Wrapping(BG_CHARS_PER_ROW as u16);
+            let char_offset = Wrapping(translated_x.0 as u16) / Wrapping(PIXEL_PER_CHAR as u16) + char_y_offset;
+            let char_addr = self.get_bg_code_dat_start() + Address(char_offset.0);
+            let char_ = self.read(char_addr).unwrap();
+            let char_row = self.read_char_row_at(char_, (translated_y % Wrapping(8)).0, self.get_bg_char_addr_start());
+
+            let color_index = char_row[(translated_x % Wrapping(8)).0  as usize] as usize;
+            self.get_back_framebuffer()[screen_y as usize][screen_x as usize] = COLORS[color_index];
+        }
+    }
+
+    fn read_char_row_at(&self, char_: u8, row: u8, base_address: Address) -> CharRow {
         let char_address = base_address + Address(BYTES_PER_CHAR * (char_ as u16));
         let row_address = char_address + Address(BYTES_PER_CHAR_ROW * (row as u16));
         let b1 = self.read(row_address).unwrap();
@@ -178,6 +190,26 @@ impl Lcd {
             row[i] = (read_bit(b1, (7 - i) as u8) | (read_bit(b2, (7 - i) as u8) << 1)) as usize;
         }
         row
+    }
+
+    fn is_bg_enabled(&self) -> bool {
+        self.lcdc & BG_ENABLED_FLAG != 0
+    }
+
+    fn get_bg_char_addr_start(&self) -> Address {
+        if self.lcdc & BGD_CHAR_DAT_FLAG == 0 {
+            Address(0x9000)
+        } else {
+            Address(0x8000)
+        }
+    }
+
+    fn get_bg_code_dat_start(&self) -> Address {
+        if self.lcdc & BGD_CODE_DAT_FLAG == 0 {
+            Address(0x9800)
+        } else {
+            Address(0x9C00)
+        }
     }
 }
 
