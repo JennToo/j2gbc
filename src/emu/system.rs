@@ -4,7 +4,7 @@ use super::cpu::Cpu;
 use super::lcd::Framebuffer;
 
 pub struct System {
-    cpu: Cpu,
+    pub cpu: Cpu,
 }
 
 impl System {

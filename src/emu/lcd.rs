@@ -33,6 +33,7 @@ const BYTES_PER_CHAR: u16 = 16;
 const BYTES_PER_CHAR_ROW: u16 = 2;
 const BG_CHARS_PER_ROW: u8 = 32;
 const PIXEL_PER_CHAR: u8 = 8;
+const CHARS_PER_BANK: u8 = 255;
 
 const LYC_MATCH_INT_FLAG: u8 = 0b0100_0000;
 const MODE_10_INT_FLAG: u8 = 0b0010_0000;
@@ -235,6 +236,31 @@ impl Lcd {
         } else {
             Address(0x9C00)
         }
+    }
+
+    pub fn render_char_dat(&self, high: bool) -> Box<Framebuffer> {
+        let mut fb = Box::new([[Pixel(255, 255, 0, 255); SCREEN_SIZE.0]; SCREEN_SIZE.1]);
+        let start_addr = if high {
+            Address(0x9000)
+        } else {
+            Address(0x8000)
+        };
+
+        const CHARS_PER_ROW: u8 = (SCREEN_SIZE.0 as u8 / PIXEL_PER_CHAR);
+        for char_ in 0..CHARS_PER_BANK {
+            let base_x = (char_ % CHARS_PER_ROW) * 8;
+            let base_y = (char_ / CHARS_PER_ROW) * 8;
+
+            for y in 0..PIXEL_PER_CHAR {
+                let row = self.read_char_row_at(char_, y, start_addr);
+                for x in 0..PIXEL_PER_CHAR {
+                    let color_index = row[x as usize];
+                    fb[(base_y + y) as usize][(base_x + x) as usize] = COLORS[color_index];
+                }
+            }
+        }
+
+        fb
     }
 }
 
