@@ -34,6 +34,11 @@ const BYTES_PER_CHAR_ROW: u16 = 2;
 const BG_CHARS_PER_ROW: u8 = 32;
 const PIXEL_PER_CHAR: u8 = 8;
 
+const LYC_MATCH_INT_FLAG: u8 = 0b0100_0000;
+const MODE_10_INT_FLAG: u8 = 0b0010_0000;
+const MODE_01_INT_FLAG: u8 = 0b0001_0000;
+const MODE_00_INT_FLAG: u8 = 0b0000_1000;
+
 const LYC_MATCH_FLAG: u8 = 0b0000_0100;
 const BG_ENABLED_FLAG: u8 = 0b0000_0001;
 const BGD_CHAR_DAT_FLAG: u8 = 0b0001_0000;
@@ -122,9 +127,15 @@ impl Lcd {
     pub fn pump_cycle(&mut self, cycle: u64) -> Option<Interrupt> {
         if cycle >= self.next_hblank_cycle {
             self.do_hblank(cycle);
-            //Some(Interrupt::HBlank)
-            // TODO: Check stat reg
-            None
+
+            if self.ly == self.lyc && self.is_lyc_int_enabled() {
+                // TODO: This should actually happen at the start of the line I think
+                Some(Interrupt::LCDC)
+            } else if self.is_hblank_int_enabled() {
+                Some(Interrupt::LCDC)
+            } else {
+                None
+            }
         } else if cycle >= self.next_vblank_cycle {
             self.do_vblank(cycle);
             Some(Interrupt::VBlank)
@@ -169,13 +180,19 @@ impl Lcd {
         for screen_x in 0..SCREEN_SIZE.0 {
             let translated_x = Wrapping(screen_x as u8) + Wrapping(self.sx); // Implicit % 256
 
-            let char_y_offset = Wrapping(translated_y.0 as u16) / Wrapping(PIXEL_PER_CHAR as u16) * Wrapping(BG_CHARS_PER_ROW as u16);
-            let char_offset = Wrapping(translated_x.0 as u16) / Wrapping(PIXEL_PER_CHAR as u16) + char_y_offset;
+            let char_y_offset = Wrapping(translated_y.0 as u16) / Wrapping(PIXEL_PER_CHAR as u16)
+                * Wrapping(BG_CHARS_PER_ROW as u16);
+            let char_offset =
+                Wrapping(translated_x.0 as u16) / Wrapping(PIXEL_PER_CHAR as u16) + char_y_offset;
             let char_addr = self.get_bg_code_dat_start() + Address(char_offset.0);
             let char_ = self.read(char_addr).unwrap();
-            let char_row = self.read_char_row_at(char_, (translated_y % Wrapping(8)).0, self.get_bg_char_addr_start());
+            let char_row = self.read_char_row_at(
+                char_,
+                (translated_y % Wrapping(8)).0,
+                self.get_bg_char_addr_start(),
+            );
 
-            let color_index = char_row[(translated_x % Wrapping(8)).0  as usize] as usize;
+            let color_index = char_row[(translated_x % Wrapping(8)).0 as usize] as usize;
             self.get_back_framebuffer()[screen_y as usize][screen_x as usize] = COLORS[color_index];
         }
     }
@@ -194,6 +211,14 @@ impl Lcd {
 
     fn is_bg_enabled(&self) -> bool {
         self.lcdc & BG_ENABLED_FLAG != 0
+    }
+
+    fn is_lyc_int_enabled(&self) -> bool {
+        self.stat & LYC_MATCH_INT_FLAG != 0
+    }
+
+    fn is_hblank_int_enabled(&self) -> bool {
+        self.stat & MODE_00_INT_FLAG != 0
     }
 
     fn get_bg_char_addr_start(&self) -> Address {
