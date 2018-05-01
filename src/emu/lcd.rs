@@ -187,19 +187,23 @@ impl Lcd {
                 Wrapping(translated_x.0 as u16) / Wrapping(PIXEL_PER_CHAR as u16) + char_y_offset;
             let char_addr = self.get_bg_code_dat_start() + Address(char_offset.0);
             let char_ = self.read(char_addr).unwrap();
-            let char_row = self.read_char_row_at(
-                char_,
-                (translated_y % Wrapping(8)).0,
-                self.get_bg_char_addr_start(),
-            );
+            let (base_addr, signed) = self.get_bg_char_addr_start();
+            let char_row =
+                self.read_char_row_at(char_, (translated_y % Wrapping(8)).0, base_addr, signed);
 
             let color_index = char_row[(translated_x % Wrapping(8)).0 as usize] as usize;
             self.get_back_framebuffer()[screen_y as usize][screen_x as usize] = COLORS[color_index];
         }
     }
 
-    fn read_char_row_at(&self, char_: u8, row: u8, base_address: Address) -> CharRow {
-        let char_address = base_address + Address(BYTES_PER_CHAR * (char_ as u16));
+    fn read_char_row_at(&self, char_: u8, row: u8, base_address: Address, signed: bool) -> CharRow {
+        let char_address = if signed {
+            let chari = (char_ as i8) as i32;
+            let a = base_address.0 as i32 + BYTES_PER_CHAR as i32 * chari;
+            Address(a as u16)
+        } else {
+            base_address + Address(BYTES_PER_CHAR * (char_ as u16))
+        };
         let row_address = char_address + Address(BYTES_PER_CHAR_ROW * (row as u16));
         let b1 = self.read(row_address).unwrap();
         let b2 = self.read(row_address + Address(1)).unwrap();
@@ -222,11 +226,11 @@ impl Lcd {
         self.stat & MODE_00_INT_FLAG != 0
     }
 
-    fn get_bg_char_addr_start(&self) -> Address {
+    fn get_bg_char_addr_start(&self) -> (Address, bool) {
         if self.lcdc & BGD_CHAR_DAT_FLAG == 0 {
-            Address(0x9000)
+            (Address(0x9000), true)
         } else {
-            Address(0x8000)
+            (Address(0x8000), false)
         }
     }
 
@@ -240,10 +244,10 @@ impl Lcd {
 
     pub fn render_char_dat(&self, high: bool) -> Box<Framebuffer> {
         let mut fb = Box::new([[Pixel(255, 255, 0, 255); SCREEN_SIZE.0]; SCREEN_SIZE.1]);
-        let start_addr = if high {
-            Address(0x9000)
+        let (start_addr, signed) = if high {
+            (Address(0x9000), true)
         } else {
-            Address(0x8000)
+            (Address(0x8000), false)
         };
 
         const CHARS_PER_ROW: u8 = (SCREEN_SIZE.0 as u8 / PIXEL_PER_CHAR);
@@ -252,7 +256,7 @@ impl Lcd {
             let base_y = (char_ / CHARS_PER_ROW) * 8;
 
             for y in 0..PIXEL_PER_CHAR {
-                let row = self.read_char_row_at(char_, y, start_addr);
+                let row = self.read_char_row_at(char_, y, start_addr, signed);
                 for x in 0..PIXEL_PER_CHAR {
                     let color_index = row[x as usize];
                     fb[(base_y + y) as usize][(base_x + x) as usize] = COLORS[color_index];
