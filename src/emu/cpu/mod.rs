@@ -15,6 +15,8 @@ pub const CLOCK_RATE: u64 = 4_190_000;
 
 mod register;
 mod interrupt;
+#[cfg(test)]
+mod test;
 
 pub use self::register::{Register16, Register8};
 pub use self::interrupt::Interrupt;

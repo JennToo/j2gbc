@@ -1,7 +1,7 @@
 use std::fmt::Display;
 use std::fmt;
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum Register8 {
     A,
     B,
@@ -13,7 +13,7 @@ pub enum Register8 {
     F,
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum Register16 {
     AF,
     BC,
