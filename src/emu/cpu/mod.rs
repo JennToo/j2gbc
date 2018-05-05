@@ -100,7 +100,7 @@ impl Cpu {
                 try!(self.execute_logic(l));
             }
         }
-        self.cycle += i.cycles() as u64;
+        self.cycle += u64::from(i.cycles());
         Ok(())
     }
 
@@ -385,12 +385,12 @@ impl Cpu {
                 try!(self.write_indirect(Register16::HL, v));
             }
             Load::LdNCA => {
-                let a = Address(self[Register8::C] as u16 + 0xFF00);
+                let a = Address(u16::from(self[Register8::C]) + 0xFF00);
                 let v = self[Register8::A];
                 try!(self.mmu.write(a, v));
             }
             Load::LdANC => {
-                let a = Address(self[Register8::C] as u16 + 0xFF00);
+                let a = Address(u16::from(self[Register8::C]) + 0xFF00);
                 let v = try!(self.mmu.read(a));
                 self[Register8::A] = v;
             }
@@ -490,7 +490,7 @@ impl Cpu {
         }
         self.last_instructions.push_back((self.pc, instruction));
 
-        self.pc += Address(len as u16);
+        self.pc += Address(u16::from(len));
         try!(self.execute(instruction));
 
         self.drive_peripherals()
@@ -611,7 +611,7 @@ pub fn duration_to_cycle_count(duration: &Duration) -> u64 {
     // Clock for the CPU is 4.19 MHz
     const NSEC_PER_SEC: u64 = 1_000_000_000;
     let scount = duration.as_secs() * CLOCK_RATE;
-    let ncount = (CLOCK_RATE * duration.subsec_nanos() as u64) / NSEC_PER_SEC;
+    let ncount = CLOCK_RATE * u64::from(duration.subsec_nanos()) / NSEC_PER_SEC;
     scount + ncount
 }
 

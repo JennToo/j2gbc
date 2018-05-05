@@ -65,9 +65,7 @@ impl MemDevice for Mmu {
             self.lcd.read(a)
         } else if a.in_(RNG_SND_WAV_RAM) || a.in_(RNG_SND_REGS) {
             self.audio.read(a)
-        } else if a == REG_P1 {
-            Ok(0)
-        } else if a == REG_SB || a == REG_SC {
+        } else if a == REG_P1 || a == REG_SB || a == REG_SC {
             Ok(0)
         } else {
             println!("MMU: Unimplemented memory read at address {:?}", a);
@@ -80,7 +78,7 @@ impl MemDevice for Mmu {
             println!("Write watchpoint for {:?}", a);
             Err(())
         } else if a == REG_DMA {
-            self.dma(Address((v as u16) << 8))
+            self.dma(Address((u16::from(v)) << 8))
         } else if a.in_(RNG_INT_RAM) {
             self.internal_ram.write(a - RNG_INT_RAM.0, v)
         } else if a.in_(RNG_ROM_BANK0) || a.in_(RNG_ROM_BANK1) || a.in_(RNG_EXT_RAM)
@@ -98,9 +96,7 @@ impl MemDevice for Mmu {
             self.lcd.write(a, v)
         } else if a.in_(RNG_SND_WAV_RAM) || a.in_(RNG_SND_REGS) {
             self.audio.write(a, v)
-        } else if a == REG_P1 {
-            Ok(())
-        } else if a == REG_SB || a == REG_SC {
+        } else if a == REG_P1 || a == REG_SB || a == REG_SC {
             Ok(())
         } else {
             println!("MMU: Unimplemented memory write at address {:?}", a);

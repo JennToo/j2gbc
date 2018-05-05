@@ -1,3 +1,5 @@
+#![allow(unknown_lints)]
+
 extern crate linenoise;
 extern crate sdl2;
 

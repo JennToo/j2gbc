@@ -80,7 +80,7 @@ impl Flags {
 }
 
 pub fn hi_lo(hi: u8, lo: u8) -> u16 {
-    (hi as u16) << 8 | lo as u16
+    u16::from(hi) << 8 | u16::from(lo)
 }
 
 pub fn hi(v: u16) -> u8 {
@@ -106,16 +106,16 @@ pub fn add(l: u8, r: u8) -> (u8, Flags) {
     let v = (Wrapping(l) + Wrapping(r)).0;
     f.set_zero(v == 0);
     f.set_halfcarry((l & 0x0F) + (r & 0x0F) > 0x0F);
-    f.set_carry((l as u16) + (r as u16) > 0xFF);
+    f.set_carry(u16::from(l) + u16::from(r) > 0xFF);
     f.set_subtract(false);
     (v, f)
 }
 
 pub fn add16(l: u16, r: u16, mut f: Flags) -> (u16, Flags) {
-    let v = ((Wrapping(l) + Wrapping(r))).0;
+    let v = (Wrapping(l) + Wrapping(r)).0;
     f.set_subtract(false);
     f.set_halfcarry((l & 0x0FFF) + (r & 0x0FFF) > 0x0FFF);
-    f.set_carry((l as u32) + (r as u32) > 0xFFFF);
+    f.set_carry(u32::from(l) + u32::from(r) > 0xFFFF);
     (v, f)
 }
 
@@ -237,6 +237,7 @@ pub fn rrc(v: u8, mut f: Flags) -> (u8, Flags) {
 // |   DEC     |    1    |     7-F      |   0    |     0-9      |   A0    |   1   |
 // |   NEG     |    1    |     6-F      |   1    |     6-F      |   9A    |   1   |
 // |------------------------------------------------------------------------------|
+#[allow(if_same_then_else)]
 pub fn daa(v: u8, mut f: Flags) -> (u8, Flags) {
     let hi = v >> 4;
     let lo = v & 0xF;

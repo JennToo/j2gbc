@@ -7,7 +7,7 @@ use super::mem::Address;
 
 pub fn debug(cpu: &mut Cpu) {
     println!("Entering debugger");
-    for &(a, i) in cpu.last_instructions.iter() {
+    for &(a, i) in &cpu.last_instructions {
         println!("    {}: {}", a, i);
     }
     print_next_instruction(cpu);
@@ -16,15 +16,14 @@ pub fn debug(cpu: &mut Cpu) {
 
     loop {
         if let Some(input) = linenoise::input("> ") {
-            let mut pieces: Vec<String> =
-                input.as_str().split(' ').map(|s| String::from(s)).collect();
+            let mut pieces: Vec<String> = input.as_str().split(' ').map(String::from).collect();
             let cmd = pieces.remove(0);
             let result = if input.as_str() == "" {
-                execute_command(prev_cmd.clone(), prev_args.clone(), cpu)
+                execute_command(&prev_cmd, &prev_args, cpu)
             } else {
                 prev_cmd = cmd.clone();
                 prev_args = pieces.clone();
-                execute_command(cmd, pieces, cpu)
+                execute_command(&cmd, &pieces, cpu)
             };
             if !result {
                 return;
@@ -40,8 +39,8 @@ fn print_next_instruction(cpu: &mut Cpu) {
     }
 }
 
-fn execute_command(cmd: String, args: Vec<String>, cpu: &mut Cpu) -> bool {
-    match cmd.as_str() {
+fn execute_command(cmd: &str, args: &[String], cpu: &mut Cpu) -> bool {
+    match cmd {
         "exit" => std::process::exit(0),
         "r" => dump_regs(cpu),
         "c" => return false,

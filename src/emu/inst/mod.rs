@@ -147,13 +147,13 @@ impl Instruction {
             0xF0 => Ok((
                 Instruction::Load(Load::LdRM(
                     Register8::A,
-                    Address(0xFF00) + Address(bytes[1] as u16),
+                    Address(0xFF00) + Address(u16::from(bytes[1])),
                 )),
                 2,
             )),
             0xE0 => Ok((
                 Instruction::Load(Load::LdMR(
-                    Address(0xFF00) + Address(bytes[1] as u16),
+                    Address(0xFF00) + Address(u16::from(bytes[1])),
                     Register8::A,
                 )),
                 2,

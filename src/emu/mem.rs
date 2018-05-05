@@ -56,7 +56,7 @@ impl Add<i8> for Address {
     type Output = Address;
 
     fn add(self, o: i8) -> Address {
-        Address((self.0 as i32 + o as i32) as u16)
+        Address((i32::from(self.0) + i32::from(o)) as u16)
     }
 }
 
@@ -118,7 +118,7 @@ pub trait MemDevice {
     }
 
     fn read16(&self, a: Address) -> Result<u16, ()> {
-        Ok((try!(self.read(a)) as u16) << 8 | (try!(self.read(a + Address(1))) as u16))
+        Ok((u16::from(try!(self.read(a)))) << 8 | (u16::from(try!(self.read(a + Address(1))))))
     }
 }
 

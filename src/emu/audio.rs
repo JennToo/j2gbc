@@ -207,3 +207,9 @@ impl MemDevice for Audio {
         }
     }
 }
+
+impl Default for Audio {
+    fn default() -> Audio {
+        Audio::new()
+    }
+}

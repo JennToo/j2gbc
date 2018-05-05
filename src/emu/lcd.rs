@@ -131,10 +131,8 @@ impl Lcd {
         if cycle >= self.next_hblank_cycle {
             self.do_hblank(cycle);
 
-            if self.ly == self.lyc && self.is_lyc_int_enabled() {
+            if (self.ly == self.lyc && self.is_lyc_int_enabled()) || self.is_hblank_int_enabled() {
                 // TODO: This should actually happen at the start of the line I think
-                Some(Interrupt::LCDC)
-            } else if self.is_hblank_int_enabled() {
                 Some(Interrupt::LCDC)
             } else {
                 None
@@ -183,10 +181,11 @@ impl Lcd {
         for screen_x in 0..SCREEN_SIZE.0 {
             let translated_x = Wrapping(screen_x as u8) + Wrapping(self.sx); // Implicit % 256
 
-            let char_y_offset = Wrapping(translated_y.0 as u16) / Wrapping(PIXEL_PER_CHAR as u16)
-                * Wrapping(BG_CHARS_PER_ROW as u16);
-            let char_offset =
-                Wrapping(translated_x.0 as u16) / Wrapping(PIXEL_PER_CHAR as u16) + char_y_offset;
+            let char_y_offset = Wrapping(u16::from(translated_y.0))
+                / Wrapping(u16::from(PIXEL_PER_CHAR))
+                * Wrapping(u16::from(BG_CHARS_PER_ROW));
+            let char_offset = Wrapping(u16::from(translated_x.0))
+                / Wrapping(u16::from(PIXEL_PER_CHAR)) + char_y_offset;
             let char_addr = self.get_bg_code_dat_start() + Address(char_offset.0);
             let char_ = self.read(char_addr).unwrap();
             let (base_addr, signed) = self.get_bg_char_addr_start();
@@ -200,13 +199,13 @@ impl Lcd {
 
     fn read_char_row_at(&self, char_: u8, row: u8, base_address: Address, signed: bool) -> CharRow {
         let char_address = if signed {
-            let chari = (char_ as i8) as i32;
-            let a = base_address.0 as i32 + BYTES_PER_CHAR as i32 * chari;
+            let chari = i32::from(char_ as i8);
+            let a = i32::from(base_address.0) + i32::from(BYTES_PER_CHAR) * chari;
             Address(a as u16)
         } else {
-            base_address + Address(BYTES_PER_CHAR * (char_ as u16))
+            base_address + Address(BYTES_PER_CHAR * u16::from(char_))
         };
-        let row_address = char_address + Address(BYTES_PER_CHAR_ROW * (row as u16));
+        let row_address = char_address + Address(BYTES_PER_CHAR_ROW * u16::from(row));
         let b1 = self.read(row_address).unwrap();
         let b2 = self.read(row_address + Address(1)).unwrap();
         let mut row = [0; 8];
@@ -281,7 +280,8 @@ impl Lcd {
 
         for char_y in 0..BG_CHARS_PER_ROW {
             for char_x in 0..BG_CHARS_PER_ROW {
-                let char_offset = Address(char_x as u16 + char_y as u16 * BG_CHARS_PER_ROW as u16);
+                let char_offset =
+                    Address(u16::from(char_x) + u16::from(char_y) * u16::from(BG_CHARS_PER_ROW));
                 let char_ = self.read(code_start + char_offset).unwrap();
 
                 for y in 0..PIXEL_PER_CHAR {
@@ -413,5 +413,11 @@ impl MemDevice for Lcd {
                 }
             }
         }
+    }
+}
+
+impl Default for Lcd {
+    fn default() -> Lcd {
+        Lcd::new()
     }
 }

@@ -145,7 +145,7 @@ fn copy_framebuffer<'r>(fb: &Framebuffer, gb_screen: &mut Texture<'r>) -> Result
                 }
             }
         })
-        .map_err(|e| format!("{}", e))
+        .map_err(|e| e.to_string())
 }
 
 fn copy_bgbuffer<'r>(fb: &BgBuffer, gb_screen: &mut Texture<'r>) -> Result<(), String> {
@@ -163,5 +163,5 @@ fn copy_bgbuffer<'r>(fb: &BgBuffer, gb_screen: &mut Texture<'r>) -> Result<(), S
                 }
             }
         })
-        .map_err(|e| format!("{}", e))
+        .map_err(|e| e.to_string())
 }

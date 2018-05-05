@@ -3,7 +3,7 @@ use super::Mbc;
 
 const RNG_BANK_SELECT: AddressRange = AddressRange(Address(0x2000), Address(0x4000));
 const RNG_RAMCS: AddressRange = AddressRange(Address(0x0000), Address(0x2000));
-const MASK_BANK_SELECT: u8 = 0b00011111;
+const MASK_BANK_SELECT: u8 = 0b0001_1111;
 
 pub struct Mbc1 {
     ram_protected: bool,
