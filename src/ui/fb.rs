@@ -4,7 +4,7 @@ use sdl2::rect::Rect;
 use sdl2::video::WindowContext;
 
 use emu::system::System;
-use emu::lcd::{Framebuffer, SCREEN_SIZE};
+use emu::lcd::{BgBuffer, Framebuffer, SCREEN_SIZE};
 
 pub enum RenderingState {
     Normal,
@@ -13,6 +13,7 @@ pub enum RenderingState {
 
 pub struct Framebuffers<'r> {
     lcd_screen: Texture<'r>,
+    bg_screen: Texture<'r>,
     pub rendering_state: RenderingState,
 }
 
@@ -25,9 +26,11 @@ impl<'r> Framebuffers<'r> {
             SCREEN_SIZE.0 as u32,
             SCREEN_SIZE.1 as u32
         ));
+        let bg_screen = try!(Framebuffers::make_tex(texture_creator, 256, 256));
 
         Ok(Framebuffers {
             lcd_screen,
+            bg_screen,
             rendering_state: RenderingState::Normal,
         })
     }
@@ -57,20 +60,54 @@ impl<'r> Framebuffers<'r> {
                 let lcd_prop_size =
                     proportional_subset((SCREEN_SIZE.0 as u32, SCREEN_SIZE.1 as u32), window_size);
                 let lcd_center_offset = center_in(lcd_prop_size, window_size);
-                let gb_screen_target = Rect::new(
+                let target = Rect::new(
                     lcd_center_offset.0 as i32,
                     lcd_center_offset.1 as i32,
                     lcd_prop_size.0,
                     lcd_prop_size.1,
                 );
-                try!(window_canvas.copy(&self.lcd_screen, None, gb_screen_target));
+                try!(window_canvas.copy(&self.lcd_screen, None, target));
             }
             RenderingState::Debug => {
+                let fb = system.get_framebuffer();
+                try!(copy_framebuffer(&fb, &mut self.lcd_screen));
+                let target = Rect::new(4, 4, SCREEN_SIZE.0 as u32 * 2, SCREEN_SIZE.1 as u32 * 2);
+                try!(window_canvas.copy(&self.lcd_screen, None, target));
+
+                let fb = system.cpu.mmu.lcd.render_char_dat(false);
+                try!(copy_framebuffer(&fb, &mut self.lcd_screen));
+                let target = Rect::new(
+                    4,
+                    8 + (SCREEN_SIZE.1 as i32) * 2,
+                    SCREEN_SIZE.0 as u32 * 2,
+                    SCREEN_SIZE.1 as u32 * 2,
+                );
+                try!(window_canvas.copy(&self.lcd_screen, None, target));
+
                 let fb = system.cpu.mmu.lcd.render_char_dat(true);
                 try!(copy_framebuffer(&fb, &mut self.lcd_screen));
-                let gb_screen_target =
-                    Rect::new(4, 4, SCREEN_SIZE.0 as u32 * 2, SCREEN_SIZE.1 as u32 * 2);
-                try!(window_canvas.copy(&self.lcd_screen, None, gb_screen_target));
+                let target = Rect::new(
+                    4,
+                    4 + (4 + (SCREEN_SIZE.1 as i32) * 2) * 2,
+                    SCREEN_SIZE.0 as u32 * 2,
+                    SCREEN_SIZE.1 as u32 * 2,
+                );
+                try!(window_canvas.copy(&self.lcd_screen, None, target));
+
+                let fb = system.cpu.mmu.lcd.render_background(false);
+                try!(copy_bgbuffer(&fb, &mut self.bg_screen));
+                let target = Rect::new(8 + (SCREEN_SIZE.0 as i32) * 2, 4, 256 * 2, 256 * 2);
+                try!(window_canvas.copy(&self.bg_screen, None, target));
+
+                let fb = system.cpu.mmu.lcd.render_background(true);
+                try!(copy_bgbuffer(&fb, &mut self.bg_screen));
+                let target = Rect::new(
+                    8 + (SCREEN_SIZE.0 as i32) * 2,
+                    4 + (4 + 256 * 2),
+                    256 * 2,
+                    256 * 2,
+                );
+                try!(window_canvas.copy(&self.bg_screen, None, target));
             }
         }
 
@@ -99,6 +136,24 @@ fn copy_framebuffer<'r>(fb: &Framebuffer, gb_screen: &mut Texture<'r>) -> Result
             for y in 0..SCREEN_SIZE.1 {
                 for x in 0..SCREEN_SIZE.0 {
                     let index = 4 * x + 4 * y * SCREEN_SIZE.0;
+
+                    let pixel = fb[y][x];
+                    outfb[index] = pixel.3;
+                    outfb[index + 1] = pixel.2;
+                    outfb[index + 2] = pixel.1;
+                    outfb[index + 3] = pixel.0;
+                }
+            }
+        })
+        .map_err(|e| format!("{}", e))
+}
+
+fn copy_bgbuffer<'r>(fb: &BgBuffer, gb_screen: &mut Texture<'r>) -> Result<(), String> {
+    gb_screen
+        .with_lock(None, |outfb, _| {
+            for y in 0..256 {
+                for x in 0..256 {
+                    let index = 4 * x + 4 * y * 256;
 
                     let pixel = fb[y][x];
                     outfb[index] = pixel.3;

@@ -47,6 +47,8 @@ const BGD_CODE_DAT_FLAG: u8 = 0b0000_1000;
 
 pub type Framebuffer = [FrameRow; SCREEN_SIZE.1];
 type FrameRow = [Pixel; SCREEN_SIZE.0];
+pub type BgBuffer = [BgRow; 256];
+type BgRow = [Pixel; 256];
 type CharRow = [usize; 8];
 
 pub struct Lcd {
@@ -260,6 +262,35 @@ impl Lcd {
                 for x in 0..PIXEL_PER_CHAR {
                     let color_index = row[x as usize];
                     fb[(base_y + y) as usize][(base_x + x) as usize] = COLORS[color_index];
+                }
+            }
+        }
+
+        fb
+    }
+
+    pub fn render_background(&self, first: bool) -> Box<BgBuffer> {
+        let mut fb = Box::new([[Pixel(255, 255, 0, 255); 256]; 256]);
+
+        let code_start = if first {
+            Address(0x9800)
+        } else {
+            Address(0x9C00)
+        };
+        let (start_addr, signed) = self.get_bg_char_addr_start();
+
+        for char_y in 0..BG_CHARS_PER_ROW {
+            for char_x in 0..BG_CHARS_PER_ROW {
+                let char_offset = Address(char_x as u16 + char_y as u16 * BG_CHARS_PER_ROW as u16);
+                let char_ = self.read(code_start + char_offset).unwrap();
+
+                for y in 0..PIXEL_PER_CHAR {
+                    let row = self.read_char_row_at(char_, y, start_addr, signed);
+                    for x in 0..PIXEL_PER_CHAR {
+                        let color_index = row[x as usize];
+                        fb[(char_y * PIXEL_PER_CHAR + y) as usize]
+                            [(char_x * PIXEL_PER_CHAR + x) as usize] = COLORS[color_index];
+                    }
                 }
             }
         }
