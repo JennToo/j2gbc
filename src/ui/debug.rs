@@ -26,11 +26,12 @@ impl<'a> Debug<'a> {
         system: &System,
     ) -> Result<(), String> {
         let line_spacing = self.font.height() + 4;
+        let column = 1000;
         self.draw_line(
             canvas,
             texture_creator,
             "Registers:",
-            (1000, 0 * line_spacing),
+            (column, 0 * line_spacing),
         )?;
         self.draw_line(
             canvas,
@@ -41,7 +42,7 @@ impl<'a> Debug<'a> {
                 system.cpu[Register8::F],
                 system.cpu.sp
             ),
-            (1000, 1 * line_spacing),
+            (column, 1 * line_spacing),
         )?;
         self.draw_line(
             canvas,
@@ -52,7 +53,7 @@ impl<'a> Debug<'a> {
                 system.cpu[Register8::C],
                 system.cpu.pc
             ),
-            (1000, 2 * line_spacing),
+            (column, 2 * line_spacing),
         )?;
         self.draw_line(
             canvas,
@@ -63,7 +64,7 @@ impl<'a> Debug<'a> {
                 system.cpu[Register8::E],
                 system.cpu.interrupt_master_enable
             ),
-            (1000, 3 * line_spacing),
+            (column, 3 * line_spacing),
         )?;
         self.draw_line(
             canvas,
@@ -73,7 +74,7 @@ impl<'a> Debug<'a> {
                 system.cpu[Register8::H],
                 system.cpu[Register8::L]
             ),
-            (1000, 4 * line_spacing),
+            (column, 4 * line_spacing),
         )?;
 
         Ok(())
