@@ -8,6 +8,7 @@ use emu::system::System;
 use emu::lcd::SCREEN_SIZE;
 
 mod fb;
+mod debug;
 
 use self::fb::{Framebuffers, RenderingState};
 
@@ -44,6 +45,9 @@ impl Window {
         let texture_creator = self.window_canvas.texture_creator();
         let mut fbs = Framebuffers::new(&texture_creator)?;
         let mut dt = Instant::now();
+        let ttf_ctx = sdl2::ttf::init().map_err(|e| e.to_string())?;
+
+        let mut debug = debug::Debug::new(&ttf_ctx)?;
 
         loop {
             for event in self.ctx.event_pump().unwrap().poll_iter() {
@@ -80,6 +84,7 @@ impl Window {
             self.window_canvas.set_draw_color(Color::RGB(100, 100, 100));
             try!(self.window_canvas.fill_rect(None));
             try!(fbs.render(&system, &mut self.window_canvas));
+            debug.draw(&mut self.window_canvas, &texture_creator, &system)?;
             self.window_canvas.present();
         }
     }
