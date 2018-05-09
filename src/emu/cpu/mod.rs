@@ -8,7 +8,6 @@ use super::alu::*;
 use super::inst::{Arith, Bits, Control, Instruction, Load, Logic};
 use super::mem::{Address, MemDevice};
 use super::mmu::Mmu;
-use super::debug::debug;
 use super::cart::Cart;
 
 pub const CLOCK_RATE: u64 = 4_190_000;
@@ -30,6 +29,7 @@ pub struct Cpu {
     pub interrupt_master_enable: bool,
     halted: bool,
 
+    pub debug_halted: bool,
     pub last_instructions: VecDeque<(Address, Instruction)>,
     pub breakpoints: HashSet<Address>,
 }
@@ -47,6 +47,7 @@ impl Cpu {
             interrupt_master_enable: false,
             halted: false,
 
+            debug_halted: false,
             last_instructions: VecDeque::new(),
             breakpoints: initial_breakpoints,
         }
@@ -499,15 +500,15 @@ impl Cpu {
     pub fn run_for_duration(&mut self, duration: &Duration) {
         let cycles_to_run = duration_to_cycle_count(&duration);
         let stop_at_cycle = self.cycle() + cycles_to_run;
-        while self.cycle() < stop_at_cycle {
+        while self.cycle() < stop_at_cycle && !self.debug_halted {
             if self.run_cycle().is_err() {
-                debug(self);
+                self.debug_halted = true;
             }
 
             if self.halted {
                 self.cycle = min(self.mmu.lcd.get_next_event_cycle(), stop_at_cycle);
                 if self.drive_peripherals().is_err() {
-                    debug(self);
+                    self.debug_halted = true;
                 }
             }
         }

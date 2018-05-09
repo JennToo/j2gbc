@@ -6,6 +6,7 @@ use sdl2::video::WindowContext;
 use emu::system::System;
 use emu::lcd::{BgBuffer, Framebuffer, SCREEN_SIZE};
 
+#[derive(PartialEq, Eq, Copy, Clone)]
 pub enum RenderingState {
     Normal,
     Debug,

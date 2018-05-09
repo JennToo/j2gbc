@@ -1,14 +1,21 @@
+use std;
 use sdl2::ttf;
 use sdl2::rect::Rect;
 use sdl2::render::{TextureCreator, WindowCanvas};
 use sdl2::pixels::Color;
 use sdl2::video::WindowContext;
 
+use emu::mem::Address;
+use emu::cpu::Cpu;
 use emu::system::System;
 use emu::cpu::Register8;
 
 pub struct Debug<'a> {
     font: ttf::Font<'a, 'static>,
+    console: Vec<String>,
+    console_scollback: usize,
+    command_buffer: String,
+    prev_command_buffer: String,
 }
 
 impl<'a> Debug<'a> {
@@ -16,10 +23,71 @@ impl<'a> Debug<'a> {
         Ok(Debug {
             font: ctx.load_font("MOZART_0.ttf", 24)
                 .map_err(|e| e.to_string())?,
+            console: Vec::new(),
+            console_scollback: 0,
+            command_buffer: String::new(),
+            prev_command_buffer: String::new(),
         })
     }
 
+    pub fn print(&mut self, s: String) {
+        self.console.push(s);
+    }
+
+    pub fn command_keystroke(&mut self, s: &str) {
+        self.command_buffer.push_str(s);
+    }
+
+    pub fn command_backspace(&mut self) {
+        self.command_buffer.pop();
+    }
+
     pub fn draw(
+        &mut self,
+        canvas: &mut WindowCanvas,
+        texture_creator: &TextureCreator<WindowContext>,
+        system: &System,
+    ) -> Result<(), String> {
+        self.draw_regs(canvas, texture_creator, system)?;
+        self.draw_command_buffer(canvas, texture_creator)?;
+        self.draw_console(canvas, texture_creator)
+    }
+
+    fn draw_command_buffer(
+        &mut self,
+        canvas: &mut WindowCanvas,
+        texture_creator: &TextureCreator<WindowContext>,
+    ) -> Result<(), String> {
+        let line_spacing = self.font.height() + 4;
+        let column = 1000;
+        let y = canvas.output_size()?.1 as i32 - (4 * line_spacing);
+        let s = self.command_buffer.clone();
+        self.draw_line(canvas, texture_creator, &format!("> {}", s), (column, y))
+    }
+
+    fn draw_console(
+        &mut self,
+        canvas: &mut WindowCanvas,
+        texture_creator: &TextureCreator<WindowContext>,
+    ) -> Result<(), String> {
+        let line_spacing = self.font.height() + 4;
+        let column = 1000;
+        let min_y = 5 * line_spacing;
+        let max_y = canvas.output_size()?.1 as i32 - (5 * line_spacing);
+        let mut cur_y = max_y;
+
+        for s in self.console.clone().iter().rev() {
+            self.draw_line(canvas, texture_creator, s, (column, cur_y))?;
+            cur_y -= line_spacing;
+            if cur_y < min_y {
+                break;
+            }
+        }
+
+        Ok(())
+    }
+
+    fn draw_regs(
         &mut self,
         canvas: &mut WindowCanvas,
         texture_creator: &TextureCreator<WindowContext>,
@@ -87,6 +155,9 @@ impl<'a> Debug<'a> {
         line: &str,
         (x, y): (i32, i32),
     ) -> Result<(), String> {
+        if line.len() == 0 {
+            return Ok(());
+        }
         let s = self.font
             .render(line)
             .solid(Color::RGB(255, 255, 255))
@@ -98,5 +169,58 @@ impl<'a> Debug<'a> {
             .map_err(|e| e.to_string())?;
         let target = Rect::new(x, y, w, h);
         canvas.copy(&t, None, target).map_err(|e| e.to_string())
+    }
+
+    pub fn start_debugging(&mut self, system: &mut System) {
+        for &(a, i) in &system.cpu.last_instructions {
+            self.print(format!("{}: {}", a, i));
+        }
+        self.print_next_instruction(&mut system.cpu);
+    }
+
+    pub fn run_command(&mut self, system: &mut System) {
+        if self.command_buffer == "" {
+            self.command_buffer = self.prev_command_buffer.clone();
+        }
+        let mut pieces: Vec<String> = self.command_buffer.split(' ').map(String::from).collect();
+        let cmd = pieces.remove(0);
+        let cmdline = format!("> {}", self.command_buffer);
+        self.print(cmdline);
+        self.execute_command(&cmd, &pieces, &mut system.cpu);
+        self.prev_command_buffer = self.command_buffer.clone();
+        self.command_buffer = String::new();
+    }
+
+    fn execute_command(&mut self, cmd: &str, args: &[String], cpu: &mut Cpu) -> bool {
+        match cmd {
+            "exit" => std::process::exit(0),
+            "c" => cpu.debug_halted = false,
+            "s" => {
+                let _ret = cpu.run_cycle();
+                self.print_next_instruction(cpu);
+            }
+            "w" => {
+                let address = Address(u16::from_str_radix(args[0].as_str(), 16).unwrap());
+                cpu.mmu.watchpoints.insert(address);
+            }
+            "uw" => {
+                let address = Address(u16::from_str_radix(args[0].as_str(), 16).unwrap());
+                cpu.mmu.watchpoints.remove(&address);
+            }
+            "b" => {
+                let address = Address(u16::from_str_radix(args[0].as_str(), 16).unwrap());
+                cpu.breakpoints.insert(address);
+            }
+            _ => self.print(format!("Unrecognized command: {}", cmd)),
+        }
+
+        true
+    }
+
+    fn print_next_instruction(&mut self, cpu: &mut Cpu) {
+        match cpu.fetch_instruction() {
+            Result::Ok((i, _)) => self.print(format!(" => {}: {}", cpu.pc, i)),
+            Result::Err(()) => self.print(format!("    FAILED TO READ NEXT INSTRUCTION")),
+        }
     }
 }

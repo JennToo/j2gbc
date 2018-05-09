@@ -70,6 +70,29 @@ impl Window {
                     } => {
                         fbs.rendering_state = RenderingState::Debug;
                     }
+                    Event::KeyDown {
+                        keycode: Some(Keycode::F4),
+                        ..
+                    } => {
+                        fbs.rendering_state = RenderingState::Debug;
+                        system.cpu.debug_halted = true;
+                        debug.start_debugging(&mut system);
+                    }
+                    Event::KeyDown {
+                        keycode: Some(Keycode::Backspace),
+                        ..
+                    } => {
+                        debug.command_backspace();
+                    }
+                    Event::TextInput { text, .. } => {
+                        debug.command_keystroke(text.as_str());
+                    }
+                    Event::KeyDown {
+                        keycode: Some(Keycode::Return),
+                        ..
+                    } => {
+                        debug.run_command(&mut system);
+                    }
                     _ => {}
                 }
             }
@@ -84,7 +107,9 @@ impl Window {
             self.window_canvas.set_draw_color(Color::RGB(100, 100, 100));
             try!(self.window_canvas.fill_rect(None));
             try!(fbs.render(&system, &mut self.window_canvas));
-            debug.draw(&mut self.window_canvas, &texture_creator, &system)?;
+            if fbs.rendering_state == RenderingState::Debug && system.cpu.debug_halted {
+                debug.draw(&mut self.window_canvas, &texture_creator, &system)?;
+            }
             self.window_canvas.present();
         }
     }
