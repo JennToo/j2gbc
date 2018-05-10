@@ -448,7 +448,7 @@ impl Instruction {
                 )),
 
                 _ => {
-                    println!(
+                    error!(
                         "Unknown instruction {:#X} {:#X} {:#X}",
                         bytes[0], bytes[1], bytes[2]
                     );
@@ -456,7 +456,7 @@ impl Instruction {
                 }
             },
             _ => {
-                println!(
+                error!(
                     "Unknown instruction {:#X} {:#X} {:#X}",
                     bytes[0], bytes[1], bytes[2]
                 );

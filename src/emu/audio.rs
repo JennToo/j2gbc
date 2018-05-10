@@ -103,7 +103,7 @@ impl MemDevice for Audio {
                 REG_NR51 => Ok(self.nr51),
                 REG_NR52 => Ok(self.nr52),
                 _ => {
-                    println!("Unimplemented sound register {:?}", a);
+                    error!("Unimplemented sound register {:?}", a);
                     Err(())
                 }
             }
@@ -200,7 +200,7 @@ impl MemDevice for Audio {
                     Ok(())
                 }
                 _ => {
-                    println!("Unimplemented sound register {:?}", a);
+                    error!("Unimplemented sound register {:?}", a);
                     Err(())
                 }
             }

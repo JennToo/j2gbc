@@ -8,7 +8,7 @@ use emu::system::System;
 use emu::lcd::SCREEN_SIZE;
 
 mod fb;
-mod debug;
+pub mod debug;
 
 use self::fb::{Framebuffers, RenderingState};
 
@@ -93,16 +93,32 @@ impl Window {
                     } => {
                         debug.run_command(&mut system);
                     }
+                    Event::KeyDown {
+                        keycode: Some(Keycode::Up),
+                        ..
+                    } => {
+                        debug.scroll_up(1);
+                    }
+                    Event::KeyDown {
+                        keycode: Some(Keycode::Down),
+                        ..
+                    } => {
+                        debug.scroll_down(1);
+                    }
                     _ => {}
                 }
             }
 
             let elapsed = dt.elapsed();
             if elapsed > Duration::from_millis(17) {
-                println!("Warning: Slow frame {:?}", elapsed);
+                //println!("Warning: Slow frame {:?}", elapsed);
             }
+            let was_debugging = system.cpu.debug_halted;
             system.run_for_duration(&elapsed);
             dt = Instant::now();
+            if !was_debugging && system.cpu.debug_halted {
+                debug.start_debugging(&mut system);
+            }
 
             self.window_canvas.set_draw_color(Color::RGB(100, 100, 100));
             try!(self.window_canvas.fill_rect(None));

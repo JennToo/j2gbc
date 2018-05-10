@@ -1,9 +1,12 @@
 use std;
+use std::sync::Mutex;
+
 use sdl2::ttf;
 use sdl2::rect::Rect;
 use sdl2::render::{TextureCreator, WindowCanvas};
 use sdl2::pixels::Color;
 use sdl2::video::WindowContext;
+use log::{set_logger, set_max_level, LevelFilter, Log, Metadata, Record};
 
 use emu::mem::Address;
 use emu::cpu::Cpu;
@@ -12,7 +15,6 @@ use emu::cpu::Register8;
 
 pub struct Debug<'a> {
     font: ttf::Font<'a, 'static>,
-    console: Vec<String>,
     console_scollback: usize,
     command_buffer: String,
     prev_command_buffer: String,
@@ -23,15 +25,10 @@ impl<'a> Debug<'a> {
         Ok(Debug {
             font: ctx.load_font("MOZART_0.ttf", 24)
                 .map_err(|e| e.to_string())?,
-            console: Vec::new(),
             console_scollback: 0,
             command_buffer: String::new(),
             prev_command_buffer: String::new(),
         })
-    }
-
-    pub fn print(&mut self, s: String) {
-        self.console.push(s);
     }
 
     pub fn command_keystroke(&mut self, s: &str) {
@@ -40,6 +37,18 @@ impl<'a> Debug<'a> {
 
     pub fn command_backspace(&mut self) {
         self.command_buffer.pop();
+    }
+
+    pub fn scroll_up(&mut self, n: usize) {
+        self.console_scollback += n;
+    }
+
+    pub fn scroll_down(&mut self, n: usize) {
+        if self.console_scollback >= n {
+            self.console_scollback -= n;
+        } else {
+            self.console_scollback = 0;
+        }
     }
 
     pub fn draw(
@@ -76,7 +85,9 @@ impl<'a> Debug<'a> {
         let max_y = canvas.output_size()?.1 as i32 - (5 * line_spacing);
         let mut cur_y = max_y;
 
-        for s in self.console.clone().iter().rev() {
+        let l = DEBUG_LOGGER.log.lock().unwrap();
+
+        for s in l.iter().rev().skip(self.console_scollback) {
             self.draw_line(canvas, texture_creator, s, (column, cur_y))?;
             cur_y -= line_spacing;
             if cur_y < min_y {
@@ -173,19 +184,19 @@ impl<'a> Debug<'a> {
 
     pub fn start_debugging(&mut self, system: &mut System) {
         for &(a, i) in &system.cpu.last_instructions {
-            self.print(format!("{}: {}", a, i));
+            info!("{}: {}", a, i);
         }
         self.print_next_instruction(&mut system.cpu);
     }
 
     pub fn run_command(&mut self, system: &mut System) {
+        self.console_scollback = 0;
         if self.command_buffer == "" {
             self.command_buffer = self.prev_command_buffer.clone();
         }
         let mut pieces: Vec<String> = self.command_buffer.split(' ').map(String::from).collect();
         let cmd = pieces.remove(0);
-        let cmdline = format!("> {}", self.command_buffer);
-        self.print(cmdline);
+        info!("> {}", self.command_buffer);
         self.execute_command(&cmd, &pieces, &mut system.cpu);
         self.prev_command_buffer = self.command_buffer.clone();
         self.command_buffer = String::new();
@@ -211,7 +222,7 @@ impl<'a> Debug<'a> {
                 let address = Address(u16::from_str_radix(args[0].as_str(), 16).unwrap());
                 cpu.breakpoints.insert(address);
             }
-            _ => self.print(format!("Unrecognized command: {}", cmd)),
+            _ => info!("Unrecognized command: {}", cmd),
         }
 
         true
@@ -219,8 +230,39 @@ impl<'a> Debug<'a> {
 
     fn print_next_instruction(&mut self, cpu: &mut Cpu) {
         match cpu.fetch_instruction() {
-            Result::Ok((i, _)) => self.print(format!(" => {}: {}", cpu.pc, i)),
-            Result::Err(()) => self.print(format!("    FAILED TO READ NEXT INSTRUCTION")),
+            Result::Ok((i, _)) => info!(" => {}: {}", cpu.pc, i),
+            Result::Err(()) => info!("    FAILED TO READ NEXT INSTRUCTION"),
         }
     }
+}
+
+struct DebugLogger {
+    log: Mutex<Vec<String>>,
+}
+
+lazy_static! {
+    static ref DEBUG_LOGGER: DebugLogger = {
+        set_max_level(LevelFilter::Debug);
+        DebugLogger {
+            log: Mutex::new(Vec::new())
+        }
+    };
+}
+
+impl Log for DebugLogger {
+    fn enabled(&self, _: &Metadata) -> bool {
+        true
+    }
+
+    fn log(&self, record: &Record) {
+        let r = record.args().to_string();
+        let mut l = self.log.lock().unwrap();
+        l.push(r);
+    }
+
+    fn flush(&self) {}
+}
+
+pub fn install_logger() {
+    set_logger(&*DEBUG_LOGGER).expect("Failed to install logger");
 }

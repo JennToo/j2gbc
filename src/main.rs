@@ -1,5 +1,9 @@
 #![allow(unknown_lints)]
 
+#[macro_use]
+extern crate lazy_static;
+#[macro_use]
+extern crate log;
 extern crate sdl2;
 
 use std::fs::File;
@@ -8,6 +12,7 @@ pub mod emu;
 pub mod ui;
 
 fn main() {
+    ui::debug::install_logger();
     let mut window = ui::Window::new().unwrap();
 
     let mut args = std::env::args();
@@ -15,12 +20,12 @@ fn main() {
     let cart_file = File::open(cart_path.clone()).unwrap();
     let c = emu::cart::Cart::load(cart_file).unwrap();
 
-    println!("Loaded cart {}:", cart_path);
-    println!("Name: {}", c.name());
-    println!("File Size: {} bytes", c.data.len());
-    println!("Cart type: {}", c.type_());
-    println!("ROM Size: {} bytes", c.rom_size());
-    println!("RAM Size: {} bytes", c.ram_size());
+    info!("Loaded cart {}:", cart_path);
+    info!("Name: {}", c.name());
+    info!("File Size: {} bytes", c.data.len());
+    info!("Cart type: {}", c.type_());
+    info!("ROM Size: {} bytes", c.rom_size());
+    info!("RAM Size: {} bytes", c.ram_size());
 
     let cpu = emu::cpu::Cpu::new(c);
     let system = emu::system::System::new(cpu);

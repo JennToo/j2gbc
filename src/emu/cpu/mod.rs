@@ -481,7 +481,7 @@ impl Cpu {
 
         if self.breakpoints.contains(&self.pc) {
             self.breakpoints.remove(&self.pc);
-            println!("Breakpoint");
+            error!("Breakpoint");
             return Err(());
         }
 

@@ -333,15 +333,15 @@ impl MemDevice for Lcd {
                 REG_SCX => Ok(self.sx),
                 REG_SCY => Ok(self.sy),
                 REG_BGP => {
-                    println!("Error: BGP is a write-only register");
+                    error!("Error: BGP is a write-only register");
                     Err(())
                 }
                 REG_DMA => {
-                    println!("DMA register is write-only");
+                    error!("DMA register is write-only");
                     Err(())
                 }
                 _ => {
-                    println!("Unimplemented LCD register {:?}", a);
+                    error!("Unimplemented LCD register {:?}", a);
                     Err(())
                 }
             }
@@ -360,7 +360,7 @@ impl MemDevice for Lcd {
         } else {
             match a {
                 REG_LY => {
-                    println!("LY is a read only register!");
+                    error!("LY is a read only register!");
                     Err(())
                 }
                 REG_LYC => {
@@ -408,7 +408,7 @@ impl MemDevice for Lcd {
                     Ok(())
                 }
                 _ => {
-                    println!("Unimplemented LCD register {:?}", a);
+                    error!("Unimplemented LCD register {:?}", a);
                     Err(())
                 }
             }

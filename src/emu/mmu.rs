@@ -47,7 +47,7 @@ impl Mmu {
 impl MemDevice for Mmu {
     fn read(&self, a: Address) -> Result<u8, ()> {
         if self.watchpoints.contains(&a) {
-            println!("Read watchpoint for {:?}", a);
+            info!("Read watchpoint for {:?}", a);
             Err(())
         } else if a.in_(RNG_INT_RAM) {
             self.internal_ram.read(a - RNG_INT_RAM.0)
@@ -68,14 +68,14 @@ impl MemDevice for Mmu {
         } else if a == REG_P1 || a == REG_SB || a == REG_SC {
             Ok(0)
         } else {
-            println!("MMU: Unimplemented memory read at address {:?}", a);
+            error!("MMU: Unimplemented memory read at address {:?}", a);
             Err(())
         }
     }
 
     fn write(&mut self, a: Address, v: u8) -> Result<(), ()> {
         if self.watchpoints.contains(&a) {
-            println!("Write watchpoint for {:?}", a);
+            info!("Write watchpoint for {:?}", a);
             Err(())
         } else if a == REG_DMA {
             self.dma(Address((u16::from(v)) << 8))
@@ -99,7 +99,7 @@ impl MemDevice for Mmu {
         } else if a == REG_P1 || a == REG_SB || a == REG_SC {
             Ok(())
         } else {
-            println!("MMU: Unimplemented memory write at address {:?}", a);
+            error!("MMU: Unimplemented memory write at address {:?}", a);
             Err(())
         }
     }

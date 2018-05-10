@@ -3,6 +3,10 @@ name = "j2gbc"
 version = "0.1.0"
 authors = ["Jennifer Wilcox <jennifer@nitori.nl>"]
 
+[dependencies]
+log = "*"
+lazy_static = "*"
+
 [dependencies.sdl2]
 version = "*"
 features = ["ttf"]

@@ -41,7 +41,7 @@ impl MemDevice for Mbc1 {
             Ok(())
         } else if a.in_(RNG_EXT_RAM) {
             if self.ram_protected {
-                println!("Error: RAM is not writable right now");
+                error!("Error: RAM is not writable right now");
                 Err(())
             } else {
                 self.ram.write(a - RNG_EXT_RAM.0, v)
@@ -50,7 +50,7 @@ impl MemDevice for Mbc1 {
             self.ram_protected = false;
             Ok(())
         } else {
-            println!("Unimplemented MBC1 register");
+            error!("Unimplemented MBC1 register");
             Err(())
         }
     }
