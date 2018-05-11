@@ -1,24 +1,24 @@
-use std::ops::{Index, IndexMut};
-use std::num::Wrapping;
-use std::time::Duration;
-use std::collections::{HashSet, VecDeque};
 use std::cmp::min;
+use std::collections::{HashSet, VecDeque};
+use std::num::Wrapping;
+use std::ops::{Index, IndexMut};
+use std::time::Duration;
 
 use super::alu::*;
+use super::cart::Cart;
 use super::inst::{Arith, Bits, Control, Instruction, Load, Logic};
 use super::mem::{Address, MemDevice};
 use super::mmu::Mmu;
-use super::cart::Cart;
 
 pub const CLOCK_RATE: u64 = 4_190_000;
 
-mod register;
 mod interrupt;
+mod register;
 #[cfg(test)]
 mod test;
 
-pub use self::register::{Register16, Register8};
 pub use self::interrupt::Interrupt;
+pub use self::register::{Register16, Register8};
 
 pub struct Cpu {
     registers: [u8; 8],

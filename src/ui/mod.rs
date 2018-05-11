@@ -4,11 +4,11 @@ use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
 use std::time::{Duration, Instant};
 
-use emu::system::System;
 use emu::lcd::SCREEN_SIZE;
+use emu::system::System;
 
-mod fb;
 pub mod debug;
+mod fb;
 
 use self::fb::{Framebuffers, RenderingState};
 
@@ -48,6 +48,10 @@ impl Window {
         let ttf_ctx = sdl2::ttf::init().map_err(|e| e.to_string())?;
 
         let mut debug = debug::Debug::new(&ttf_ctx)?;
+
+        fbs.rendering_state = RenderingState::Debug;
+        system.cpu.debug_halted = true;
+        debug.start_debugging(&mut system);
 
         loop {
             for event in self.ctx.event_pump().unwrap().poll_iter() {

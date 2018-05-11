@@ -1,10 +1,10 @@
 use sdl2;
-use sdl2::render::{Texture, TextureCreator, WindowCanvas};
 use sdl2::rect::Rect;
+use sdl2::render::{Texture, TextureCreator, WindowCanvas};
 use sdl2::video::WindowContext;
 
-use emu::system::System;
 use emu::lcd::{BgBuffer, Framebuffer, SCREEN_SIZE};
+use emu::system::System;
 
 #[derive(PartialEq, Eq, Copy, Clone)]
 pub enum RenderingState {

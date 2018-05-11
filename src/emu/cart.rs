@@ -1,8 +1,9 @@
-use std::io::Read;
 use std::io;
-use super::mem::{Address, MemDevice, RNG_ROM_BANK0, RNG_INTR_TABLE};
+use std::io::Read;
+
 use super::mbc::Mbc;
 use super::mbc::mbc1::Mbc1;
+use super::mem::{Address, ExtendedAddress, MemDevice, RNG_ROM_BANK0, RNG_ROM_BANK1, RNG_INTR_TABLE};
 
 pub struct Cart {
     pub data: Vec<u8>,
@@ -50,6 +51,14 @@ impl Cart {
             3 => 32_768,
             4 => 131_072,
             _ => unimplemented!(),
+        }
+    }
+
+    pub fn map_address_into_rom(&self, a: Address) -> ExtendedAddress {
+        if a.in_(RNG_ROM_BANK1) {
+            self.mbc.map_address_into_rom(a)
+        } else {
+            ExtendedAddress(u32::from(a.0))
         }
     }
 }

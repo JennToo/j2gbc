@@ -1,17 +1,17 @@
 use std;
 use std::sync::Mutex;
 
-use sdl2::ttf;
+use log::{set_logger, set_max_level, LevelFilter, Log, Metadata, Record};
+use sdl2::pixels::Color;
 use sdl2::rect::Rect;
 use sdl2::render::{TextureCreator, WindowCanvas};
-use sdl2::pixels::Color;
+use sdl2::ttf;
 use sdl2::video::WindowContext;
-use log::{set_logger, set_max_level, LevelFilter, Log, Metadata, Record};
 
-use emu::mem::Address;
 use emu::cpu::Cpu;
-use emu::system::System;
 use emu::cpu::Register8;
+use emu::mem::Address;
+use emu::system::System;
 
 pub struct Debug<'a> {
     font: ttf::Font<'a, 'static>,
@@ -244,7 +244,7 @@ lazy_static! {
     static ref DEBUG_LOGGER: DebugLogger = {
         set_max_level(LevelFilter::Debug);
         DebugLogger {
-            log: Mutex::new(Vec::new())
+            log: Mutex::new(Vec::new()),
         }
     };
 }

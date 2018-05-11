@@ -1,8 +1,8 @@
 use std::cmp::min;
 use std::num::Wrapping;
 
-use super::mem::{Address, MemDevice, RNG_LCD_BGDD1, RNG_LCD_BGDD2, Ram, RNG_CHAR_DAT, RNG_LCD_OAM};
 use super::cpu::{Interrupt, CLOCK_RATE};
+use super::mem::{Address, MemDevice, RNG_LCD_BGDD1, RNG_LCD_BGDD2, Ram, RNG_CHAR_DAT, RNG_LCD_OAM};
 
 const REG_LCDC: Address = Address(0xFF40);
 const REG_STAT: Address = Address(0xFF41);
@@ -13,7 +13,6 @@ const REG_LYC: Address = Address(0xFF45);
 const REG_BGP: Address = Address(0xFF47);
 const REG_OBP0: Address = Address(0xFF48);
 const REG_OBP1: Address = Address(0xFF49);
-const REG_DMA: Address = Address(0xFF46);
 const REG_WY: Address = Address(0xFF4A);
 const REG_WX: Address = Address(0xFF4B);
 
@@ -57,7 +56,6 @@ pub struct Lcd {
     bgp: u8,
     obp0: u8,
     obp1: u8,
-    dma: u8,
     wx: u8,
     wy: u8,
     sx: u8,
@@ -84,7 +82,6 @@ impl Lcd {
             bgp: 0,
             obp0: 0,
             obp1: 0,
-            dma: 0,
             wx: 0,
             wy: 0,
             sx: 0,
@@ -336,10 +333,6 @@ impl MemDevice for Lcd {
                     error!("Error: BGP is a write-only register");
                     Err(())
                 }
-                REG_DMA => {
-                    error!("DMA register is write-only");
-                    Err(())
-                }
                 _ => {
                     error!("Unimplemented LCD register {:?}", a);
                     Err(())
@@ -385,10 +378,6 @@ impl MemDevice for Lcd {
                 }
                 REG_OBP1 => {
                     self.obp1 = v;
-                    Ok(())
-                }
-                REG_DMA => {
-                    self.dma = v;
                     Ok(())
                 }
                 REG_WX => {

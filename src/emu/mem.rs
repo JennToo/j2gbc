@@ -1,7 +1,7 @@
-use std::ops::{Add, AddAssign, Sub, SubAssign};
 use std::convert::Into;
-use std::fmt::{Debug, Display, Formatter};
 use std::fmt;
+use std::fmt::{Debug, Display, Formatter};
+use std::ops::{Add, AddAssign, Sub, SubAssign};
 
 pub const RNG_INTR_TABLE: AddressRange = AddressRange(Address(0x0000), Address(0x0100));
 pub const RNG_ROM_BANK0: AddressRange = AddressRange(Address(0x0100), Address(0x4000));
@@ -26,6 +26,9 @@ pub const REG_SC: Address = Address(0xFF02);
 #[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone, Hash)]
 pub struct Address(pub u16);
 
+#[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone, Hash)]
+pub struct ExtendedAddress(pub u32);
+
 impl Debug for Address {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(f, "Address({:#X})", self.0)
@@ -35,6 +38,18 @@ impl Debug for Address {
 impl Display for Address {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "0x{:04x}", self.0)
+    }
+}
+
+impl Debug for ExtendedAddress {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        write!(f, "ExtendedAddress({:#X})", self.0)
+    }
+}
+
+impl Display for ExtendedAddress {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "0x{:08x}", self.0)
     }
 }
 

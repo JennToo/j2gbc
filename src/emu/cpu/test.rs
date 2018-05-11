@@ -1,10 +1,10 @@
-use std::io::Cursor;
 use std::collections::{HashMap, HashSet};
+use std::io::Cursor;
 
-use super::{Arith, Cpu, Instruction, Register16, Register8};
+use super::{Arith, Cpu, Instruction, Load, Register16, Register8};
 use emu::alu::Flags;
-use emu::mem::{Address, MemDevice};
 use emu::cart::Cart;
+use emu::mem::{Address, MemDevice};
 
 const INTIAL_PC: Address = Address(0x0150);
 const INITAL_SP: Address = Address(0xFFFE);
@@ -157,6 +157,58 @@ fn test_addr() {
             (Register8::A, 0x00),
             (Register8::B, 0xC6),
             (Register8::F, Flags(0).zero().halfcarry().carry().0),
+        ],
+    );
+    assert_eq!(cpu.pc, INTIAL_PC);
+    assert_eq!(cpu.sp, INITAL_SP);
+}
+
+// --------------- Load Instructions ------------------
+
+#[test]
+fn test_load_indirect_increment() {
+    let mut cpu = make_test_cpu();
+    cpu[Register8::A] = 0x3C;
+    cpu[Register8::H] = 0xFF;
+    cpu[Register8::L] = 0x80;
+    cpu.mmu.write(Address(0xFF80), 0x12).unwrap();
+
+    let i = Instruction::Load(Load::LdNA(1));
+    cpu.execute(i).unwrap();
+
+    assert_eq!(cpu.mmu.read(Address(0xFF80)).unwrap(), 0x3C);
+    assert_reg_vals(
+        &cpu,
+        &[
+            (Register8::A, 0x3C),
+            (Register8::F, Flags(0).0),
+            (Register8::H, 0xFF),
+            (Register8::L, 0x81),
+        ],
+    );
+    assert_eq!(cpu.pc, INTIAL_PC);
+    assert_eq!(cpu.sp, INITAL_SP);
+}
+
+#[test]
+fn test_load_indirect_decrement() {
+    let mut cpu = make_test_cpu();
+    cpu[Register8::A] = 0x3C;
+    cpu[Register8::H] = 0xFF;
+    cpu[Register8::L] = 0x80;
+    cpu.mmu.write(Address(0xFF80), 0x12).unwrap();
+
+    let i = Instruction::Load(Load::LdNA(-1));
+    cpu.execute(i).unwrap();
+
+    assert_eq!(cpu.mmu.read(Address(0xFF80)).unwrap(), 0x3C);
+    assert_reg_vals(
+        &cpu,
+        &[
+            (Register8::A, 0x3C),
+            (Register8::F, Flags(0).0),
+            (Register8::H, 0xFF),
+            (Register8::L, 0x7F),
         ],
     );
     assert_eq!(cpu.pc, INTIAL_PC);

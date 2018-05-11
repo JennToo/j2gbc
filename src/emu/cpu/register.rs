@@ -1,5 +1,5 @@
-use std::fmt::Display;
 use std::fmt;
+use std::fmt::Display;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum Register8 {

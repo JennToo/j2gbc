@@ -1,10 +1,10 @@
+pub mod alu;
+pub mod audio;
+pub mod cart;
 pub mod cpu;
 pub mod inst;
-pub mod cart;
+pub mod lcd;
+pub mod mbc;
 pub mod mem;
 pub mod mmu;
-pub mod lcd;
-pub mod alu;
-pub mod mbc;
-pub mod audio;
 pub mod system;

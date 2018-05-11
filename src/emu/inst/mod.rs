@@ -1,21 +1,21 @@
-use std::fmt::Display;
 use std::fmt;
+use std::fmt::Display;
 
 use super::alu::hi_lo;
-use super::mem::Address;
 use super::cpu::{Register16, Register8};
+use super::mem::Address;
 
 mod arith;
 mod bits;
 mod control;
-mod logic;
 mod load;
+mod logic;
 
 pub use self::arith::Arith;
 pub use self::bits::Bits;
 pub use self::control::Control;
-pub use self::logic::Logic;
 pub use self::load::Load;
+pub use self::logic::Logic;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Instruction {

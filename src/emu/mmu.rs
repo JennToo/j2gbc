@@ -1,9 +1,9 @@
 use std::collections::HashSet;
 
-use super::mem::*;
+use super::audio::Audio;
 use super::cart::Cart;
 use super::lcd::Lcd;
-use super::audio::Audio;
+use super::mem::*;
 
 pub struct Mmu {
     internal_ram: Ram,
