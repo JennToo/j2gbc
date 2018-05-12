@@ -345,6 +345,34 @@ impl Cpu {
                 try!(self.push16(v));
                 self.pc = a;
             }
+            Control::CallINZ(a) => {
+                if !self.flags().get_zero() {
+                    let v = self.pc.into();
+                    try!(self.push16(v));
+                    self.pc = a;
+                }
+            }
+            Control::CallINC(a) => {
+                if !self.flags().get_carry() {
+                    let v = self.pc.into();
+                    try!(self.push16(v));
+                    self.pc = a;
+                }
+            }
+            Control::CallIZ(a) => {
+                if self.flags().get_zero() {
+                    let v = self.pc.into();
+                    try!(self.push16(v));
+                    self.pc = a;
+                }
+            }
+            Control::CallIC(a) => {
+                if self.flags().get_carry() {
+                    let v = self.pc.into();
+                    try!(self.push16(v));
+                    self.pc = a;
+                }
+            }
         }
 
         Ok(())

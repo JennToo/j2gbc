@@ -23,6 +23,10 @@ pub enum Control {
     JpNCI(Address),
     JpNZI(Address),
     CallI(Address),
+    CallINZ(Address),
+    CallINC(Address),
+    CallIC(Address),
+    CallIZ(Address),
     Rst(Address),
 }
 
@@ -36,7 +40,11 @@ impl Control {
             | Control::JpZI(_)
             | Control::JpNCI(_)
             | Control::JpNZI(_) => 16,
-            Control::CallI(_) => 24,
+            Control::CallI(_)
+            | Control::CallIC(_)
+            | Control::CallINC(_)
+            | Control::CallINZ(_)
+            | Control::CallIZ(_) => 24,
             // TODO: This is actually variable
             Control::JrNZI(_)
             | Control::JrNCI(_)
@@ -70,6 +78,10 @@ impl Display for Control {
             Control::JpNCI(a) => write!(f, "jmpnc {}", a),
             Control::JpNZI(a) => write!(f, "jmpnz {}", a),
             Control::CallI(a) => write!(f, "call {}", a),
+            Control::CallIC(a) => write!(f, "callc {}", a),
+            Control::CallIZ(a) => write!(f, "callz {}", a),
+            Control::CallINC(a) => write!(f, "callnc {}", a),
+            Control::CallINZ(a) => write!(f, "callnz {}", a),
             Control::Rst(a) => write!(f, "rst {}", a),
         }
     }
