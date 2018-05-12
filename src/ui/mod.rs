@@ -121,7 +121,7 @@ impl Window {
             }
 
             let elapsed = if super_speed {
-                dt.elapsed() * 4  
+                dt.elapsed() * 8
             } else {
                 dt.elapsed()
             };

@@ -9,11 +9,15 @@ pub enum Arith {
     IncR(Register8),
     DecN,
     DecR(Register8),
-    
+
     AddN,
     AddR(Register8),
     AddI(u8),
-    
+
+    AdcN,
+    AdcR(Register8),
+    AdcI(u8),
+
     SubN,
     SubR(Register8),
     SubI(u8),
@@ -32,9 +36,9 @@ impl Arith {
     pub fn cycles(self) -> u8 {
         match self {
             Arith::Daa => 4,
-            Arith::SubR(_) | Arith::AddR(_) | Arith::SbcR(_) => 4,
-            Arith::SubN | Arith::AddN | Arith::SbcN => 8,
-            Arith::SubI(_) | Arith::AddI(_) | Arith::SbcI(_) => 8,
+            Arith::SubR(_) | Arith::AddR(_) | Arith::SbcR(_) | Arith::AdcR(_) => 4,
+            Arith::SubN | Arith::AddN | Arith::SbcN | Arith::AdcN => 8,
+            Arith::SubI(_) | Arith::AddI(_) | Arith::SbcI(_) | Arith::AdcI(_) => 8,
             Arith::DecR16(_) | Arith::IncR16(_) => 8,
             Arith::IncN | Arith::DecN => 12,
             Arith::IncR(_) | Arith::DecR(_) => 4,
@@ -50,6 +54,9 @@ impl Display for Arith {
             Arith::AddN => write!(f, "add [hl]"),
             Arith::AddR(r) => write!(f, "add {}", r),
             Arith::AddI(v) => write!(f, "add {:#x}", v),
+            Arith::AdcN => write!(f, "adc [hl]"),
+            Arith::AdcR(r) => write!(f, "adc {}", r),
+            Arith::AdcI(v) => write!(f, "adc {:#x}", v),
             Arith::SubN => write!(f, "sub [hl]"),
             Arith::SubR(r) => write!(f, "sub {}", r),
             Arith::SubI(v) => write!(f, "sub {:#x}", v),

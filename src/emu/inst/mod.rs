@@ -329,6 +329,16 @@ impl Instruction {
             0x87 => Ok((Instruction::Arith(Arith::AddR(Register8::A)), 1)),
             0xC6 => Ok((Instruction::Arith(Arith::AddI(bytes[1])), 2)),
 
+            0x88 => Ok((Instruction::Arith(Arith::AdcR(Register8::B)), 1)),
+            0x89 => Ok((Instruction::Arith(Arith::AdcR(Register8::C)), 1)),
+            0x8A => Ok((Instruction::Arith(Arith::AdcR(Register8::D)), 1)),
+            0x8B => Ok((Instruction::Arith(Arith::AdcR(Register8::E)), 1)),
+            0x8C => Ok((Instruction::Arith(Arith::AdcR(Register8::H)), 1)),
+            0x8D => Ok((Instruction::Arith(Arith::AdcR(Register8::L)), 1)),
+            0x8E => Ok((Instruction::Arith(Arith::AdcN), 1)),
+            0x8F => Ok((Instruction::Arith(Arith::AdcR(Register8::A)), 1)),
+            0xCE => Ok((Instruction::Arith(Arith::AdcI(bytes[1])), 2)),
+
             0x90 => Ok((Instruction::Arith(Arith::SubR(Register8::B)), 1)),
             0x91 => Ok((Instruction::Arith(Arith::SubR(Register8::C)), 1)),
             0x92 => Ok((Instruction::Arith(Arith::SubR(Register8::D)), 1)),

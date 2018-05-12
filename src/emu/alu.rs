@@ -422,7 +422,6 @@ fn test_adc() {
     assert!(!f.get_subtract());
 }
 
-
 #[test]
 fn test_sbc() {
     let (v, f) = sbc(0x3B, 0x2A, true);
