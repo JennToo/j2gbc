@@ -41,14 +41,19 @@ const MODE_00_INT_FLAG: u8 = 0b0000_1000;
 
 const LYC_MATCH_FLAG: u8 = 0b0000_0100;
 const BG_ENABLED_FLAG: u8 = 0b0000_0001;
+const OAM_ENABLED_FLAG: u8 = 0b0000_0010;
 const BGD_CHAR_DAT_FLAG: u8 = 0b0001_0000;
 const BGD_CODE_DAT_FLAG: u8 = 0b0000_1000;
+const OBJ_PAL_FLAG: u8 = 0b0001_0000;
+const OBJ_XFLIP_FLAG: u8 = 0b0010_0000;
+const OBJ_YFLIP_FLAG: u8 = 0b0100_0000;
+const OBJ_PRI_FLAG: u8 = 0b1000_0000;
 
 pub type Framebuffer = [FrameRow; SCREEN_SIZE.1];
 type FrameRow = [Pixel; SCREEN_SIZE.0];
 pub type BgBuffer = [BgRow; 256];
 type BgRow = [Pixel; 256];
-type CharRow = [usize; 8];
+type CharRow = [u8; 8];
 
 pub struct Lcd {
     lcdc: u8,
@@ -78,7 +83,25 @@ struct Obj {
     x: u8,
     y: u8,
     char_: u8,
-    _flags: u8,
+    flags: u8,
+}
+
+impl Obj {
+    fn high_palette(&self) -> bool {
+        self.flags & OBJ_PAL_FLAG != 0
+    }
+
+    fn xflip(&self) -> bool {
+        self.flags & OBJ_XFLIP_FLAG != 0
+    }
+
+    fn yflip(&self) -> bool {
+        self.flags & OBJ_YFLIP_FLAG != 0
+    }
+
+    fn priority(&self) -> bool {
+        self.flags & OBJ_PRI_FLAG != 0
+    }
 }
 
 impl Lcd {
@@ -153,6 +176,7 @@ impl Lcd {
         // TODO: This is just a debug hack to display char data on the screen
         if self.ly < SCREEN_SIZE.1 as u8 {
             self.render_background_row();
+            self.render_oam_row();
         }
 
         self.ly += 1;
@@ -161,7 +185,6 @@ impl Lcd {
     }
 
     pub fn do_vblank(&mut self, cycle: u64) {
-        self.render_oam_broken();
         self.swap();
         self.ly = 0;
         self.update_lyc();
@@ -215,13 +238,17 @@ impl Lcd {
         let b2 = self.read(row_address + Address(1)).unwrap();
         let mut row = [0; 8];
         for i in 0..8 {
-            row[i] = (read_bit(b1, (7 - i) as u8) | (read_bit(b2, (7 - i) as u8) << 1)) as usize;
+            row[i] = read_bit(b1, (7 - i) as u8) | (read_bit(b2, (7 - i) as u8) << 1);
         }
         row
     }
 
     fn is_bg_enabled(&self) -> bool {
         self.lcdc & BG_ENABLED_FLAG != 0
+    }
+
+    fn is_oam_enabled(&self) -> bool {
+        self.lcdc & OAM_ENABLED_FLAG != 0
     }
 
     fn is_lyc_int_enabled(&self) -> bool {
@@ -265,7 +292,8 @@ impl Lcd {
                 let row = self.read_char_row_at(char_, y, start_addr, signed);
                 for x in 0..PIXEL_PER_CHAR {
                     let color_index = row[x as usize];
-                    fb[(base_y + y) as usize][(base_x + x) as usize] = COLORS[color_index];
+                    let corrected_index = palette_convert(color_index, self.bgp) as usize;
+                    fb[(base_y + y) as usize][(base_x + x) as usize] = COLORS[corrected_index];
                 }
             }
         }
@@ -293,8 +321,9 @@ impl Lcd {
                     let row = self.read_char_row_at(char_, y, start_addr, signed);
                     for x in 0..PIXEL_PER_CHAR {
                         let color_index = row[x as usize];
+                        let corrected_index = palette_convert(color_index, self.bgp) as usize;
                         fb[(char_y * PIXEL_PER_CHAR + y) as usize]
-                            [(char_x * PIXEL_PER_CHAR + x) as usize] = COLORS[color_index];
+                            [(char_x * PIXEL_PER_CHAR + x) as usize] = COLORS[corrected_index];
                     }
                 }
             }
@@ -310,26 +339,49 @@ impl Lcd {
             y: self.read(a).unwrap(),
             x: self.read(a + Address(1)).unwrap(),
             char_: self.read(a + Address(2)).unwrap(),
-            _flags: self.read(a + Address(3)).unwrap(),
+            flags: self.read(a + Address(3)).unwrap(),
         }
     }
 
-    // This is super broken but it's enough to get things on the screen
-    fn render_oam_broken(&mut self) {
+    fn render_oam_row(&mut self) {
+        if !self.is_oam_enabled() {
+            return;
+        }
+
         for i in 0..40 {
             let obj = self.get_obj(i);
 
             for y in 0..8 {
-                let row = self.read_char_row_at(obj.char_, y, Address(0x8000), false);
-                for x in 0..8 {
-                    let full_x = x as usize + obj.x as usize;
-                    let full_y = y as usize + obj.y as usize;
+                let full_y = y as isize + obj.y as isize - 16;
+                if full_y > SCREEN_SIZE.1 as isize || full_y < 0 || full_y != self.ly as isize {
+                    continue;
+                }
 
-                    if full_x >= SCREEN_SIZE.0 || full_y >= SCREEN_SIZE.1 {
+                let index_y = if obj.yflip() { 7 - y } else { y };
+                let row = self.read_char_row_at(obj.char_, index_y, Address(0x8000), false);
+                for x in 0..8 {
+                    let full_x = x as isize + obj.x as isize - 8;
+
+                    if full_x >= SCREEN_SIZE.0 as isize || full_x < 0 {
                         continue;
                     }
 
-                    self.get_back_framebuffer()[full_y][full_x] = COLORS[row[x as usize]];
+                    let index_x = if obj.xflip() { 7 - x } else { x };
+                    let color_index = row[index_x as usize];
+                    let pal = if obj.high_palette() {
+                        self.obp1
+                    } else {
+                        self.obp0
+                    };
+                    let corrected_index = palette_convert(color_index, pal) as usize;
+                    let color = COLORS[corrected_index];
+
+                    if obj.priority()
+                        || self.get_back_framebuffer()[full_y as usize][full_x as usize]
+                            == COLOR_WHITE
+                    {
+                        self.get_back_framebuffer()[full_y as usize][full_x as usize] = color;
+                    }
                 }
             }
         }
@@ -339,6 +391,10 @@ impl Lcd {
 fn read_bit(value: u8, bit: u8) -> u8 {
     let mask = 1 << bit;
     (value & mask) >> bit
+}
+
+fn palette_convert(v: u8, p: u8) -> u8 {
+    (p >> (v * 2)) & 0b11
 }
 
 #[test]
