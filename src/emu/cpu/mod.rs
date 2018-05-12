@@ -147,6 +147,26 @@ impl Cpu {
                 self[Register8::A] = v;
                 self[Register8::F] = flags.0;
             }
+            Arith::SbcN => {
+                let v1 = try!(self.read_indirect(Register16::HL));
+                let v2 = self[Register8::A];
+                let (v, flags) = sbc(v1, v2, Flags(self[Register8::F]).get_carry());
+                self[Register8::A] = v;
+                self[Register8::F] = flags.0;
+            }
+            Arith::SbcR(r) => {
+                let v1 = self[r];
+                let v2 = self[Register8::A];
+                let (v, flags) = sbc(v1, v2, Flags(self[Register8::F]).get_carry());
+                self[Register8::A] = v;
+                self[Register8::F] = flags.0;
+            }
+            Arith::SbcI(v1) => {
+                let v2 = self[Register8::A];
+                let (v, flags) = sbc(v1, v2, Flags(self[Register8::F]).get_carry());
+                self[Register8::A] = v;
+                self[Register8::F] = flags.0;
+            }
             Arith::IncR(r) => {
                 let (v, flags) = inc(self[r], self.flags());
                 self[r] = v;

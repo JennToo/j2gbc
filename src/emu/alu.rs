@@ -101,6 +101,17 @@ pub fn sub(l: u8, r: u8) -> (u8, Flags) {
     (v, f)
 }
 
+pub fn sbc(l: u8, r: u8, carry: bool) -> (u8, Flags) {
+    let mut f = Flags(0);
+    let c = if carry { 1 } else { 0 };
+    let v = (Wrapping(l) - Wrapping(r) - Wrapping(c)).0;
+    f.set_zero(v == 0);
+    f.set_subtract(true);
+    f.set_carry(l < r);
+    f.set_halfcarry(l & 0x0F < r & 0x0F);
+    (v, f)
+}
+
 pub fn add(l: u8, r: u8) -> (u8, Flags) {
     let mut f = Flags(0);
     let v = (Wrapping(l) + Wrapping(r)).0;
@@ -370,6 +381,30 @@ fn test_sub() {
     let (_, f) = sub(0x3C, 0x40);
     assert!(!f.get_zero());
     assert!(!f.get_halfcarry());
+    assert!(f.get_carry());
+    assert!(f.get_subtract());
+}
+
+#[test]
+fn test_sbc() {
+    let (v, f) = sbc(0x3B, 0x2A, true);
+    assert_eq!(v, 0x10);
+    assert!(!f.get_zero());
+    assert!(!f.get_halfcarry());
+    assert!(!f.get_carry());
+    assert!(f.get_subtract());
+
+    let (v, f) = sbc(0x3B, 0x3A, true);
+    assert_eq!(v, 0x0);
+    assert!(f.get_zero());
+    assert!(!f.get_halfcarry());
+    assert!(!f.get_carry());
+    assert!(f.get_subtract());
+
+    let (v, f) = sbc(0x3B, 0x4F, true);
+    assert_eq!(v, 0xEB);
+    assert!(!f.get_zero());
+    assert!(f.get_halfcarry());
     assert!(f.get_carry());
     assert!(f.get_subtract());
 }
