@@ -436,7 +436,17 @@ impl Instruction {
                 0x13 => Ok((Instruction::Bits(Bits::RlR(Register8::E)), 2)),
                 0x14 => Ok((Instruction::Bits(Bits::RlR(Register8::H)), 2)),
                 0x15 => Ok((Instruction::Bits(Bits::RlR(Register8::L)), 2)),
+                0x16 => Ok((Instruction::Bits(Bits::RlN), 2)),
                 0x17 => Ok((Instruction::Bits(Bits::RlR(Register8::A)), 2)),
+
+                0x18 => Ok((Instruction::Bits(Bits::RrR(Register8::B)), 2)),
+                0x19 => Ok((Instruction::Bits(Bits::RrR(Register8::C)), 2)),
+                0x1A => Ok((Instruction::Bits(Bits::RrR(Register8::D)), 2)),
+                0x1B => Ok((Instruction::Bits(Bits::RrR(Register8::E)), 2)),
+                0x1C => Ok((Instruction::Bits(Bits::RrR(Register8::H)), 2)),
+                0x1D => Ok((Instruction::Bits(Bits::RrR(Register8::L)), 2)),
+                0x1E => Ok((Instruction::Bits(Bits::RrN), 2)),
+                0x1F => Ok((Instruction::Bits(Bits::RrR(Register8::A)), 2)),
 
                 0x80 | 0x88 | 0x90 | 0x98 | 0xA0 | 0xA8 | 0xB0 | 0xB8 => Ok((
                     Instruction::Bits(Bits::Res(get_bits_bit(bytes[1]), Register8::B)),

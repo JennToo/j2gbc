@@ -263,6 +263,23 @@ impl Cpu {
                 self[r] = v;
                 self[Register8::F] = flags.0;
             }
+            Bits::RlN => {
+                let v = try!(self.read_indirect(Register16::HL));
+                let (v, flags) = rl(v, self.flags());
+                try!(self.write_indirect(Register16::HL, v));
+                self[Register8::F] = flags.0;
+            }
+            Bits::RrR(r) => {
+                let (v, flags) = rr(self[r], self.flags());
+                self[r] = v;
+                self[Register8::F] = flags.0;
+            }
+            Bits::RrN => {
+                let v = try!(self.read_indirect(Register16::HL));
+                let (v, flags) = rr(v, self.flags());
+                try!(self.write_indirect(Register16::HL, v));
+                self[Register8::F] = flags.0;
+            }
             Bits::Rra => {
                 let (v, mut flags) = rr(self[Register8::A], self.flags());
                 flags.set_zero(false);
