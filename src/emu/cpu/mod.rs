@@ -497,12 +497,11 @@ impl Cpu {
                 self[Register8::A] = v;
             }
             Load::LdHLSPI(v) => {
-                let (v, mut flags) = add16(self.read_r16(Register16::SP), (v as i8) as u16, self.flags());
+                let (v, mut flags) = add16(self.read_r16(Register16::SP), (v as i16) as u16, self.flags());
                 flags.set_zero(false);
                 flags.set_subtract(false);
                 self.write_r16(Register16::HL, v);
                 self[Register8::F] = flags.0;
-                info!("Computed value {:#x}", v);
             }
             Load::LdSPHL => {
                 let v = self.read_r16(Register16::HL);
