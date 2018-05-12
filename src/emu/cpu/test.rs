@@ -1,7 +1,7 @@
 use std::collections::{HashMap, HashSet};
 use std::io::Cursor;
 
-use super::{Arith, Cpu, Instruction, Load, Register16, Register8};
+use super::{Arith, Cpu, Instruction, Load, Register8};
 use emu::alu::Flags;
 use emu::cart::Cart;
 use emu::mem::{Address, MemDevice};

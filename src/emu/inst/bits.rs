@@ -9,6 +9,7 @@ pub enum Bits {
     SwapR(Register8),
     SlaR(Register8),
     RlR(Register8),
+    SrlR(Register8),
     Rra,
     Rrca,
     Rla,
@@ -24,7 +25,7 @@ impl Bits {
             Bits::Cpl => 4,
             Bits::Set(_, _) | Bits::Res(_, _) => 8,
             Bits::SwapR(_) => 8,
-            Bits::RlR(_) | Bits::SlaR(_) => 8,
+            Bits::RlR(_) | Bits::SlaR(_) | Bits::SrlR(_) => 8,
             Bits::Rra | Bits::Rrca | Bits::Rla | Bits::Rlca => 4,
         }
     }
@@ -38,6 +39,7 @@ impl Display for Bits {
             Bits::SwapR(r) => write!(f, "swap {}", r),
             Bits::SlaR(r) => write!(f, "sla {}", r),
             Bits::RlR(r) => write!(f, "rl {}", r),
+            Bits::SrlR(r) => write!(f, "srl {}", r),
             Bits::Rra => write!(f, "rra"),
             Bits::Rrca => write!(f, "rrca"),
             Bits::Rla => write!(f, "rla"),

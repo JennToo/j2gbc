@@ -402,6 +402,14 @@ impl Instruction {
                 0x25 => Ok((Instruction::Bits(Bits::SlaR(Register8::L)), 1)),
                 0x27 => Ok((Instruction::Bits(Bits::SlaR(Register8::A)), 1)),
 
+                0x38 => Ok((Instruction::Bits(Bits::RlR(Register8::B)), 1)),
+                0x39 => Ok((Instruction::Bits(Bits::RlR(Register8::C)), 1)),
+                0x3A => Ok((Instruction::Bits(Bits::RlR(Register8::D)), 1)),
+                0x3B => Ok((Instruction::Bits(Bits::RlR(Register8::E)), 1)),
+                0x3C => Ok((Instruction::Bits(Bits::RlR(Register8::H)), 1)),
+                0x3D => Ok((Instruction::Bits(Bits::RlR(Register8::L)), 1)),
+                0x3F => Ok((Instruction::Bits(Bits::RlR(Register8::A)), 1)),
+
                 0x10 => Ok((Instruction::Bits(Bits::RlR(Register8::B)), 1)),
                 0x11 => Ok((Instruction::Bits(Bits::RlR(Register8::C)), 1)),
                 0x12 => Ok((Instruction::Bits(Bits::RlR(Register8::D)), 1)),
