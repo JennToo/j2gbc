@@ -7,7 +7,7 @@ use std::time::Duration;
 use super::alu::*;
 use super::cart::Cart;
 use super::inst::{Arith, Bits, Control, Instruction, Load, Logic};
-use super::mem::{Address, MemDevice};
+use super::mem::{Address, ExtendedAddress, MemDevice};
 use super::mmu::Mmu;
 
 pub const CLOCK_RATE: u64 = 4_190_000;
@@ -30,7 +30,7 @@ pub struct Cpu {
     halted: bool,
 
     pub debug_halted: bool,
-    pub last_instructions: VecDeque<(Address, Instruction)>,
+    pub last_instructions: VecDeque<(ExtendedAddress, Instruction)>,
     pub breakpoints: HashSet<Address>,
 }
 
@@ -489,7 +489,8 @@ impl Cpu {
         if self.last_instructions.len() > 50 {
             self.last_instructions.pop_front();
         }
-        self.last_instructions.push_back((self.pc, instruction));
+        self.last_instructions
+            .push_back((self.mmu.cart.map_address_into_rom(self.pc), instruction));
 
         self.pc += Address(u16::from(len));
         try!(self.execute(instruction));
