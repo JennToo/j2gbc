@@ -48,6 +48,7 @@ impl Window {
         let ttf_ctx = sdl2::ttf::init().map_err(|e| e.to_string())?;
 
         let mut debug = debug::Debug::new(&ttf_ctx)?;
+        let mut super_speed = false;
 
         fbs.rendering_state = RenderingState::Debug;
         system.cpu.debug_halted = true;
@@ -109,11 +110,21 @@ impl Window {
                     } => {
                         debug.scroll_down(1);
                     }
+                    Event::KeyDown {
+                        keycode: Some(Keycode::Tab),
+                        ..
+                    } => {
+                        super_speed = !super_speed;
+                    }
                     _ => {}
                 }
             }
 
-            let elapsed = dt.elapsed();
+            let elapsed = if super_speed {
+                dt.elapsed() * 4  
+            } else {
+                dt.elapsed()
+            };
             if elapsed > Duration::from_millis(17) {
                 //println!("Warning: Slow frame {:?}", elapsed);
             }
