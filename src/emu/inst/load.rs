@@ -22,6 +22,8 @@ pub enum Load {
     LdANI16(Address),
     LdNR16(Register16),
     LdRN16(Register16),
+    LdHLSPI(i8),
+    LdSPHL,
     Push(Register16),
     Pop(Register16),
 }
@@ -29,7 +31,7 @@ pub enum Load {
 impl Load {
     pub fn cycles(self) -> u8 {
         match self {
-            Load::LdRM(_, _) | Load::LdRI16(_, _) | Load::LdMR(_, _) => 12,
+            Load::LdRM(_, _) | Load::LdRI16(_, _) | Load::LdMR(_, _) | Load::LdHLSPI(_) => 12,
             Load::LdRR(_, _) => 4,
             Load::LdRI(_, _) => 8,
             Load::LdNA(_) | Load::LdAN(_) | Load::LdRN(_) | Load::LdNR(_) => 8,
@@ -38,6 +40,7 @@ impl Load {
             Load::LdNIA16(_) | Load::LdANI16(_) => 16,
             Load::LdNCA => 8,
             Load::LdANC => 8,
+            Load::LdSPHL => 8,
             Load::Push(_) => 16,
             Load::Pop(_) => 12,
         }
@@ -67,6 +70,8 @@ impl Display for Load {
                     write!(f, "ld a,[hl-]")
                 }
             }
+            Load::LdHLSPI(v) => write!(f, "ld hl,sp+{:#x}", v),
+            Load::LdSPHL => write!(f, "ld sp,hl"),
             Load::LdNI(v) => write!(f, "ld [hl],{:#x}", v),
             Load::LdNCA => write!(f, "ld [c+0xff00],a"),
             Load::LdANC => write!(f, "ld a,[c+0xff00]"),

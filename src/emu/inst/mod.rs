@@ -210,6 +210,9 @@ impl Instruction {
 
             0x36 => Ok((Instruction::Load(Load::LdNI(bytes[1])), 2)),
 
+            0xF8 => Ok((Instruction::Load(Load::LdHLSPI(bytes[1] as i8)), 2)),
+            0xF9 => Ok((Instruction::Load(Load::LdSPHL), 1)),
+
             0x02 => Ok((Instruction::Load(Load::LdNR16(Register16::BC)), 1)),
             0x12 => Ok((Instruction::Load(Load::LdNR16(Register16::DE)), 1)),
 

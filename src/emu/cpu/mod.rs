@@ -37,8 +37,8 @@ pub struct Cpu {
 impl Cpu {
     pub fn new(c: Cart) -> Cpu {
         let initial_breakpoints = HashSet::new();
-        //initial_breakpoints.insert(Address(0x0100));
-        Cpu {
+
+        let mut cpu = Cpu {
             registers: [0, 0, 0, 0, 0, 0, 0, 0],
             sp: Address(0xFFFE),
             pc: Address(0x100),
@@ -50,7 +50,18 @@ impl Cpu {
             debug_halted: false,
             last_instructions: VecDeque::new(),
             breakpoints: initial_breakpoints,
-        }
+        };
+
+        cpu[Register8::A] = 0x01;
+        cpu[Register8::F] = 0xB0;
+        cpu[Register8::B] = 0x00;
+        cpu[Register8::C] = 0x13;
+        cpu[Register8::D] = 0x00;
+        cpu[Register8::E] = 0xD8;
+        cpu[Register8::H] = 0x01;
+        cpu[Register8::L] = 0x4D;
+
+        cpu
     }
 
     pub fn cycle(&self) -> u64 {
@@ -484,6 +495,18 @@ impl Cpu {
                 let a = Address(u16::from(self[Register8::C]) + 0xFF00);
                 let v = try!(self.mmu.read(a));
                 self[Register8::A] = v;
+            }
+            Load::LdHLSPI(v) => {
+                let (v, mut flags) = add16(self.read_r16(Register16::SP), (v as i8) as u16, self.flags());
+                flags.set_zero(false);
+                flags.set_subtract(false);
+                self.write_r16(Register16::HL, v);
+                self[Register8::F] = flags.0;
+                info!("Computed value {:#x}", v);
+            }
+            Load::LdSPHL => {
+                let v = self.read_r16(Register16::HL);
+                self.write_r16(Register16::SP, v);
             }
             Load::LdNI(v) => {
                 try!(self.write_indirect(Register16::HL, v));
