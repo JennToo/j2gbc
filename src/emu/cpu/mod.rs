@@ -492,8 +492,19 @@ impl Cpu {
                 self[Register8::A] = value;
                 self[Register8::F] = flags.0;
             }
+            Logic::XorI(v) => {
+                let (value, flags) = xor(self[Register8::A], v);
+                self[Register8::A] = value;
+                self[Register8::F] = flags.0;
+            }
             Logic::XorR(r) => {
                 let (value, flags) = xor(self[Register8::A], self[r]);
+                self[Register8::A] = value;
+                self[Register8::F] = flags.0;
+            }
+            Logic::XorN => {
+                let v = try!(self.read_indirect(Register16::HL));
+                let (value, flags) = xor(self[Register8::A], v);
                 self[Register8::A] = value;
                 self[Register8::F] = flags.0;
             }
