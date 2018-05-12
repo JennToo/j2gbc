@@ -74,6 +74,13 @@ pub struct Lcd {
     next_vblank_cycle: u64,
 }
 
+struct Obj {
+    x: u8,
+    y: u8,
+    char_: u8,
+    _flags: u8,
+}
+
 impl Lcd {
     pub fn new() -> Lcd {
         Lcd {
@@ -154,6 +161,7 @@ impl Lcd {
     }
 
     pub fn do_vblank(&mut self, cycle: u64) {
+        self.render_oam_broken();
         self.swap();
         self.ly = 0;
         self.update_lyc();
@@ -243,7 +251,7 @@ impl Lcd {
     pub fn render_char_dat(&self, high: bool) -> Box<Framebuffer> {
         let mut fb = Box::new([[Pixel(255, 255, 0, 255); SCREEN_SIZE.0]; SCREEN_SIZE.1]);
         let (start_addr, signed) = if high {
-            (Address(0x9000), true)
+            (Address(0x9000), false)
         } else {
             (Address(0x8000), false)
         };
@@ -293,6 +301,38 @@ impl Lcd {
         }
 
         fb
+    }
+
+    fn get_obj(&self, index: u8) -> Obj {
+        let a = RNG_LCD_OAM.0 + Address(u16::from(index) * 4);
+
+        Obj {
+            y: self.read(a).unwrap(),
+            x: self.read(a + Address(1)).unwrap(),
+            char_: self.read(a + Address(2)).unwrap(),
+            _flags: self.read(a + Address(3)).unwrap(),
+        }
+    }
+
+    // This is super broken but it's enough to get things on the screen
+    fn render_oam_broken(&mut self) {
+        for i in 0..40 {
+            let obj = self.get_obj(i);
+
+            for y in 0..8 {
+                let row = self.read_char_row_at(obj.char_, y, Address(0x8000), false);
+                for x in 0..8 {
+                    let full_x = x as usize + obj.x as usize;
+                    let full_y = y as usize + obj.y as usize;
+
+                    if full_x >= SCREEN_SIZE.0 || full_y >= SCREEN_SIZE.1 {
+                        continue;
+                    }
+
+                    self.get_back_framebuffer()[full_y][full_x] = COLORS[row[x as usize]];
+                }
+            }
+        }
     }
 }
 
