@@ -220,8 +220,10 @@ impl Lcd {
             let char_row =
                 self.read_char_row_at(char_, (translated_y % Wrapping(8)).0, base_addr, signed);
 
-            let color_index = char_row[(translated_x % Wrapping(8)).0 as usize] as usize;
-            self.get_back_framebuffer()[screen_y as usize][screen_x as usize] = COLORS[color_index];
+            let color_index = char_row[(translated_x % Wrapping(8)).0 as usize];
+            let corrected_index = palette_convert(color_index, self.bgp) as usize;
+            self.get_back_framebuffer()[screen_y as usize][screen_x as usize] =
+                COLORS[corrected_index];
         }
     }
 
@@ -368,6 +370,10 @@ impl Lcd {
 
                     let index_x = if obj.xflip() { 7 - x } else { x };
                     let color_index = row[index_x as usize];
+                    if color_index == 0 {
+                        // 0 is always transparent
+                        continue;
+                    }
                     let pal = if obj.high_palette() {
                         self.obp1
                     } else {
@@ -376,7 +382,7 @@ impl Lcd {
                     let corrected_index = palette_convert(color_index, pal) as usize;
                     let color = COLORS[corrected_index];
 
-                    if obj.priority()
+                    if !obj.priority()
                         || self.get_back_framebuffer()[full_y as usize][full_x as usize]
                             == COLOR_WHITE
                     {
@@ -395,6 +401,13 @@ fn read_bit(value: u8, bit: u8) -> u8 {
 
 fn palette_convert(v: u8, p: u8) -> u8 {
     (p >> (v * 2)) & 0b11
+}
+
+#[test]
+fn test_palette_convert() {
+    assert_eq!(0b11, palette_convert(0, 0b11));
+    assert_eq!(0b00, palette_convert(3, 0b00111111));
+    assert_eq!(0b01, palette_convert(1, 0b0100));
 }
 
 #[test]
