@@ -42,6 +42,7 @@ const MODE_00_INT_FLAG: u8 = 0b0000_1000;
 const LYC_MATCH_FLAG: u8 = 0b0000_0100;
 const BG_ENABLED_FLAG: u8 = 0b0000_0001;
 const OAM_ENABLED_FLAG: u8 = 0b0000_0010;
+const OAM_TALL_FLAG: u8 = 0b0000_0100;
 const BGD_CHAR_DAT_FLAG: u8 = 0b0001_0000;
 const BGD_CODE_DAT_FLAG: u8 = 0b0000_1000;
 const OBJ_PAL_FLAG: u8 = 0b0001_0000;
@@ -353,14 +354,20 @@ impl Lcd {
         for i in 0..40 {
             let obj = self.get_obj(i);
 
-            for y in 0..8 {
+            let (char_, hi_y) = if self.lcdc & OAM_TALL_FLAG != 0 {
+                (obj.char_ & 0b1111_1110, 16)
+            } else {
+                (obj.char_, 8)
+            };
+
+            for y in 0..hi_y {
                 let full_y = y as isize + obj.y as isize - 16;
                 if full_y > SCREEN_SIZE.1 as isize || full_y < 0 || full_y != self.ly as isize {
                     continue;
                 }
 
-                let index_y = if obj.yflip() { 7 - y } else { y };
-                let row = self.read_char_row_at(obj.char_, index_y, Address(0x8000), false);
+                let index_y = if obj.yflip() { hi_y - 1 - y } else { y };
+                let row = self.read_char_row_at(char_, index_y, Address(0x8000), false);
                 for x in 0..8 {
                     let full_x = x as isize + obj.x as isize - 8;
 
