@@ -1,4 +1,3 @@
-use std::cmp::min;
 use std::num::Wrapping;
 
 use super::cpu::{Interrupt, CLOCK_RATE};
@@ -27,7 +26,11 @@ const COLOR_DARK_GRAY: Pixel = Pixel(68, 106, 81, 255);
 const COLOR_BLACK: Pixel = Pixel(0, 14, 2, 255);
 const COLORS: [Pixel; 4] = [COLOR_WHITE, COLOR_LIGHT_GRAY, COLOR_DARK_GRAY, COLOR_BLACK];
 
-const LINE_CYCLE_TIME: u64 = CLOCK_RATE * 180_700 / 1_000_000_000;
+const LINE_CYCLE_TIME: u64 = CLOCK_RATE * 180_700 / 1_000_000_000; // Src: Official GB manual
+const HBLANK_DURATION: u64 = CLOCK_RATE * 48_600 / 1_000_000_000; // Src: GBCPUMan.pdf
+const MODE_10_DURATION: u64 = CLOCK_RATE * 19_000 / 1_000_000_000; // Src: GBCPUMan.pdf
+const _VBLANK_DURATION: u64 = LINE_CYCLE_TIME * 10; // Src: Official GB manual
+const SCREEN_CYCLE_TIME: u64 = 154 * LINE_CYCLE_TIME;
 const BYTES_PER_CHAR: u16 = 16;
 const BYTES_PER_CHAR_ROW: u16 = 2;
 const BG_CHARS_PER_ROW: u8 = 32;
@@ -35,9 +38,14 @@ const PIXEL_PER_CHAR: u8 = 8;
 const CHARS_PER_BANK: u8 = 255;
 
 const LYC_MATCH_INT_FLAG: u8 = 0b0100_0000;
-//const MODE_10_INT_FLAG: u8 = 0b0010_0000;
-//const MODE_01_INT_FLAG: u8 = 0b0001_0000;
+const MODE_10_INT_FLAG: u8 = 0b0010_0000;
+const _MODE_01_INT_FLAG: u8 = 0b0001_0000;
 const MODE_00_INT_FLAG: u8 = 0b0000_1000;
+
+const MODE_00_MASK: u8 = 0b00;
+const MODE_01_MASK: u8 = 0b01;
+const MODE_10_MASK: u8 = 0b10;
+const _MODE_11_MASK: u8 = 0b11;
 
 const LYC_MATCH_FLAG: u8 = 0b0000_0100;
 const BG_ENABLED_FLAG: u8 = 0b0000_0001;
@@ -76,8 +84,12 @@ pub struct Lcd {
     fbs: [Framebuffer; 2],
     fbi: usize,
 
-    next_hblank_cycle: u64,
-    next_vblank_cycle: u64,
+    next_hblank_start_cycle: u64,
+    next_hblank_end_cycle: u64,
+    next_vblank_start_cycle: u64,
+    next_vblank_end_cycle: u64,
+    next_mode_10_start_cycle: u64,
+    next_mode_10_end_cycle: u64,
 }
 
 struct Obj {
@@ -125,8 +137,12 @@ impl Lcd {
             fbs: [[[COLOR_WHITE; SCREEN_SIZE.0]; SCREEN_SIZE.1]; 2],
             fbi: 0,
 
-            next_hblank_cycle: 0,
-            next_vblank_cycle: 0,
+            next_hblank_start_cycle: LINE_CYCLE_TIME - HBLANK_DURATION - MODE_10_DURATION,
+            next_hblank_end_cycle: LINE_CYCLE_TIME - MODE_10_DURATION,
+            next_vblank_start_cycle: SCREEN_SIZE.0 as u64 * LINE_CYCLE_TIME,
+            next_vblank_end_cycle: SCREEN_CYCLE_TIME,
+            next_mode_10_start_cycle: LINE_CYCLE_TIME - HBLANK_DURATION,
+            next_mode_10_end_cycle: LINE_CYCLE_TIME,
             ly: 0,
         }
     }
@@ -152,44 +168,87 @@ impl Lcd {
     }
 
     pub fn get_next_event_cycle(&self) -> u64 {
-        min(self.next_hblank_cycle, self.next_vblank_cycle)
+        *[
+            self.next_hblank_start_cycle,
+            self.next_hblank_end_cycle,
+            self.next_mode_10_start_cycle,
+            self.next_mode_10_end_cycle,
+            self.next_vblank_start_cycle,
+            self.next_vblank_end_cycle,
+        ].iter()
+            .min()
+            .unwrap()
     }
 
     pub fn pump_cycle(&mut self, cycle: u64) -> Option<Interrupt> {
-        if cycle >= self.next_hblank_cycle {
-            self.do_hblank(cycle);
+        if cycle >= self.next_hblank_start_cycle {
+            self.do_hblank_start(cycle);
 
-            if (self.ly == self.lyc && self.is_lyc_int_enabled()) || self.is_hblank_int_enabled() {
-                // TODO: This should actually happen at the start of the line I think
+            if self.is_hblank_int_enabled() && self.ly < SCREEN_SIZE.1 as u8 {
                 Some(Interrupt::LCDC)
             } else {
                 None
             }
-        } else if cycle >= self.next_vblank_cycle {
-            self.do_vblank(cycle);
+        } else if cycle >= self.next_hblank_end_cycle {
+            self.do_hblank_end(cycle);
+            if self.ly == self.lyc && self.is_lyc_int_enabled() {
+                Some(Interrupt::LCDC)
+            } else {
+                None
+            }
+        } else if cycle >= self.next_mode_10_start_cycle {
+            self.next_mode_10_start_cycle = cycle + LINE_CYCLE_TIME;
+            self.stat = (self.stat & 0b1111_1100) | MODE_10_MASK;
+
+            if self.is_mode_10_int_enabled() {
+                Some(Interrupt::LCDC)
+            } else {
+                None
+            }
+        } else if cycle >= self.next_mode_10_end_cycle {
+            self.next_mode_10_end_cycle = cycle + LINE_CYCLE_TIME;
+            self.stat = (self.stat & 0b1111_1100) | MODE_00_MASK;
+            None
+        } else if cycle >= self.next_vblank_start_cycle {
+            self.do_vblank_start(cycle);
             Some(Interrupt::VBlank)
+        } else if cycle >= self.next_vblank_end_cycle {
+            self.do_vblank_end(cycle);
+            // TODO: Is ther an interrupt for this?
+            None
         } else {
             None
         }
     }
 
-    pub fn do_hblank(&mut self, cycle: u64) {
-        // TODO: This is just a debug hack to display char data on the screen
+    pub fn do_hblank_start(&mut self, cycle: u64) {
         if self.ly < SCREEN_SIZE.1 as u8 {
             self.render_background_row();
             self.render_oam_row();
+            self.stat = (self.stat & 0b1111_1100) | MODE_00_MASK;
         }
-
-        self.ly += 1;
-        self.update_lyc();
-        self.next_hblank_cycle = LINE_CYCLE_TIME + cycle;
+        self.next_hblank_start_cycle = LINE_CYCLE_TIME + cycle;
     }
 
-    pub fn do_vblank(&mut self, cycle: u64) {
+    fn do_hblank_end(&mut self, cycle: u64) {
+        self.ly += 1;
+        self.update_lyc();
+        self.next_hblank_end_cycle = LINE_CYCLE_TIME + cycle;
+    }
+
+    pub fn do_vblank_start(&mut self, cycle: u64) {
         self.swap();
+        self.ly += 1;
+        self.update_lyc();
+        self.stat = (self.stat & 0b1111_1100) | MODE_01_MASK;
+        self.next_vblank_start_cycle = SCREEN_CYCLE_TIME + cycle;
+    }
+
+    pub fn do_vblank_end(&mut self, cycle: u64) {
         self.ly = 0;
         self.update_lyc();
-        self.next_vblank_cycle = 154 * LINE_CYCLE_TIME + cycle;
+        self.stat = (self.stat & 0b1111_1100) | MODE_00_MASK;
+        self.next_vblank_end_cycle = SCREEN_CYCLE_TIME + cycle;
     }
 
     fn update_lyc(&mut self) {
@@ -260,6 +319,10 @@ impl Lcd {
 
     fn is_hblank_int_enabled(&self) -> bool {
         self.stat & MODE_00_INT_FLAG != 0
+    }
+
+    fn is_mode_10_int_enabled(&self) -> bool {
+        self.stat & MODE_10_INT_FLAG != 0
     }
 
     fn get_bg_char_addr_start(&self) -> (Address, bool) {
