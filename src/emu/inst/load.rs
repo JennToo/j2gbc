@@ -1,20 +1,14 @@
 use std::fmt;
 use std::fmt::Display;
 
-use emu::cpu::{Register16, Register8};
+use emu::cpu::{Operand, Register16};
 use emu::mem::Address;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Load {
-    LdRM(Register8, Address),
-    LdMR(Address, Register8),
-    LdRR(Register8, Register8),
-    LdRI(Register8, u8),
-    LdRN(Register8),
-    LdNR(Register8),
+    Ld(Operand, Operand),
     LdNA(i8),
     LdAN(i8),
-    LdNI(u8),
     LdNCA,
     LdANC,
     LdRI16(Register16, u16),
@@ -31,11 +25,18 @@ pub enum Load {
 impl Load {
     pub fn cycles(self) -> u8 {
         match self {
-            Load::LdRM(_, _) | Load::LdRI16(_, _) | Load::LdMR(_, _) | Load::LdHLSPI(_) => 12,
-            Load::LdRR(_, _) => 4,
-            Load::LdRI(_, _) => 8,
-            Load::LdNA(_) | Load::LdAN(_) | Load::LdRN(_) | Load::LdNR(_) => 8,
-            Load::LdNI(_) => 12,
+            Load::Ld(Operand::Register(_), Operand::Register(_)) => 4,
+
+            Load::Ld(Operand::Register(_), Operand::Immediate(_))
+            | Load::Ld(Operand::Register(_), Operand::IndirectRegister(_))
+            | Load::Ld(Operand::IndirectRegister(_), Operand::Register(_)) => 8,
+
+            Load::Ld(Operand::Register(_), Operand::IndirectAddress(_))
+            | Load::Ld(Operand::IndirectAddress(_), Operand::Register(_))
+            | Load::Ld(Operand::IndirectRegister(_), Operand::Immediate(_))
+            | Load::LdRI16(_, _)
+            | Load::LdHLSPI(_) => 12,
+            Load::LdNA(_) | Load::LdAN(_) => 8,
             Load::LdNR16(_) | Load::LdRN16(_) => 8,
             Load::LdNIA16(_) | Load::LdANI16(_) => 16,
             Load::LdNCA => 8,
@@ -43,6 +44,8 @@ impl Load {
             Load::LdSPHL => 8,
             Load::Push(_) => 16,
             Load::Pop(_) => 12,
+
+            Load::Ld(_, _) => unimplemented!(),
         }
     }
 }
@@ -50,12 +53,7 @@ impl Load {
 impl Display for Load {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            Load::LdRM(r, a) => write!(f, "ld {},[{}]", r, a),
-            Load::LdMR(a, r) => write!(f, "ld [{}],{}", a, r),
-            Load::LdRR(r1, r2) => write!(f, "ld {},{}", r1, r2),
-            Load::LdRI(r, v) => write!(f, "ld {},{:#x}", r, v),
-            Load::LdRN(r) => write!(f, "ld {},[hl]", r),
-            Load::LdNR(r) => write!(f, "ld [hl],{}", r),
+            Load::Ld(o1, o2) => write!(f, "ld {},{}", o1, o2),
             Load::LdNA(i) => {
                 if i > 0 {
                     write!(f, "ld [hl+],a")
@@ -72,7 +70,6 @@ impl Display for Load {
             }
             Load::LdHLSPI(v) => write!(f, "ld hl,sp+{:#x}", v),
             Load::LdSPHL => write!(f, "ld sp,hl"),
-            Load::LdNI(v) => write!(f, "ld [hl],{:#x}", v),
             Load::LdNCA => write!(f, "ld [c+0xff00],a"),
             Load::LdANC => write!(f, "ld a,[c+0xff00]"),
             Load::LdRI16(r, v) => write!(f, "ld {},{:#x}", r, v),

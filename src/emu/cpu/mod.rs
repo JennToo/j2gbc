@@ -449,19 +449,9 @@ impl Cpu {
 
     fn execute_load(&mut self, l: Load) -> Result<(), ()> {
         match l {
-            Load::LdRM(r, a) => {
-                self[r] = try!(self.mmu.read(a));
-            }
-            Load::LdMR(a, r) => {
-                let v = self[r];
-                try!(self.mmu.write(a, v));
-            }
-            Load::LdRR(d, s) => {
-                let v = self[s];
-                self[d] = v;
-            }
-            Load::LdRI(r, i) => {
-                self[r] = i;
+            Load::Ld(o1, o2) => {
+                let v = self.read_operand(o2)?;
+                self.write_operand(o1, v)?;
             }
             Load::LdNA(d) => {
                 let a = self.read_r16(Register16::HL);
@@ -473,14 +463,6 @@ impl Cpu {
                 let a = self.read_r16(Register16::HL);
                 self[Register8::A] = try!(self.mmu.read(Address(a)));
                 self.write_r16(Register16::HL, (Wrapping(a) + Wrapping(d as u16)).0);
-            }
-            Load::LdRN(r) => {
-                let v = try!(self.read_indirect(Register16::HL));
-                self[r] = v;
-            }
-            Load::LdNR(r) => {
-                let v = self[r];
-                try!(self.write_indirect(Register16::HL, v));
             }
             Load::LdNCA => {
                 let a = Address(u16::from(self[Register8::C]) + 0xFF00);
@@ -506,9 +488,6 @@ impl Cpu {
             Load::LdSPHL => {
                 let v = self.read_r16(Register16::HL);
                 self.write_r16(Register16::SP, v);
-            }
-            Load::LdNI(v) => {
-                try!(self.write_indirect(Register16::HL, v));
             }
             Load::LdNR16(r) => {
                 let v = self[Register8::A];
@@ -597,12 +576,24 @@ impl Cpu {
         Ok(())
     }
 
-    pub fn read_operand(&self, o: Operand) -> Result<u8, ()> {
+    fn read_operand(&self, o: Operand) -> Result<u8, ()> {
         match o {
             Operand::Immediate(v) => Ok(v),
             Operand::Register(r) => Ok(self[r]),
             Operand::IndirectRegister(ir) => self.read_indirect(ir),
             Operand::IndirectAddress(a) => self.mmu.read(a),
+        }
+    }
+
+    fn write_operand(&mut self, o: Operand, v: u8) -> Result<(), ()> {
+        match o {
+            Operand::Immediate(_) => panic!("Invalid instruction requesting write to immediate"),
+            Operand::Register(r) => {
+                self[r] = v;
+                Ok(())
+            }
+            Operand::IndirectAddress(a) => self.mmu.write(a, v),
+            Operand::IndirectRegister(r) => self.write_indirect(r, v),
         }
     }
 
