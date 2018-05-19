@@ -250,41 +250,34 @@ impl Cpu {
                 self[Register8::A] = !v;
                 self[Register8::F] = f.0;
             }
-            Bits::SwapR(r) => {
-                let (v, flags) = swap(self[r]);
-                self[r] = v;
+            Bits::Swap(o) => {
+                let v = self.read_operand(o)?;
+                let (v, flags) = swap(v);
+                self.write_operand(o, v)?;
                 self[Register8::F] = flags.0;
             }
-            Bits::SlaR(r) => {
-                let (v, flags) = sla(self[r]);
-                self[r] = v;
+            Bits::Sla(o) => {
+                let v = self.read_operand(o)?;
+                let (v, flags) = sla(v);
+                self.write_operand(o, v)?;
                 self[Register8::F] = flags.0;
             }
-            Bits::SrlR(r) => {
-                let (v, flags) = srl(self[r]);
-                self[r] = v;
+            Bits::Srl(o) => {
+                let v = self.read_operand(o)?;
+                let (v, flags) = srl(v);
+                self.write_operand(o, v)?;
                 self[Register8::F] = flags.0;
             }
-            Bits::RlR(r) => {
-                let (v, flags) = rl(self[r], self.flags());
-                self[r] = v;
-                self[Register8::F] = flags.0;
-            }
-            Bits::RlN => {
-                let v = try!(self.read_indirect(Register16::HL));
+            Bits::Rl(o) => {
+                let v = self.read_operand(o)?;
                 let (v, flags) = rl(v, self.flags());
-                try!(self.write_indirect(Register16::HL, v));
+                self.write_operand(o, v)?;
                 self[Register8::F] = flags.0;
             }
-            Bits::RrR(r) => {
-                let (v, flags) = rr(self[r], self.flags());
-                self[r] = v;
-                self[Register8::F] = flags.0;
-            }
-            Bits::RrN => {
-                let v = try!(self.read_indirect(Register16::HL));
+            Bits::Rr(o) => {
+                let v = self.read_operand(o)?;
                 let (v, flags) = rr(v, self.flags());
-                try!(self.write_indirect(Register16::HL, v));
+                self.write_operand(o, v)?;
                 self[Register8::F] = flags.0;
             }
             Bits::Rra => {
@@ -311,13 +304,13 @@ impl Cpu {
                 self[Register8::A] = v;
                 self[Register8::F] = flags.0;
             }
-            Bits::Res(b, r) => {
-                let v = self[r] & !(1 << b);
-                self[r] = v;
+            Bits::Res(b, o) => {
+                let v = self.read_operand(o)?;
+                self.write_operand(o, v & !(1 << b))?;
             }
-            Bits::Set(b, r) => {
-                let v = self[r] | (1 << b);
-                self[r] = v;
+            Bits::Set(b, o) => {
+                let v = self.read_operand(o)?;
+                self.write_operand(o, v | (1 << b))?;
             }
         }
 
