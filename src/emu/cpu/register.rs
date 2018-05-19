@@ -71,3 +71,20 @@ impl Display for Operand {
         }
     }
 }
+
+impl Operand {
+    pub fn from_bits(byte: u8, start_bit: u8) -> Operand {
+        let bits = (byte >> start_bit) & 0b111;
+        match bits {
+            0b111 => Operand::Register(Register8::A),
+            0b000 => Operand::Register(Register8::B),
+            0b001 => Operand::Register(Register8::C),
+            0b010 => Operand::Register(Register8::D),
+            0b011 => Operand::Register(Register8::E),
+            0b100 => Operand::Register(Register8::H),
+            0b101 => Operand::Register(Register8::L),
+            0b110 => Operand::IndirectRegister(Register16::HL),
+            _ => panic!("Invalid register decode {}", bits),
+        }
+    }
+}

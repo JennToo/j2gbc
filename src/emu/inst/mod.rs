@@ -310,13 +310,7 @@ impl Instruction {
 
             0xFE => Ok((Instruction::Cp(Operand::Immediate(bytes[1])), 2)),
 
-            0xB8 => Ok((Instruction::Cp(Operand::Register(Register8::B)), 1)),
-            0xB9 => Ok((Instruction::Cp(Operand::Register(Register8::C)), 1)),
-            0xBA => Ok((Instruction::Cp(Operand::Register(Register8::D)), 1)),
-            0xBB => Ok((Instruction::Cp(Operand::Register(Register8::E)), 1)),
-            0xBC => Ok((Instruction::Cp(Operand::Register(Register8::H)), 1)),
-            0xBD => Ok((Instruction::Cp(Operand::Register(Register8::L)), 1)),
-            0xBF => Ok((Instruction::Cp(Operand::Register(Register8::A)), 1)),
+            0xB8...0xBF => Ok((Instruction::Cp(Operand::from_bits(bytes[0], 0)), 1)),
 
             0x20 => Ok((Instruction::Control(Control::JrNZI(bytes[1] as i8)), 2)),
             0x30 => Ok((Instruction::Control(Control::JrNCI(bytes[1] as i8)), 2)),
