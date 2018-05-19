@@ -386,7 +386,7 @@ impl Instruction {
                     2,
                 )),
                 0xC0...0xFF => Ok((
-                    Instruction::Bits(Bits::Res(
+                    Instruction::Bits(Bits::Set(
                         get_bits_bit(bytes[1]),
                         Operand::from_bits(bytes[1], 0),
                     )),
