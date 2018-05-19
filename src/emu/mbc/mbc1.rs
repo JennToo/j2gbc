@@ -24,7 +24,7 @@ impl Mbc1 {
             rom,
             upper_bank_controls_rom: true,
             upper_bank_select: 0,
-            lower_bank_select: 0,
+            lower_bank_select: 1,
             ram: Ram::new(RNG_EXT_RAM.len() * 4),
         }
     }
@@ -54,6 +54,9 @@ impl MemDevice for Mbc1 {
     fn write(&mut self, a: Address, v: u8) -> Result<(), ()> {
         if a.in_(RNG_LOWER_BANK_SELECT) {
             self.lower_bank_select = (v & MASK_LOWER_BANK_SELECT) as usize;
+            if self.lower_bank_select == 0 {
+                self.lower_bank_select = 1;
+            }
             Ok(())
         } else if a.in_(RNG_EXT_RAM) {
             if self.ram_protected {

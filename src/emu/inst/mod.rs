@@ -24,6 +24,7 @@ pub enum Instruction {
     Di,
     Halt,
     Scf,
+    Ccf,
     Cp(Operand),
     Arith(Arith),
     Bits(Bits),
@@ -40,7 +41,7 @@ impl Instruction {
             Instruction::Ei => 4,
             Instruction::Di => 4,
             Instruction::Halt => 4,
-            Instruction::Scf => 4,
+            Instruction::Scf | Instruction::Ccf => 4,
             Instruction::Cp(Operand::Immediate(_)) => 8,
             Instruction::Cp(Operand::IndirectRegister(_)) => 8,
             Instruction::Cp(Operand::Register(_)) => 4,
@@ -65,6 +66,7 @@ impl Instruction {
             0x76 => Ok((Instruction::Halt, 1)),
 
             0x37 => Ok((Instruction::Scf, 1)),
+            0x3F => Ok((Instruction::Ccf, 1)),
 
             0x04 | 0x14 | 0x24 | 0x34 | 0x0C | 0x1C | 0x2C | 0x3C => Ok((
                 Instruction::Arith(Arith::Inc(Operand::from_bits(bytes[0], 3))),
@@ -410,6 +412,7 @@ impl Display for Instruction {
             Instruction::Di => write!(f, "di"),
             Instruction::Halt => write!(f, "halt"),
             Instruction::Scf => write!(f, "scf"),
+            Instruction::Ccf => write!(f, "ccf"),
             Instruction::Cp(o) => write!(f, "cp {}", o),
             Instruction::Arith(a) => a.fmt(f),
             Instruction::Bits(b) => b.fmt(f),

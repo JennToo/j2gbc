@@ -87,6 +87,13 @@ impl Cpu {
                 f.set_carry(true);
                 self[Register8::F] = f.0;
             }
+            Instruction::Ccf => {
+                let mut f = self.flags();
+                f.set_subtract(false);
+                f.set_halfcarry(false);
+                f.set_carry(!self.flags().get_carry());
+                self[Register8::F] = f.0;
+            }
             Instruction::Cp(o) => {
                 let v = try!(self.read_operand(o));
                 let (_, flags) = sub(self[Register8::A], v);
