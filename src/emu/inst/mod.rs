@@ -2,7 +2,7 @@ use std::fmt;
 use std::fmt::Display;
 
 use super::alu::hi_lo;
-use super::cpu::{Register16, Register8};
+use super::cpu::{Operand, Register16, Register8};
 use super::mem::Address;
 
 mod arith;
@@ -24,8 +24,7 @@ pub enum Instruction {
     Di,
     Halt,
     Scf,
-    CpI(u8),
-    CpR(Register8),
+    Cp(Operand),
     Arith(Arith),
     Bits(Bits),
     Control(Control),
@@ -42,13 +41,16 @@ impl Instruction {
             Instruction::Di => 4,
             Instruction::Halt => 4,
             Instruction::Scf => 4,
-            Instruction::CpI(_) => 8,
-            Instruction::CpR(_) => 4,
+            Instruction::Cp(Operand::Immediate(_)) => 8,
+            Instruction::Cp(Operand::Register(_)) => 4,
+
             Instruction::Arith(a) => a.cycles(),
             Instruction::Bits(b) => b.cycles(),
             Instruction::Load(l) => l.cycles(),
             Instruction::Control(c) => c.cycles(),
             Instruction::Logic(l) => l.cycles(),
+
+            Instruction::Cp(_) => unimplemented!(),
         }
     }
 
@@ -306,15 +308,15 @@ impl Instruction {
             0xE1 => Ok((Instruction::Load(Load::Pop(Register16::HL)), 1)),
             0xF1 => Ok((Instruction::Load(Load::Pop(Register16::AF)), 1)),
 
-            0xFE => Ok((Instruction::CpI(bytes[1]), 2)),
+            0xFE => Ok((Instruction::Cp(Operand::Immediate(bytes[1])), 2)),
 
-            0xB8 => Ok((Instruction::CpR(Register8::B), 1)),
-            0xB9 => Ok((Instruction::CpR(Register8::C), 1)),
-            0xBA => Ok((Instruction::CpR(Register8::D), 1)),
-            0xBB => Ok((Instruction::CpR(Register8::E), 1)),
-            0xBC => Ok((Instruction::CpR(Register8::H), 1)),
-            0xBD => Ok((Instruction::CpR(Register8::L), 1)),
-            0xBF => Ok((Instruction::CpR(Register8::A), 1)),
+            0xB8 => Ok((Instruction::Cp(Operand::Register(Register8::B)), 1)),
+            0xB9 => Ok((Instruction::Cp(Operand::Register(Register8::C)), 1)),
+            0xBA => Ok((Instruction::Cp(Operand::Register(Register8::D)), 1)),
+            0xBB => Ok((Instruction::Cp(Operand::Register(Register8::E)), 1)),
+            0xBC => Ok((Instruction::Cp(Operand::Register(Register8::H)), 1)),
+            0xBD => Ok((Instruction::Cp(Operand::Register(Register8::L)), 1)),
+            0xBF => Ok((Instruction::Cp(Operand::Register(Register8::A)), 1)),
 
             0x20 => Ok((Instruction::Control(Control::JrNZI(bytes[1] as i8)), 2)),
             0x30 => Ok((Instruction::Control(Control::JrNCI(bytes[1] as i8)), 2)),
@@ -540,8 +542,7 @@ impl Display for Instruction {
             Instruction::Di => write!(f, "di"),
             Instruction::Halt => write!(f, "halt"),
             Instruction::Scf => write!(f, "scf"),
-            Instruction::CpI(b) => write!(f, "cp {:#x}", b),
-            Instruction::CpR(r) => write!(f, "cp {}", r),
+            Instruction::Cp(o) => write!(f, "cp {}", o),
             Instruction::Arith(a) => a.fmt(f),
             Instruction::Bits(b) => b.fmt(f),
             Instruction::Load(l) => l.fmt(f),

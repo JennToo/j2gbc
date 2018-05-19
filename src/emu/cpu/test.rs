@@ -1,7 +1,7 @@
 use std::collections::{HashMap, HashSet};
 use std::io::Cursor;
 
-use super::{Arith, Cpu, Instruction, Load, Register8};
+use super::{Arith, Cpu, Instruction, Load, Operand, Register8};
 use emu::alu::Flags;
 use emu::cart::Cart;
 use emu::mem::{Address, MemDevice};
@@ -81,7 +81,7 @@ fn test_cpi() {
     let mut cpu = make_test_cpu();
     cpu[Register8::A] = 0x3C;
 
-    let i = Instruction::CpI(0x3C);
+    let i = Instruction::Cp(Operand::Immediate(0x3C));
     cpu.execute(i).unwrap();
 
     assert_reg_vals(
@@ -101,7 +101,7 @@ fn test_cpr() {
     cpu[Register8::A] = 0x3C;
     cpu[Register8::B] = 0x2F;
 
-    let i = Instruction::CpR(Register8::B);
+    let i = Instruction::Cp(Operand::Register(Register8::B));
     cpu.execute(i).unwrap();
 
     assert_reg_vals(

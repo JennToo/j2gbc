@@ -18,7 +18,7 @@ mod register;
 mod test;
 
 pub use self::interrupt::Interrupt;
-pub use self::register::{Register16, Register8};
+pub use self::register::{Operand, Register16, Register8};
 
 pub struct Cpu {
     registers: [u8; 8],
@@ -87,12 +87,8 @@ impl Cpu {
                 f.set_carry(true);
                 self[Register8::F] = f.0;
             }
-            Instruction::CpI(v) => {
-                let (_, flags) = sub(self[Register8::A], v);
-                self[Register8::F] = flags.0;
-            }
-            Instruction::CpR(r) => {
-                let v = self[r];
+            Instruction::Cp(o) => {
+                let v = try!(self.read_operand(o));
                 let (_, flags) = sub(self[Register8::A], v);
                 self[Register8::F] = flags.0;
             }
@@ -599,6 +595,15 @@ impl Cpu {
         }
 
         Ok(())
+    }
+
+    pub fn read_operand(&self, o: Operand) -> Result<u8, ()> {
+        match o {
+            Operand::Immediate(v) => Ok(v),
+            Operand::Register(r) => Ok(self[r]),
+            Operand::IndirectRegister(ir) => self.read_indirect(ir),
+            Operand::IndirectAddress(a) => self.mmu.read(a),
+        }
     }
 
     pub fn run_cycle(&mut self) -> Result<(), ()> {

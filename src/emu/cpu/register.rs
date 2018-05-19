@@ -1,6 +1,8 @@
 use std::fmt;
 use std::fmt::Display;
 
+use emu::mem::Address;
+
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum Register8 {
     A,
@@ -21,6 +23,14 @@ pub enum Register16 {
     HL,
     SP,
     PC,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+pub enum Operand {
+    Register(Register8),
+    IndirectRegister(Register16),
+    IndirectAddress(Address),
+    Immediate(u8),
 }
 
 impl Display for Register8 {
@@ -47,6 +57,17 @@ impl Display for Register16 {
             Register16::HL => write!(f, "hl"),
             Register16::SP => write!(f, "sp"),
             Register16::PC => write!(f, "pc"),
+        }
+    }
+}
+
+impl Display for Operand {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            Operand::Immediate(v) => write!(f, "{:#x}", v),
+            Operand::IndirectAddress(a) => write!(f, "[{}]", a),
+            Operand::IndirectRegister(r) => write!(f, "[{}]", r),
+            Operand::Register(r) => r.fmt(f),
         }
     }
 }
