@@ -13,7 +13,7 @@ pub const RNG_EXT_RAM: AddressRange = AddressRange(Address(0xA000), Address(0xC0
 pub const RNG_INT_RAM: AddressRange = AddressRange(Address(0xC000), Address(0xE000));
 pub const RNG_LCD_OAM: AddressRange = AddressRange(Address(0xFE00), Address(0xFEA0));
 pub const RNG_SND_REGS: AddressRange = AddressRange(Address(0xFF10), Address(0xFF27));
-pub const RNG_SND_WAV_RAM: AddressRange = AddressRange(Address(0xFF30), Address(0xFF3F));
+pub const RNG_SND_WAV_RAM: AddressRange = AddressRange(Address(0xFF30), Address(0xFF40));
 pub const RNG_LCD_MM_REG: AddressRange = AddressRange(Address(0xFF40), Address(0xFF6C));
 pub const RNG_INT_TINY_RAM: AddressRange = AddressRange(Address(0xFF80), Address(0xFFFF));
 

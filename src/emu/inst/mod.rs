@@ -42,6 +42,7 @@ impl Instruction {
             Instruction::Halt => 4,
             Instruction::Scf => 4,
             Instruction::Cp(Operand::Immediate(_)) => 8,
+            Instruction::Cp(Operand::IndirectRegister(_)) => 8,
             Instruction::Cp(Operand::Register(_)) => 4,
 
             Instruction::Arith(a) => a.cycles(),
@@ -375,7 +376,7 @@ impl Instruction {
                     )),
                     2,
                 )),
-                0x80...0xB8 => Ok((
+                0x80...0xBF => Ok((
                     Instruction::Bits(Bits::Res(
                         get_bits_bit(bytes[1]),
                         Operand::from_bits(bytes[1], 0),
