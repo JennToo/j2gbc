@@ -105,11 +105,11 @@ pub fn sbc(l: u8, r: u8, carry: bool) -> (u8, Flags) {
     let mut f = Flags(0);
     let c = if carry { 1 } else { 0 };
     let v = (Wrapping(l) - Wrapping(r) - Wrapping(c)).0;
-    let full_l = (Wrapping(l) - Wrapping(c)).0;
+    let full_o = (Wrapping(l) - Wrapping(r)).0;
     f.set_zero(v == 0);
     f.set_subtract(true);
-    f.set_carry(full_l < r);
-    f.set_halfcarry(full_l & 0x0F < r & 0x0F);
+    f.set_carry(l < r || full_o < c);
+    f.set_halfcarry(l & 0x0F < r & 0x0F || full_o & 0x0F < c);
     (v, f)
 }
 
@@ -127,10 +127,10 @@ pub fn adc(l: u8, r: u8, carry: bool) -> (u8, Flags) {
     let mut f = Flags(0);
     let c = if carry { 1 } else { 0 };
     let v = (Wrapping(l) + Wrapping(r) + Wrapping(c)).0;
-    let full_l = (Wrapping(l) + Wrapping(c)).0;
+    let full_l = u16::from(l) + u16::from(c);
     f.set_zero(v == 0);
-    f.set_halfcarry((full_l & 0x0F) + (r & 0x0F) > 0x0F);
-    f.set_carry(u16::from(full_l) + u16::from(r) > 0xFF);
+    f.set_halfcarry((full_l & 0x0F) as u8 + (r & 0x0F) > 0x0F || (l & 0x0F == 0x0F && c == 1));
+    f.set_carry(full_l + u16::from(r) > 0xFF);
     f.set_subtract(false);
     (v, f)
 }
