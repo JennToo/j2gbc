@@ -1,7 +1,7 @@
 use std::collections::{HashMap, HashSet};
 use std::io::Cursor;
 
-use super::{Arith, Cpu, Instruction, Load, Operand, Register8};
+use super::{Arith, Cpu, Instruction, Load, Operand, Register16, Register8};
 use emu::alu::Flags;
 use emu::cart::Cart;
 use emu::mem::{Address, MemDevice};
@@ -126,7 +126,7 @@ fn test_addn() {
     cpu[Register8::L] = 0x80;
     cpu.mmu.write(Address(0xFF80), 0x12).unwrap();
 
-    let i = Instruction::Arith(Arith::AddN);
+    let i = Instruction::Arith(Arith::Add(Operand::IndirectRegister(Register16::HL)));
     cpu.execute(i).unwrap();
 
     assert_reg_vals(
@@ -148,7 +148,7 @@ fn test_addr() {
     cpu[Register8::A] = 0x3A;
     cpu[Register8::B] = 0xC6;
 
-    let i = Instruction::Arith(Arith::AddR(Register8::B));
+    let i = Instruction::Arith(Arith::Add(Operand::Register(Register8::B)));
     cpu.execute(i).unwrap();
 
     assert_reg_vals(

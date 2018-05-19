@@ -114,106 +114,44 @@ impl Cpu {
 
     fn execute_arith(&mut self, a: Arith) -> Result<(), ()> {
         match a {
-            Arith::AddN => {
-                let v1 = try!(self.read_indirect(Register16::HL));
-                let v2 = self[Register8::A];
+            Arith::Add(o) => {
+                let v1 = self[Register8::A];
+                let v2 = self.read_operand(o)?;
                 let (v, flags) = add(v1, v2);
                 self[Register8::A] = v;
                 self[Register8::F] = flags.0;
             }
-            Arith::AddR(r) => {
-                let v1 = self[r];
-                let v2 = self[Register8::A];
-                let (v, flags) = add(v1, v2);
-                self[Register8::A] = v;
-                self[Register8::F] = flags.0;
-            }
-            Arith::AddI(v1) => {
-                let v2 = self[Register8::A];
-                let (v, flags) = add(v1, v2);
-                self[Register8::A] = v;
-                self[Register8::F] = flags.0;
-            }
-            Arith::AdcN => {
-                let v1 = try!(self.read_indirect(Register16::HL));
-                let v2 = self[Register8::A];
-                let (v, flags) = adc(v1, v2, Flags(self[Register8::F]).get_carry());
-                self[Register8::A] = v;
-                self[Register8::F] = flags.0;
-            }
-            Arith::AdcR(r) => {
-                let v1 = self[r];
-                let v2 = self[Register8::A];
-                let (v, flags) = adc(v1, v2, Flags(self[Register8::F]).get_carry());
-                self[Register8::A] = v;
-                self[Register8::F] = flags.0;
-            }
-            Arith::AdcI(v1) => {
-                let v2 = self[Register8::A];
-                let (v, flags) = adc(v1, v2, Flags(self[Register8::F]).get_carry());
-                self[Register8::A] = v;
-                self[Register8::F] = flags.0;
-            }
-            Arith::SubN => {
+            Arith::Adc(o) => {
                 let v1 = self[Register8::A];
-                let v2 = try!(self.read_indirect(Register16::HL));
+                let v2 = self.read_operand(o)?;
+                let (v, flags) = adc(v1, v2, self.flags().get_carry());
+                self[Register8::A] = v;
+                self[Register8::F] = flags.0;
+            }
+            Arith::Sub(o) => {
+                let v1 = self[Register8::A];
+                let v2 = self.read_operand(o)?;
                 let (v, flags) = sub(v1, v2);
                 self[Register8::A] = v;
                 self[Register8::F] = flags.0;
             }
-            Arith::SubR(r) => {
+            Arith::Sbc(o) => {
                 let v1 = self[Register8::A];
-                let v2 = self[r];
-                let (v, flags) = sub(v1, v2);
+                let v2 = self.read_operand(o)?;
+                let (v, flags) = sbc(v1, v2, self.flags().get_carry());
                 self[Register8::A] = v;
                 self[Register8::F] = flags.0;
             }
-            Arith::SubI(v2) => {
-                let v1 = self[Register8::A];
-                let (v, flags) = sub(v1, v2);
-                self[Register8::A] = v;
+            Arith::Inc(o) => {
+                let v = self.read_operand(o)?;
+                let (v, flags) = inc(v, self.flags());
+                self.write_operand(o, v)?;
                 self[Register8::F] = flags.0;
             }
-            Arith::SbcN => {
-                let v1 = try!(self.read_indirect(Register16::HL));
-                let v2 = self[Register8::A];
-                let (v, flags) = sbc(v1, v2, Flags(self[Register8::F]).get_carry());
-                self[Register8::A] = v;
-                self[Register8::F] = flags.0;
-            }
-            Arith::SbcR(r) => {
-                let v1 = self[r];
-                let v2 = self[Register8::A];
-                let (v, flags) = sbc(v1, v2, Flags(self[Register8::F]).get_carry());
-                self[Register8::A] = v;
-                self[Register8::F] = flags.0;
-            }
-            Arith::SbcI(v1) => {
-                let v2 = self[Register8::A];
-                let (v, flags) = sbc(v1, v2, Flags(self[Register8::F]).get_carry());
-                self[Register8::A] = v;
-                self[Register8::F] = flags.0;
-            }
-            Arith::IncR(r) => {
-                let (v, flags) = inc(self[r], self.flags());
-                self[r] = v;
-                self[Register8::F] = flags.0;
-            }
-            Arith::IncN => {
-                let s = try!(self.read_indirect(Register16::HL));
-                let (v, flags) = inc(s, self.flags());
-                try!(self.write_indirect(Register16::HL, v));
-                self[Register8::F] = flags.0;
-            }
-            Arith::DecR(r) => {
-                let (v, flags) = dec(self[r], self.flags());
-                self[r] = v;
-                self[Register8::F] = flags.0;
-            }
-            Arith::DecN => {
-                let s = try!(self.read_indirect(Register16::HL));
-                let (v, flags) = dec(s, self.flags());
-                try!(self.write_indirect(Register16::HL, v));
+            Arith::Dec(o) => {
+                let v = self.read_operand(o)?;
+                let (v, flags) = dec(v, self.flags());
+                self.write_operand(o, v)?;
                 self[Register8::F] = flags.0;
             }
             Arith::DecR16(r) => {
