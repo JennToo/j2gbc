@@ -304,6 +304,14 @@ impl Cpu {
                 self[Register8::A] = v;
                 self[Register8::F] = flags.0;
             }
+            Bits::Bit(b, o) => {
+                let v = self.read_operand(o)?;
+                let mut flags = self.flags();
+                flags.set_halfcarry(true);
+                flags.set_subtract(false);
+                flags.set_zero(v & (1 << b) == 0);
+                self[Register8::F] = flags.0;
+            }
             Bits::Res(b, o) => {
                 let v = self.read_operand(o)?;
                 self.write_operand(o, v & !(1 << b))?;

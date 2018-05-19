@@ -368,7 +368,13 @@ impl Instruction {
                     Instruction::Bits(Bits::Srl(Operand::from_bits(bytes[1], 0))),
                     2,
                 )),
-
+                0x40...0x7F => Ok((
+                    Instruction::Bits(Bits::Bit(
+                        get_bits_bit(bytes[1]),
+                        Operand::from_bits(bytes[1], 0),
+                    )),
+                    2,
+                )),
                 0x80...0xB8 => Ok((
                     Instruction::Bits(Bits::Res(
                         get_bits_bit(bytes[1]),

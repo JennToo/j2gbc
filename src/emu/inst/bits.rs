@@ -15,6 +15,7 @@ pub enum Bits {
     Rrca,
     Rla,
     Rlca,
+    Bit(u8, Operand),
     Res(u8, Operand),
     Set(u8, Operand),
 }
@@ -26,6 +27,7 @@ impl Bits {
             Bits::Cpl => 4,
 
             Bits::Set(_, Operand::Register(_))
+            | Bits::Bit(_, Operand::Register(_))
             | Bits::Res(_, Operand::Register(_))
             | Bits::Swap(Operand::Register(_))
             | Bits::Rl(Operand::Register(_))
@@ -34,6 +36,7 @@ impl Bits {
             | Bits::Srl(Operand::Register(_)) => 8,
 
             Bits::Set(_, Operand::IndirectRegister(_))
+            | Bits::Bit(_, Operand::IndirectRegister(_))
             | Bits::Res(_, Operand::IndirectRegister(_))
             | Bits::Swap(Operand::IndirectRegister(_))
             | Bits::Rl(Operand::IndirectRegister(_))
@@ -44,6 +47,7 @@ impl Bits {
             Bits::Rra | Bits::Rrca | Bits::Rla | Bits::Rlca => 4,
 
             Bits::Set(_, _)
+            | Bits::Bit(_, _)
             | Bits::Res(_, _)
             | Bits::Swap(_)
             | Bits::Rl(_)
@@ -57,6 +61,7 @@ impl Display for Bits {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             Bits::Cpl => write!(f, "cpl"),
+            Bits::Bit(b, o) => write!(f, "bit {},{}", b, o),
             Bits::Res(b, o) => write!(f, "res {},{}", b, o),
             Bits::Set(b, o) => write!(f, "set {},{}", b, o),
             Bits::Swap(o) => write!(f, "swap {}", o),
