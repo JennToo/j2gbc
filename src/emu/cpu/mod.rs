@@ -640,7 +640,7 @@ impl Cpu {
             Register16::PC => self.pc = Address(v),
             Register16::AF => {
                 self[Register8::A] = hi(v);
-                self[Register8::F] = lo(v);
+                self[Register8::F] = lo(v) & 0xF0;
             }
             Register16::BC => {
                 self[Register8::B] = hi(v);
