@@ -207,9 +207,27 @@ impl Cpu {
                 self.write_operand(o, v)?;
                 self[Register8::F] = flags.0;
             }
+            Bits::Sra(o) => {
+                let v = self.read_operand(o)?;
+                let (v, flags) = sra(v);
+                self.write_operand(o, v)?;
+                self[Register8::F] = flags.0;
+            }
             Bits::Srl(o) => {
                 let v = self.read_operand(o)?;
                 let (v, flags) = srl(v);
+                self.write_operand(o, v)?;
+                self[Register8::F] = flags.0;
+            }
+            Bits::Rlc(o) => {
+                let v = self.read_operand(o)?;
+                let (v, flags) = rlc(v, self.flags());
+                self.write_operand(o, v)?;
+                self[Register8::F] = flags.0;
+            }
+            Bits::Rrc(o) => {
+                let v = self.read_operand(o)?;
+                let (v, flags) = rrc(v, self.flags());
                 self.write_operand(o, v)?;
                 self[Register8::F] = flags.0;
             }

@@ -339,6 +339,14 @@ impl Instruction {
             0x0F => Ok((Instruction::Bits(Bits::Rrca), 1)),
 
             0xCB => match bytes[1] {
+                0x00...0x07 => Ok((
+                    Instruction::Bits(Bits::Rlc(Operand::from_bits(bytes[1], 0))),
+                    2,
+                )),
+                0x08...0x0F => Ok((
+                    Instruction::Bits(Bits::Rrc(Operand::from_bits(bytes[1], 0))),
+                    2,
+                )),
                 0x10...0x17 => Ok((
                     Instruction::Bits(Bits::Rl(Operand::from_bits(bytes[1], 0))),
                     2,
@@ -349,6 +357,10 @@ impl Instruction {
                 )),
                 0x20...0x27 => Ok((
                     Instruction::Bits(Bits::Sla(Operand::from_bits(bytes[1], 0))),
+                    2,
+                )),
+                0x28...0x2F => Ok((
+                    Instruction::Bits(Bits::Sra(Operand::from_bits(bytes[1], 0))),
                     2,
                 )),
                 0x30...0x37 => Ok((
@@ -380,14 +392,7 @@ impl Instruction {
                     )),
                     2,
                 )),
-
-                _ => {
-                    error!(
-                        "Unknown instruction {:#X} {:#X} {:#X}",
-                        bytes[0], bytes[1], bytes[2]
-                    );
-                    Err(())
-                }
+                _ => unreachable!(),
             },
             _ => {
                 error!(
