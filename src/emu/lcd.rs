@@ -90,6 +90,8 @@ pub struct Lcd {
     next_vblank_end_cycle: u64,
     next_mode_10_start_cycle: u64,
     next_mode_10_end_cycle: u64,
+
+    running_until_cycle: u64,
 }
 
 struct Obj {
@@ -143,6 +145,7 @@ impl Lcd {
             next_vblank_end_cycle: SCREEN_CYCLE_TIME,
             next_mode_10_start_cycle: LINE_CYCLE_TIME - HBLANK_DURATION,
             next_mode_10_end_cycle: LINE_CYCLE_TIME,
+            running_until_cycle: 0,
             ly: 0,
         }
     }
@@ -178,6 +181,10 @@ impl Lcd {
         ].iter()
             .min()
             .unwrap()
+    }
+
+    pub fn set_running_until(&mut self, cycle: u64) {
+        self.running_until_cycle = cycle;
     }
 
     pub fn pump_cycle(&mut self, cycle: u64) -> Option<Interrupt> {
@@ -221,13 +228,19 @@ impl Lcd {
         }
     }
 
-    pub fn do_hblank_start(&mut self, cycle: u64) {
+    fn do_hblank_start(&mut self, cycle: u64) {
         if self.ly < SCREEN_SIZE.1 as u8 {
-            self.render_background_row();
-            self.render_oam_row();
+            if self.should_render_this_frame(cycle) {
+                self.render_background_row();
+                self.render_oam_row();
+            }
             self.stat = (self.stat & 0b1111_1100) | MODE_00_MASK;
         }
         self.next_hblank_start_cycle = LINE_CYCLE_TIME + cycle;
+    }
+
+    fn should_render_this_frame(&self, cycle: u64) -> bool {
+        self.running_until_cycle - cycle <= 2 * SCREEN_CYCLE_TIME
     }
 
     fn do_hblank_end(&mut self, cycle: u64) {
