@@ -1,7 +1,5 @@
 use std::num::Wrapping;
 
-// TODO: Audit the setting of flags
-
 pub const MASK_FLAG_Z: u8 = 0b1000_0000;
 pub const MASK_FLAG_N: u8 = 0b0100_0000;
 pub const MASK_FLAG_H: u8 = 0b0010_0000;
