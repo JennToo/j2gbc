@@ -589,7 +589,9 @@ impl Cpu {
     pub fn run_for_duration(&mut self, duration: &Duration) {
         let cycles_to_run = duration_to_cycle_count(&duration);
         let stop_at_cycle = self.cycle() + cycles_to_run;
-        self.mmu.lcd.set_running_until(stop_at_cycle + LONGEST_INSTRUCTION_CYCLE);
+        self.mmu
+            .lcd
+            .set_running_until(stop_at_cycle + LONGEST_INSTRUCTION_CYCLE);
         while self.cycle() < stop_at_cycle && !self.debug_halted {
             if self.run_cycle().is_err() {
                 self.debug_halted = true;

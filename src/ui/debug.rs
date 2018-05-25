@@ -10,7 +10,7 @@ use sdl2::video::WindowContext;
 
 use emu::cpu::Cpu;
 use emu::cpu::Register8;
-use emu::mem::Address;
+use emu::mem::{Address, MemDevice};
 use emu::system::System;
 
 pub struct Debug<'a> {
@@ -221,6 +221,15 @@ impl<'a> Debug<'a> {
             "b" => {
                 let address = Address(u16::from_str_radix(args[0].as_str(), 16).unwrap());
                 cpu.breakpoints.insert(address);
+            }
+            "peek" => {
+                let address = Address(u16::from_str_radix(args[0].as_str(), 16).unwrap());
+                info!("{}: {:?}", address, cpu.mmu.read(address));
+            }
+            "poke" => {
+                let address = Address(u16::from_str_radix(args[0].as_str(), 16).unwrap());
+                let v = u8::from_str_radix(args[1].as_str(), 16).unwrap();
+                info!("{}: {:?}", address, cpu.mmu.write(address, v));
             }
             _ => info!("Unrecognized command: {}", cmd),
         }
