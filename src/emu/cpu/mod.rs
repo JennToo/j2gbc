@@ -454,6 +454,10 @@ impl Cpu {
                 let v = self.read_r16(Register16::HL);
                 self.write_r16(Register16::SP, v);
             }
+            Load::LdIndirectSP(a) => {
+                let v = self.read_r16(Register16::SP);
+                self.mmu.write16(a, v)?;
+            }
             Load::LdNR16(r) => {
                 let v = self[Register8::A];
                 try!(self.write_indirect(r, v))

@@ -18,6 +18,7 @@ pub enum Load {
     LdRN16(Register16),
     LdHLSPI(i8),
     LdSPHL,
+    LdIndirectSP(Address),
     Push(Register16),
     Pop(Register16),
 }
@@ -44,6 +45,8 @@ impl Load {
             Load::LdSPHL => 8,
             Load::Push(_) => 16,
             Load::Pop(_) => 12,
+
+            Load::LdIndirectSP(_) => 20,
 
             Load::Ld(_, _) => unimplemented!(),
         }
@@ -77,6 +80,7 @@ impl Display for Load {
             Load::LdANI16(a) => write!(f, "ld a,[{}]", a),
             Load::LdNR16(r) => write!(f, "ld [{}],a", r),
             Load::LdRN16(r) => write!(f, "ld a,[{}]", r),
+            Load::LdIndirectSP(a) => write!(f, "ld [{}],sp", a),
             Load::Push(r) => write!(f, "push {}", r),
             Load::Pop(r) => write!(f, "pop {}", r),
         }

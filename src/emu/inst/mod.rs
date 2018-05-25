@@ -78,6 +78,11 @@ impl Instruction {
                 1,
             )),
 
+            0x08 => Ok((
+                Instruction::Load(Load::LdIndirectSP(Address(hi_lo(bytes[2], bytes[1])))),
+                3,
+            )),
+
             0x0B => Ok((Instruction::Arith(Arith::DecR16(Register16::BC)), 1)),
             0x1B => Ok((Instruction::Arith(Arith::DecR16(Register16::DE)), 1)),
             0x2B => Ok((Instruction::Arith(Arith::DecR16(Register16::HL)), 1)),
@@ -115,7 +120,7 @@ impl Instruction {
                 3,
             )),
             0xD2 => Ok((
-                Instruction::Control(Control::JpCI(Address(hi_lo(bytes[2], bytes[1])))),
+                Instruction::Control(Control::JpNCI(Address(hi_lo(bytes[2], bytes[1])))),
                 3,
             )),
             0xCA => Ok((

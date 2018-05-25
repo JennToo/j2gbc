@@ -130,13 +130,13 @@ pub trait MemDevice {
     fn write(&mut self, a: Address, v: u8) -> Result<(), ()>;
 
     fn write16(&mut self, a: Address, v: u16) -> Result<(), ()> {
-        try!(self.write(a, ((v >> 8) & 0xFF) as u8));
-        try!(self.write(a + Address(1), (v & 0xFF) as u8));
+        try!(self.write(a, (v & 0xFF) as u8));
+        try!(self.write(a + Address(1), ((v >> 8) & 0xFF) as u8));
         Ok(())
     }
 
     fn read16(&self, a: Address) -> Result<u16, ()> {
-        Ok((u16::from(try!(self.read(a)))) << 8 | (u16::from(try!(self.read(a + Address(1))))))
+        Ok((u16::from(try!(self.read(a + Address(1))))) << 8 | (u16::from(try!(self.read(a)))))
     }
 }
 
