@@ -10,7 +10,7 @@ pub struct Mmu {
     tiny_ram: Ram,
     pub cart: Cart,
     pub interrupt_enable: u8,
-    interrupt_flag: u8,
+    pub interrupt_flag: u8,
     pub lcd: Box<Lcd>,
     audio: Audio,
 

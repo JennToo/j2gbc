@@ -580,6 +580,8 @@ impl Cpu {
     }
 
     pub fn run_cycle(&mut self) -> Result<(), ()> {
+        self.fire_interrupts()?;
+
         if self.halted {
             return Ok(());
         }
@@ -625,23 +627,35 @@ impl Cpu {
 
     fn drive_peripherals(&mut self) -> Result<(), ()> {
         if let Some(i) = self.mmu.lcd.pump_cycle(self.cycle) {
-            try!(self.handle_interrupt(i));
+            self.request_interrupt(i);
         }
         Ok(())
     }
 
-    fn handle_interrupt(&mut self, int: Interrupt) -> Result<(), ()> {
-        if self.interrupt_master_enable && int.is_enabled(self.mmu.interrupt_enable) {
-            let v = self.pc.into();
-            try!(self.push16(v));
+    fn request_interrupt(&mut self, int: Interrupt) {
+        self.mmu.interrupt_flag |= int.bits();
+    }
 
-            self.pc = int.table_address();
-            self.interrupt_master_enable = false;
+    fn fire_interrupts(&mut self) -> Result<(), ()> {
+        if self.interrupt_master_enable {
+            if let (Some(int), if_) =
+                Interrupt::int_to_run(self.mmu.interrupt_flag, self.mmu.interrupt_enable)
+            {
+                self.mmu.interrupt_flag = if_;
+                self.fire_interrupt(int)?;
+            }
         }
 
-        if self.halted {
-            self.halted = false;
-        }
+        Ok(())
+    }
+
+    fn fire_interrupt(&mut self, int: Interrupt) -> Result<(), ()> {
+        let v = self.pc.into();
+        try!(self.push16(v));
+
+        self.pc = int.table_address();
+        self.interrupt_master_enable = false;
+        self.halted = false;
 
         Ok(())
     }
