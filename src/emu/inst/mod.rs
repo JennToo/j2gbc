@@ -93,6 +93,8 @@ impl Instruction {
             0x23 => Ok((Instruction::Arith(Arith::IncR16(Register16::HL)), 1)),
             0x33 => Ok((Instruction::Arith(Arith::IncR16(Register16::SP)), 1)),
 
+            0xE8 => Ok((Instruction::Arith(Arith::AddSP(bytes[1] as i8)), 2)),
+
             0x09 => Ok((
                 Instruction::Arith(Arith::AddRR16(Register16::HL, Register16::BC)),
                 1,

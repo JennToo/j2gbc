@@ -177,6 +177,17 @@ impl Cpu {
                 self.write_r16(d, v3);
                 self[Register8::F] = flags.0;
             }
+            Arith::AddSP(v) => {
+                let v1 = self.read_r16(Register16::SP);
+                let v2 = (v as i16) as u16;
+                let (v3, _) = add16(v1, v2, self.flags());
+                // Flags are based on 8-bit addition
+                let (_, mut flags) = add(v1 as u8, v as u8);
+                flags.set_zero(false);
+                flags.set_subtract(false);
+                self.write_r16(Register16::SP, v3);
+                self[Register8::F] = flags.0;
+            }
             Arith::Daa => {
                 let (v, f) = daa(self[Register8::A], self.flags());
                 self[Register8::A] = v;
@@ -440,11 +451,13 @@ impl Cpu {
                 self[Register8::A] = v;
             }
             Load::LdHLSPI(v) => {
-                let (v, mut flags) = add16(
-                    self.read_r16(Register16::SP),
-                    (v as i16) as u16,
-                    self.flags(),
-                );
+                let v1 = self.read_r16(Register16::SP);
+                // Flags are based on 8-bit addition
+                let (_, mut flags) = add(v1 as u8, v as u8);
+                flags.set_zero(false);
+                flags.set_subtract(false);
+
+                let (v, _) = add16(v1, (v as i16) as u16, self.flags());
                 flags.set_zero(false);
                 flags.set_subtract(false);
                 self.write_r16(Register16::HL, v);
