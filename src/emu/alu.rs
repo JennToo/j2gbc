@@ -259,71 +259,24 @@ pub fn rrc(v: u8, mut f: Flags) -> (u8, Flags) {
     (r, f)
 }
 
-// --------------------------------------------------------------------------------
-// |           | C Flag  | HEX value in | H Flag | HEX value in | Number  | C flag|
-// | Operation | Before  | upper digit  | Before | lower digit  | added   | After |
-// |           | DAA     | (bit 7-4)    | DAA    | (bit 3-0)    | to byte | DAA   |
-// |------------------------------------------------------------------------------|
-// |           |    0    |     0-9      |   0    |     0-9      |   00    |   0   |
-// |   ADD     |    0    |     0-8      |   0    |     A-F      |   06    |   0   |
-// |           |    0    |     0-9      |   1    |     0-3      |   06    |   0   |
-// |   ADC     |    0    |     A-F      |   0    |     0-9      |   60    |   1   |
-// |           |    0    |     9-F      |   0    |     A-F      |   66    |   1   |
-// |   INC     |    0    |     A-F      |   1    |     0-3      |   66    |   1   |
-// |           |    1    |     0-2      |   0    |     0-9      |   60    |   1   |
-// |           |    1    |     0-2      |   0    |     A-F      |   66    |   1   |
-// |           |    1    |     0-3      |   1    |     0-3      |   66    |   1   |
-// |------------------------------------------------------------------------------|
-// |   SUB     |    0    |     0-9      |   0    |     0-9      |   00    |   0   |
-// |   SBC     |    0    |     0-8      |   1    |     6-F      |   FA    |   0   |
-// |   DEC     |    1    |     7-F      |   0    |     0-9      |   A0    |   1   |
-// |   NEG     |    1    |     6-F      |   1    |     6-F      |   9A    |   1   |
-// |------------------------------------------------------------------------------|
 #[allow(if_same_then_else)]
 pub fn daa(v: u8, mut f: Flags) -> (u8, Flags) {
-    let hi = v >> 4;
-    let lo = v & 0xF;
     let mut v = Wrapping(v);
+    let mut correction = 0;
 
-    if !f.get_subtract() && !f.get_carry() && hi <= 9 && !f.get_halfcarry() && lo <= 9 {
-        f.set_carry(false);
-        v += Wrapping(0x00);
-    } else if !f.get_subtract() && !f.get_carry() && hi <= 8 && !f.get_halfcarry() && lo >= 10 {
-        f.set_carry(false);
-        v += Wrapping(0x06);
-    } else if !f.get_subtract() && !f.get_carry() && hi <= 9 && f.get_halfcarry() && lo <= 3 {
-        f.set_carry(false);
-        v += Wrapping(0x06);
-    } else if !f.get_subtract() && !f.get_carry() && hi >= 10 && !f.get_halfcarry() && lo <= 9 {
+    if f.get_halfcarry() || (!f.get_subtract() && v.0 & 0x0F > 0x09) {
+        correction |= 0x06;
+    }
+
+    if f.get_carry() || (!f.get_subtract() && v.0 > 0x99) {
+        correction |= 0x60;
         f.set_carry(true);
-        v += Wrapping(0x60);
-    } else if !f.get_subtract() && !f.get_carry() && hi >= 9 && !f.get_halfcarry() && lo >= 10 {
-        f.set_carry(true);
-        v += Wrapping(0x66);
-    } else if !f.get_subtract() && !f.get_carry() && hi >= 10 && f.get_halfcarry() && lo <= 3 {
-        f.set_carry(true);
-        v += Wrapping(0x66);
-    } else if !f.get_subtract() && f.get_carry() && hi <= 2 && !f.get_halfcarry() && lo <= 9 {
-        f.set_carry(true);
-        v += Wrapping(0x60);
-    } else if !f.get_subtract() && f.get_carry() && hi <= 2 && !f.get_halfcarry() && lo >= 10 {
-        f.set_carry(true);
-        v += Wrapping(0x66);
-    } else if !f.get_subtract() && f.get_carry() && hi <= 3 && f.get_halfcarry() && lo <= 3 {
-        f.set_carry(true);
-        v += Wrapping(0x66);
-    } else if f.get_subtract() && !f.get_carry() && hi <= 9 && !f.get_halfcarry() && lo <= 9 {
-        f.set_carry(false);
-        v += Wrapping(0x00);
-    } else if f.get_subtract() && !f.get_carry() && hi <= 8 && f.get_halfcarry() && lo >= 6 {
-        f.set_carry(false);
-        v += Wrapping(0xFA);
-    } else if f.get_subtract() && f.get_carry() && hi >= 7 && !f.get_halfcarry() && lo <= 9 {
-        f.set_carry(true);
-        v += Wrapping(0xA0);
-    } else if f.get_subtract() && f.get_carry() && hi >= 6 && f.get_halfcarry() && lo >= 6 {
-        f.set_carry(true);
-        v += Wrapping(0x9A);
+    }
+
+    if f.get_subtract() {
+        v -= Wrapping(correction);
+    } else {
+        v += Wrapping(correction);
     }
 
     f.set_zero(v.0 == 0);
