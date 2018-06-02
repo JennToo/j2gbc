@@ -22,11 +22,8 @@ impl<'r> Framebuffers<'r> {
     pub fn new(
         texture_creator: &'r TextureCreator<WindowContext>,
     ) -> Result<Framebuffers<'r>, String> {
-        let lcd_screen = Framebuffers::make_tex(
-            texture_creator,
-            SCREEN_SIZE.0 as u32,
-            SCREEN_SIZE.1 as u32
-        )?;
+        let lcd_screen =
+            Framebuffers::make_tex(texture_creator, SCREEN_SIZE.0 as u32, SCREEN_SIZE.1 as u32)?;
         let bg_screen = Framebuffers::make_tex(texture_creator, 256, 256)?;
 
         Ok(Framebuffers {

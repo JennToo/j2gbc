@@ -21,22 +21,18 @@ impl Window {
     pub fn new() -> Result<Window, String> {
         let ctx = sdl2::init()?;
         let video = ctx.video()?;
-        let window =
-            video
-                .window("j2gbc", 800, (800 * SCREEN_SIZE.1 / SCREEN_SIZE.0) as u32)
-                .position_centered()
-                .resizable()
-                .maximized()
-                .build()
-                .map_err(|e| format!("{}", e))?
-        ;
-        let window_canvas = 
-            window
-                .into_canvas()
-                .present_vsync()
-                .build()
-                .map_err(|e| format!("{}", e))
-        ?;
+        let window = video
+            .window("j2gbc", 800, (800 * SCREEN_SIZE.1 / SCREEN_SIZE.0) as u32)
+            .position_centered()
+            .resizable()
+            .maximized()
+            .build()
+            .map_err(|e| format!("{}", e))?;
+        let window_canvas = window
+            .into_canvas()
+            .present_vsync()
+            .build()
+            .map_err(|e| format!("{}", e))?;
 
         Ok(Window { ctx, window_canvas })
     }

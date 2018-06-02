@@ -1,8 +1,8 @@
 use std::io;
 use std::io::Read;
 
-use super::mbc::Mbc;
 use super::mbc::mbc1::Mbc1;
+use super::mbc::Mbc;
 use super::mem::{Address, ExtendedAddress, MemDevice, RNG_ROM_BANK0, RNG_ROM_BANK1, RNG_INTR_TABLE};
 
 pub struct Cart {

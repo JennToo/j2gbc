@@ -1,8 +1,8 @@
-use std::num::Wrapping;
 use std::cmp::min;
+use std::num::Wrapping;
 
-use super::mem::*;
 use super::cpu::{Interrupt, CLOCK_RATE};
+use super::mem::*;
 
 const DIV_INCREMENT_CYCLE_COUNT: u64 = CLOCK_RATE / 16_779;
 const TIMA_INCREMENT_CYCLE_COUNT: [u64; 4] = [
