@@ -19,7 +19,7 @@ const OFF_RAM_SIZE: usize = 0x149;
 impl Cart {
     pub fn load<R: Read>(mut r: R) -> io::Result<Cart> {
         let mut data = Vec::new();
-        try!(r.read_to_end(&mut data));
+        r.read_to_end(&mut data)?;
         Ok(Cart {
             data: data.clone(),
             mbc: Box::new(Mbc1::new(data)),

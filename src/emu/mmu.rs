@@ -41,8 +41,8 @@ impl Mmu {
         // TODO: This should actually take 160us worth of cycles
         let mut dst = RNG_LCD_OAM.0;
         while dst < RNG_LCD_OAM.1 {
-            let v = try!(self.read(src));
-            try!(self.write(dst, v));
+            let v = self.read(src)?;
+            self.write(dst, v)?;
             dst += Address(1);
             src += Address(1);
         }

@@ -22,12 +22,12 @@ impl<'r> Framebuffers<'r> {
     pub fn new(
         texture_creator: &'r TextureCreator<WindowContext>,
     ) -> Result<Framebuffers<'r>, String> {
-        let lcd_screen = try!(Framebuffers::make_tex(
+        let lcd_screen = Framebuffers::make_tex(
             texture_creator,
             SCREEN_SIZE.0 as u32,
             SCREEN_SIZE.1 as u32
-        ));
-        let bg_screen = try!(Framebuffers::make_tex(texture_creator, 256, 256));
+        )?;
+        let bg_screen = Framebuffers::make_tex(texture_creator, 256, 256)?;
 
         Ok(Framebuffers {
             lcd_screen,
@@ -51,12 +51,12 @@ impl<'r> Framebuffers<'r> {
         system: &System,
         window_canvas: &mut WindowCanvas,
     ) -> Result<(), String> {
-        let window_size = try!(window_canvas.output_size());
+        let window_size = window_canvas.output_size()?;
 
         match self.rendering_state {
             RenderingState::Normal => {
                 let fb = system.get_framebuffer();
-                try!(copy_framebuffer(fb, &mut self.lcd_screen));
+                copy_framebuffer(fb, &mut self.lcd_screen)?;
 
                 let lcd_prop_size =
                     proportional_subset((SCREEN_SIZE.0 as u32, SCREEN_SIZE.1 as u32), window_size);
@@ -67,48 +67,48 @@ impl<'r> Framebuffers<'r> {
                     lcd_prop_size.0,
                     lcd_prop_size.1,
                 );
-                try!(window_canvas.copy(&self.lcd_screen, None, target));
+                window_canvas.copy(&self.lcd_screen, None, target)?;
             }
             RenderingState::Debug => {
                 let fb = system.get_framebuffer();
-                try!(copy_framebuffer(&fb, &mut self.lcd_screen));
+                copy_framebuffer(&fb, &mut self.lcd_screen)?;
                 let target = Rect::new(4, 4, SCREEN_SIZE.0 as u32 * 2, SCREEN_SIZE.1 as u32 * 2);
-                try!(window_canvas.copy(&self.lcd_screen, None, target));
+                window_canvas.copy(&self.lcd_screen, None, target)?;
 
                 let fb = system.cpu.mmu.lcd.render_char_dat(false);
-                try!(copy_framebuffer(&fb, &mut self.lcd_screen));
+                copy_framebuffer(&fb, &mut self.lcd_screen)?;
                 let target = Rect::new(
                     4,
                     8 + (SCREEN_SIZE.1 as i32) * 2,
                     SCREEN_SIZE.0 as u32 * 2,
                     SCREEN_SIZE.1 as u32 * 2,
                 );
-                try!(window_canvas.copy(&self.lcd_screen, None, target));
+                window_canvas.copy(&self.lcd_screen, None, target)?;
 
                 let fb = system.cpu.mmu.lcd.render_char_dat(true);
-                try!(copy_framebuffer(&fb, &mut self.lcd_screen));
+                copy_framebuffer(&fb, &mut self.lcd_screen)?;
                 let target = Rect::new(
                     4,
                     4 + (4 + (SCREEN_SIZE.1 as i32) * 2) * 2,
                     SCREEN_SIZE.0 as u32 * 2,
                     SCREEN_SIZE.1 as u32 * 2,
                 );
-                try!(window_canvas.copy(&self.lcd_screen, None, target));
+                window_canvas.copy(&self.lcd_screen, None, target)?;
 
                 let fb = system.cpu.mmu.lcd.render_background(false);
-                try!(copy_bgbuffer(&fb, &mut self.bg_screen));
+                copy_bgbuffer(&fb, &mut self.bg_screen)?;
                 let target = Rect::new(8 + (SCREEN_SIZE.0 as i32) * 2, 4, 256 * 2, 256 * 2);
-                try!(window_canvas.copy(&self.bg_screen, None, target));
+                window_canvas.copy(&self.bg_screen, None, target)?;
 
                 let fb = system.cpu.mmu.lcd.render_background(true);
-                try!(copy_bgbuffer(&fb, &mut self.bg_screen));
+                copy_bgbuffer(&fb, &mut self.bg_screen)?;
                 let target = Rect::new(
                     8 + (SCREEN_SIZE.0 as i32) * 2,
                     4 + (4 + 256 * 2),
                     256 * 2,
                     256 * 2,
                 );
-                try!(window_canvas.copy(&self.bg_screen, None, target));
+                window_canvas.copy(&self.bg_screen, None, target)?;
             }
         }
 

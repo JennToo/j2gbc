@@ -96,24 +96,24 @@ impl Cpu {
                 self[Register8::F] = f.0;
             }
             Instruction::Cp(o) => {
-                let v = try!(self.read_operand(o));
+                let v = self.read_operand(o)?;
                 let (_, flags) = sub(self[Register8::A], v);
                 self[Register8::F] = flags.0;
             }
             Instruction::Arith(a) => {
-                try!(self.execute_arith(a));
+                self.execute_arith(a)?;
             }
             Instruction::Bits(b) => {
-                try!(self.execute_bits(b));
+                self.execute_bits(b)?;
             }
             Instruction::Control(c) => {
-                try!(self.execute_control(c));
+                self.execute_control(c)?;
             }
             Instruction::Load(l) => {
-                try!(self.execute_load(l));
+                self.execute_load(l)?;
             }
             Instruction::Logic(l) => {
-                try!(self.execute_logic(l));
+                self.execute_logic(l)?;
             }
         }
         self.cycle += u64::from(i.cycles());
@@ -326,35 +326,35 @@ impl Cpu {
                 }
             }
             Control::Ret => {
-                self.pc = Address(try!(self.mmu.read16(self.sp)));
+                self.pc = Address(self.mmu.read16(self.sp)?);
                 self.sp += Address(2);
             }
             Control::Reti => {
-                self.pc = Address(try!(self.mmu.read16(self.sp)));
+                self.pc = Address(self.mmu.read16(self.sp)?);
                 self.sp += Address(2);
                 self.interrupt_master_enable = true;
             }
             Control::RetC => {
                 if self.flags().get_carry() {
-                    self.pc = Address(try!(self.mmu.read16(self.sp)));
+                    self.pc = Address(self.mmu.read16(self.sp)?);
                     self.sp += Address(2);
                 }
             }
             Control::RetZ => {
                 if self.flags().get_zero() {
-                    self.pc = Address(try!(self.mmu.read16(self.sp)));
+                    self.pc = Address(self.mmu.read16(self.sp)?);
                     self.sp += Address(2);
                 }
             }
             Control::RetNC => {
                 if !self.flags().get_carry() {
-                    self.pc = Address(try!(self.mmu.read16(self.sp)));
+                    self.pc = Address(self.mmu.read16(self.sp)?);
                     self.sp += Address(2);
                 }
             }
             Control::RetNZ => {
                 if !self.flags().get_zero() {
-                    self.pc = Address(try!(self.mmu.read16(self.sp)));
+                    self.pc = Address(self.mmu.read16(self.sp)?);
                     self.sp += Address(2);
                 }
             }
@@ -387,34 +387,34 @@ impl Cpu {
             }
             Control::CallI(a) | Control::Rst(a) => {
                 let v = self.pc.into();
-                try!(self.push16(v));
+                self.push16(v)?;
                 self.pc = a;
             }
             Control::CallINZ(a) => {
                 if !self.flags().get_zero() {
                     let v = self.pc.into();
-                    try!(self.push16(v));
+                    self.push16(v)?;
                     self.pc = a;
                 }
             }
             Control::CallINC(a) => {
                 if !self.flags().get_carry() {
                     let v = self.pc.into();
-                    try!(self.push16(v));
+                    self.push16(v)?;
                     self.pc = a;
                 }
             }
             Control::CallIZ(a) => {
                 if self.flags().get_zero() {
                     let v = self.pc.into();
-                    try!(self.push16(v));
+                    self.push16(v)?;
                     self.pc = a;
                 }
             }
             Control::CallIC(a) => {
                 if self.flags().get_carry() {
                     let v = self.pc.into();
-                    try!(self.push16(v));
+                    self.push16(v)?;
                     self.pc = a;
                 }
             }
@@ -432,22 +432,22 @@ impl Cpu {
             Load::LdNA(d) => {
                 let a = self.read_r16(Register16::HL);
                 let v = self[Register8::A];
-                try!(self.mmu.write(Address(a), v));
+                self.mmu.write(Address(a), v)?;
                 self.write_r16(Register16::HL, (Wrapping(a) + Wrapping(d as u16)).0);
             }
             Load::LdAN(d) => {
                 let a = self.read_r16(Register16::HL);
-                self[Register8::A] = try!(self.mmu.read(Address(a)));
+                self[Register8::A] = self.mmu.read(Address(a))?;
                 self.write_r16(Register16::HL, (Wrapping(a) + Wrapping(d as u16)).0);
             }
             Load::LdNCA => {
                 let a = Address(u16::from(self[Register8::C]) + 0xFF00);
                 let v = self[Register8::A];
-                try!(self.mmu.write(a, v));
+                self.mmu.write(a, v)?;
             }
             Load::LdANC => {
                 let a = Address(u16::from(self[Register8::C]) + 0xFF00);
-                let v = try!(self.mmu.read(a));
+                let v = self.mmu.read(a)?;
                 self[Register8::A] = v;
             }
             Load::LdHLSPI(v) => {
@@ -473,10 +473,10 @@ impl Cpu {
             }
             Load::LdNR16(r) => {
                 let v = self[Register8::A];
-                try!(self.write_indirect(r, v))
+                self.write_indirect(r, v)?;
             }
             Load::LdRN16(r) => {
-                let v = try!(self.read_indirect(r));
+                let v = self.read_indirect(r)?;
                 self[Register8::A] = v;
             }
             Load::LdRI16(r, i) => {
@@ -484,19 +484,19 @@ impl Cpu {
             }
             Load::LdNIA16(a) => {
                 let v = self[Register8::A];
-                try!(self.mmu.write(a, v));
+                self.mmu.write(a, v)?;
             }
             Load::LdANI16(a) => {
-                let v = try!(self.mmu.read(a));
+                let v = self.mmu.read(a)?;
                 self[Register8::A] = v;
             }
             Load::Pop(r) => {
-                let v = try!(self.pop16());
+                let v = self.pop16()?;
                 self.write_r16(r, v);
             }
             Load::Push(r) => {
                 let v = self.read_r16(r);
-                try!(self.push16(v));
+                self.push16(v)?;
             }
         }
 
@@ -516,7 +516,7 @@ impl Cpu {
                 self[Register8::F] = flags.0;
             }
             Logic::AndN => {
-                let v = try!(self.read_indirect(Register16::HL));
+                let v = self.read_indirect(Register16::HL)?;
                 let (value, flags) = and(self[Register8::A], v);
                 self[Register8::A] = value;
                 self[Register8::F] = flags.0;
@@ -532,7 +532,7 @@ impl Cpu {
                 self[Register8::F] = flags.0;
             }
             Logic::OrN => {
-                let v = try!(self.read_indirect(Register16::HL));
+                let v = self.read_indirect(Register16::HL)?;
                 let (value, flags) = or(self[Register8::A], v);
                 self[Register8::A] = value;
                 self[Register8::F] = flags.0;
@@ -548,7 +548,7 @@ impl Cpu {
                 self[Register8::F] = flags.0;
             }
             Logic::XorN => {
-                let v = try!(self.read_indirect(Register16::HL));
+                let v = self.read_indirect(Register16::HL)?;
                 let (value, flags) = xor(self[Register8::A], v);
                 self[Register8::A] = value;
                 self[Register8::F] = flags.0;
@@ -592,7 +592,7 @@ impl Cpu {
             return Err(());
         }
 
-        let (instruction, len) = try!(self.fetch_instruction());
+        let (instruction, len) = self.fetch_instruction()?;
         if self.last_instructions.len() > 50 {
             self.last_instructions.pop_front();
         }
@@ -600,7 +600,7 @@ impl Cpu {
             .push_back((self.mmu.cart.map_address_into_rom(self.pc), instruction));
 
         self.pc += Address(u16::from(len));
-        try!(self.execute(instruction));
+        self.execute(instruction)?;
 
         self.drive_peripherals()
     }
@@ -651,7 +651,7 @@ impl Cpu {
 
     fn fire_interrupt(&mut self, int: Interrupt) -> Result<(), ()> {
         let v = self.pc.into();
-        try!(self.push16(v));
+        self.push16(v)?;
 
         self.pc = int.table_address();
         self.interrupt_master_enable = false;
@@ -662,9 +662,9 @@ impl Cpu {
 
     pub fn fetch_instruction(&self) -> Result<(Instruction, u8), ()> {
         let bytes = [
-            try!(self.mmu.read(self.pc)),
-            try!(self.mmu.read(self.pc + Address(1))),
-            try!(self.mmu.read(self.pc + Address(2))),
+            self.mmu.read(self.pc)?,
+            self.mmu.read(self.pc + Address(1))?,
+            self.mmu.read(self.pc + Address(2))?,
         ];
         Instruction::decode(bytes)
     }
@@ -705,13 +705,13 @@ impl Cpu {
 
     fn push16(&mut self, v: u16) -> Result<(), ()> {
         let nsp = self.sp - Address(2);
-        try!(self.mmu.write16(nsp, v));
+        self.mmu.write16(nsp, v)?;
         self.sp = nsp;
         Ok(())
     }
 
     fn pop16(&mut self) -> Result<u16, ()> {
-        let v = try!(self.mmu.read16(self.sp));
+        let v = self.mmu.read16(self.sp)?;
         self.sp += Address(2);
         Ok(v)
     }

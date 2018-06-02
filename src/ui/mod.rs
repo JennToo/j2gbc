@@ -19,24 +19,24 @@ pub struct Window {
 
 impl Window {
     pub fn new() -> Result<Window, String> {
-        let ctx = try!(sdl2::init());
-        let video = try!(ctx.video());
-        let window = try!(
+        let ctx = sdl2::init()?;
+        let video = ctx.video()?;
+        let window =
             video
                 .window("j2gbc", 800, (800 * SCREEN_SIZE.1 / SCREEN_SIZE.0) as u32)
                 .position_centered()
                 .resizable()
                 .maximized()
                 .build()
-                .map_err(|e| format!("{}", e))
-        );
-        let window_canvas = try!(
+                .map_err(|e| format!("{}", e))?
+        ;
+        let window_canvas = 
             window
                 .into_canvas()
                 .present_vsync()
                 .build()
                 .map_err(|e| format!("{}", e))
-        );
+        ?;
 
         Ok(Window { ctx, window_canvas })
     }
@@ -136,8 +136,8 @@ impl Window {
             }
 
             self.window_canvas.set_draw_color(Color::RGB(100, 100, 100));
-            try!(self.window_canvas.fill_rect(None));
-            try!(fbs.render(&system, &mut self.window_canvas));
+            self.window_canvas.fill_rect(None)?;
+            fbs.render(&system, &mut self.window_canvas)?;
             if fbs.rendering_state == RenderingState::Debug && system.cpu.debug_halted {
                 debug.draw(&mut self.window_canvas, &texture_creator, &system)?;
             }
