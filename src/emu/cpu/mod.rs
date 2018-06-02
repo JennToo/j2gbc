@@ -617,7 +617,7 @@ impl Cpu {
             }
 
             if self.halted {
-                self.cycle = min(self.mmu.lcd.get_next_event_cycle(), stop_at_cycle);
+                self.cycle = min(self.mmu.lcd.get_next_event_cycle(), min(self.mmu.timer.get_next_event_cycle(), stop_at_cycle));
                 if self.drive_peripherals().is_err() {
                     self.debug_halted = true;
                 }
@@ -627,6 +627,9 @@ impl Cpu {
 
     fn drive_peripherals(&mut self) -> Result<(), ()> {
         if let Some(i) = self.mmu.lcd.pump_cycle(self.cycle) {
+            self.request_interrupt(i);
+        }
+        if let Some(i) = self.mmu.timer.pump_cycle(self.cycle) {
             self.request_interrupt(i);
         }
         Ok(())
@@ -642,6 +645,9 @@ impl Cpu {
                 Interrupt::int_to_run(self.mmu.interrupt_flag, self.mmu.interrupt_enable)
             {
                 self.mmu.interrupt_flag = if_;
+                if int == Interrupt::Timer {
+                    info!("Fired timer");
+                }
                 self.fire_interrupt(int)?;
             }
         }

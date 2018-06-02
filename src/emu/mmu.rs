@@ -4,6 +4,7 @@ use super::audio::Audio;
 use super::cart::Cart;
 use super::lcd::Lcd;
 use super::mem::*;
+use super::timer::Timer;
 
 pub struct Mmu {
     internal_ram: Ram,
@@ -13,9 +14,7 @@ pub struct Mmu {
     pub interrupt_flag: u8,
     pub lcd: Box<Lcd>,
     audio: Audio,
-
-    tma: u8,
-    tac: u8,
+    pub timer: Timer,
 
     pub watchpoints: HashSet<Address>,
 }
@@ -27,11 +26,10 @@ impl Mmu {
             tiny_ram: Ram::new(RNG_INT_TINY_RAM.len()),
             interrupt_enable: 0,
             interrupt_flag: 0,
-            tma: 0,
-            tac: 0,
             cart,
             lcd: Box::new(Lcd::new()),
             audio: Audio::new(),
+            timer: Timer::new(),
 
             watchpoints: HashSet::new(),
         }
@@ -74,8 +72,7 @@ impl MemDevice for Mmu {
             match a {
                 REG_INTR_ENABLE => Ok(self.interrupt_enable),
                 REG_INTR_FLAG => Ok(self.interrupt_flag),
-                REG_TMA => Ok(self.tma),
-                REG_TAC => Ok(self.tac),
+                REG_TIMA | REG_DIV | REG_TAC | REG_TMA => self.timer.read(a),
                 REG_P1 | REG_SB | REG_SC => Ok(0),
                 _ => {
                     error!("MMU: Unimplemented memory read at address {:?}", a);
@@ -115,14 +112,7 @@ impl MemDevice for Mmu {
                     self.interrupt_flag = v;
                     Ok(())
                 }
-                REG_TMA => {
-                    self.tma = v;
-                    Ok(())
-                }
-                REG_TAC => {
-                    self.tac = v;
-                    Ok(())
-                }
+                REG_TIMA | REG_DIV | REG_TAC | REG_TMA => self.timer.write(a, v),
                 REG_P1 | REG_SB | REG_SC => Ok(()),
                 _ => {
                     error!("MMU: Unimplemented memory write at address {:?}", a);
