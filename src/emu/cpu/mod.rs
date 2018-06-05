@@ -640,6 +640,9 @@ impl Cpu {
 
     fn request_interrupt(&mut self, int: Interrupt) {
         self.mmu.interrupt_flag |= int.bits();
+        if int.bits() & self.mmu.interrupt_enable != 0 {
+            self.halted = false;
+        }
     }
 
     fn fire_interrupts(&mut self) -> Result<(), ()> {
@@ -661,7 +664,6 @@ impl Cpu {
 
         self.pc = int.table_address();
         self.interrupt_master_enable = false;
-        self.halted = false;
 
         Ok(())
     }
