@@ -2,7 +2,7 @@ use emu::mem::Address;
 
 // TODO: Eventually move the interrupt handler to in here
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum Interrupt {
     VBlank,
     LCDC,

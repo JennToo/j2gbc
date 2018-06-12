@@ -33,6 +33,7 @@ pub struct Cpu {
     pub debug_halted: bool,
     pub last_instructions: VecDeque<(ExtendedAddress, Instruction)>,
     pub breakpoints: HashSet<Address>,
+    pub interrupt_breakpoints: HashSet<Interrupt>,
 }
 
 impl Cpu {
@@ -51,6 +52,7 @@ impl Cpu {
             debug_halted: false,
             last_instructions: VecDeque::new(),
             breakpoints: initial_breakpoints,
+            interrupt_breakpoints: HashSet::new(),
         };
 
         cpu[Register8::A] = 0x01;
@@ -652,6 +654,11 @@ impl Cpu {
             {
                 self.mmu.interrupt_flag = if_;
                 self.fire_interrupt(int)?;
+                if self.interrupt_breakpoints.contains(&int) {
+                    self.interrupt_breakpoints.remove(&int);
+                    debug!("Interrupt breakpoint {:?}", int);
+                    self.debug_halted = true;
+                }
             }
         }
 

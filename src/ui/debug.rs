@@ -8,7 +8,7 @@ use sdl2::render::{TextureCreator, WindowCanvas};
 use sdl2::ttf;
 use sdl2::video::WindowContext;
 
-use emu::cpu::Cpu;
+use emu::cpu::{Cpu, Interrupt};
 use emu::cpu::Register8;
 use emu::mem::{Address, MemDevice};
 use emu::system::System;
@@ -209,6 +209,10 @@ impl<'a> Debug<'a> {
             "s" => {
                 let _ret = cpu.run_cycle();
                 self.print_next_instruction(cpu);
+            }
+            "sf" => {
+                cpu.interrupt_breakpoints.insert(Interrupt::VBlank);
+                cpu.debug_halted = false;
             }
             "w" => {
                 let address = Address(u16::from_str_radix(args[0].as_str(), 16).unwrap());
