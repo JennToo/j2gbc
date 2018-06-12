@@ -141,7 +141,7 @@ impl Lcd {
 
             next_hblank_start_cycle: LINE_CYCLE_TIME - HBLANK_DURATION - MODE_10_DURATION,
             next_hblank_end_cycle: LINE_CYCLE_TIME - MODE_10_DURATION,
-            next_vblank_start_cycle: SCREEN_SIZE.0 as u64 * LINE_CYCLE_TIME,
+            next_vblank_start_cycle: SCREEN_SIZE.1 as u64 * LINE_CYCLE_TIME,
             next_vblank_end_cycle: SCREEN_CYCLE_TIME,
             next_mode_10_start_cycle: LINE_CYCLE_TIME - HBLANK_DURATION,
             next_mode_10_end_cycle: LINE_CYCLE_TIME,
