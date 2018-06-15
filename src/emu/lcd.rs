@@ -221,8 +221,12 @@ impl Lcd {
             Some(Interrupt::VBlank)
         } else if cycle >= self.next_vblank_end_cycle {
             self.do_vblank_end(cycle);
-            // TODO: Is ther an interrupt for this?
-            None
+
+            if self.ly == self.lyc && self.is_lyc_int_enabled() {
+                Some(Interrupt::LCDC)
+            } else {
+                None
+            }
         } else {
             None
         }
@@ -240,7 +244,8 @@ impl Lcd {
     }
 
     fn should_render_this_frame(&self, cycle: u64) -> bool {
-        self.running_until_cycle - cycle <= 2 * SCREEN_CYCLE_TIME
+        cycle >= self.running_until_cycle
+            || self.running_until_cycle - cycle <= 2 * SCREEN_CYCLE_TIME
     }
 
     fn do_hblank_end(&mut self, cycle: u64) {
