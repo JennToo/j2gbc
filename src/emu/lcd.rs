@@ -26,7 +26,7 @@ const COLOR_DARK_GRAY: Pixel = Pixel(68, 106, 81, 255);
 const COLOR_BLACK: Pixel = Pixel(0, 14, 2, 255);
 const COLORS: [Pixel; 4] = [COLOR_WHITE, COLOR_LIGHT_GRAY, COLOR_DARK_GRAY, COLOR_BLACK];
 
-const LINE_CYCLE_TIME: u64 = CLOCK_RATE * 180_700 / 1_000_000_000; // Src: Official GB manual
+const LINE_CYCLE_TIME: u64 = CLOCK_RATE * 108_700 / 1_000_000_000; // Src: Official GB manual
 const HBLANK_DURATION: u64 = CLOCK_RATE * 48_600 / 1_000_000_000; // Src: GBCPUMan.pdf
 const MODE_10_DURATION: u64 = CLOCK_RATE * 19_000 / 1_000_000_000; // Src: GBCPUMan.pdf
 const _VBLANK_DURATION: u64 = LINE_CYCLE_TIME * 10; // Src: Official GB manual
@@ -236,7 +236,7 @@ impl Lcd {
             }
             self.stat = (self.stat & 0b1111_1100) | MODE_00_MASK;
         }
-        self.next_hblank_start_cycle = LINE_CYCLE_TIME + cycle;
+        self.next_hblank_start_cycle += LINE_CYCLE_TIME;
     }
 
     fn should_render_this_frame(&self, cycle: u64) -> bool {
@@ -246,7 +246,7 @@ impl Lcd {
     fn do_hblank_end(&mut self, cycle: u64) {
         self.ly += 1;
         self.update_lyc();
-        self.next_hblank_end_cycle = LINE_CYCLE_TIME + cycle;
+        self.next_hblank_end_cycle += LINE_CYCLE_TIME;
     }
 
     pub fn do_vblank_start(&mut self, cycle: u64) {
@@ -254,14 +254,14 @@ impl Lcd {
         self.ly += 1;
         self.update_lyc();
         self.stat = (self.stat & 0b1111_1100) | MODE_01_MASK;
-        self.next_vblank_start_cycle = SCREEN_CYCLE_TIME + cycle;
+        self.next_vblank_start_cycle += SCREEN_CYCLE_TIME;
     }
 
     pub fn do_vblank_end(&mut self, cycle: u64) {
         self.ly = 0;
         self.update_lyc();
         self.stat = (self.stat & 0b1111_1100) | MODE_00_MASK;
-        self.next_vblank_end_cycle = SCREEN_CYCLE_TIME + cycle;
+        self.next_vblank_end_cycle += SCREEN_CYCLE_TIME;
     }
 
     fn update_lyc(&mut self) {
