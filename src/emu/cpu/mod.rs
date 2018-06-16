@@ -744,6 +744,10 @@ impl Cpu {
     fn flags(&self) -> Flags {
         Flags(self[Register8::F])
     }
+
+    pub fn request_p1_int(&mut self) {
+        self.mmu.interrupt_flag |= Interrupt::Controller.bits();
+    }
 }
 
 pub fn duration_to_cycle_count(duration: &Duration) -> u64 {

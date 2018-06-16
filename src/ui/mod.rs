@@ -4,6 +4,7 @@ use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
 use std::time::{Duration, Instant};
 
+use emu::input::Button;
 use emu::lcd::SCREEN_SIZE;
 use emu::system::System;
 
@@ -52,6 +53,7 @@ impl Window {
 
         loop {
             for event in self.ctx.event_pump().unwrap().poll_iter() {
+                handle_buttons(&event, &mut system);
                 match event {
                     Event::KeyDown {
                         keycode: Some(Keycode::Escape),
@@ -83,28 +85,38 @@ impl Window {
                         keycode: Some(Keycode::Backspace),
                         ..
                     } => {
-                        debug.command_backspace();
+                        if system.cpu.debug_halted {
+                            debug.command_backspace();
+                        }
                     }
                     Event::TextInput { text, .. } => {
-                        debug.command_keystroke(text.as_str());
+                        if system.cpu.debug_halted {
+                            debug.command_keystroke(text.as_str());
+                        }
                     }
                     Event::KeyDown {
                         keycode: Some(Keycode::Return),
                         ..
                     } => {
-                        debug.run_command(&mut system);
+                        if system.cpu.debug_halted {
+                            debug.run_command(&mut system);
+                        }
                     }
                     Event::KeyDown {
                         keycode: Some(Keycode::Up),
                         ..
                     } => {
-                        debug.scroll_up(1);
+                        if system.cpu.debug_halted {
+                            debug.scroll_up(1);
+                        }
                     }
                     Event::KeyDown {
                         keycode: Some(Keycode::Down),
                         ..
                     } => {
-                        debug.scroll_down(1);
+                        if system.cpu.debug_halted {
+                            debug.scroll_down(1);
+                        }
                     }
                     Event::KeyDown {
                         keycode: Some(Keycode::Tab),
@@ -139,5 +151,41 @@ impl Window {
             }
             self.window_canvas.present();
         }
+    }
+}
+
+fn handle_buttons(e: &Event, system: &mut System) {
+    match e {
+        Event::KeyDown {
+            keycode: Some(k), ..
+        } => {
+            if let Some(b) = keycode_to_button(k) {
+                system.cpu.mmu.input.activate_button(b);
+                system.cpu.request_p1_int();
+            }
+        }
+        Event::KeyUp {
+            keycode: Some(k), ..
+        } => {
+            if let Some(b) = keycode_to_button(k) {
+                system.cpu.mmu.input.deactivate_button(b);
+            }
+        }
+
+        _ => {}
+    }
+}
+
+fn keycode_to_button(keycode: &Keycode) -> Option<Button> {
+    match keycode {
+        Keycode::Up => Some(Button::Up),
+        Keycode::Down => Some(Button::Down),
+        Keycode::Left => Some(Button::Left),
+        Keycode::Right => Some(Button::Right),
+        Keycode::Z => Some(Button::A),
+        Keycode::X => Some(Button::B),
+        Keycode::A => Some(Button::Select),
+        Keycode::S => Some(Button::Start),
+        _ => None,
     }
 }

@@ -2,6 +2,7 @@ use std::collections::HashSet;
 
 use super::audio::Audio;
 use super::cart::Cart;
+use super::input::Input;
 use super::lcd::Lcd;
 use super::mem::*;
 use super::timer::Timer;
@@ -15,6 +16,7 @@ pub struct Mmu {
     pub lcd: Box<Lcd>,
     audio: Audio,
     pub timer: Timer,
+    pub input: Input,
 
     pub watchpoints: HashSet<Address>,
 }
@@ -30,6 +32,7 @@ impl Mmu {
             lcd: Box::new(Lcd::new()),
             audio: Audio::new(),
             timer: Timer::new(),
+            input: Input::new(),
 
             watchpoints: HashSet::new(),
         }
@@ -73,7 +76,8 @@ impl MemDevice for Mmu {
                 REG_INTR_ENABLE => Ok(self.interrupt_enable),
                 REG_INTR_FLAG => Ok(self.interrupt_flag),
                 REG_TIMA | REG_DIV | REG_TAC | REG_TMA => self.timer.read(a),
-                REG_P1 | REG_SB | REG_SC => Ok(0),
+                REG_P1 => self.input.read(a),
+                REG_SB | REG_SC => Ok(0),
                 _ => {
                     error!("MMU: Unimplemented memory read at address {:?}", a);
                     Err(())
@@ -113,7 +117,8 @@ impl MemDevice for Mmu {
                     Ok(())
                 }
                 REG_TIMA | REG_DIV | REG_TAC | REG_TMA => self.timer.write(a, v),
-                REG_P1 | REG_SB | REG_SC => Ok(()),
+                REG_P1 => self.input.write(a, v),
+                REG_SB | REG_SC => Ok(()),
                 _ => {
                     error!("MMU: Unimplemented memory write at address {:?}", a);
                     Err(())
