@@ -197,7 +197,7 @@ impl Lcd {
                 None
             }
         } else if cycle >= self.next_hblank_end_cycle {
-            self.do_hblank_end(cycle);
+            self.do_hblank_end();
             if self.ly == self.lyc && self.is_lyc_int_enabled() {
                 Some(Interrupt::LCDC)
             } else {
@@ -217,10 +217,10 @@ impl Lcd {
             self.stat = (self.stat & 0b1111_1100) | MODE_00_MASK;
             None
         } else if cycle >= self.next_vblank_start_cycle {
-            self.do_vblank_start(cycle);
+            self.do_vblank_start();
             Some(Interrupt::VBlank)
         } else if cycle >= self.next_vblank_end_cycle {
-            self.do_vblank_end(cycle);
+            self.do_vblank_end();
 
             if self.ly == self.lyc && self.is_lyc_int_enabled() {
                 Some(Interrupt::LCDC)
@@ -248,13 +248,13 @@ impl Lcd {
             || self.running_until_cycle - cycle <= 2 * SCREEN_CYCLE_TIME
     }
 
-    fn do_hblank_end(&mut self, cycle: u64) {
+    fn do_hblank_end(&mut self) {
         self.ly += 1;
         self.update_lyc();
         self.next_hblank_end_cycle += LINE_CYCLE_TIME;
     }
 
-    pub fn do_vblank_start(&mut self, cycle: u64) {
+    pub fn do_vblank_start(&mut self) {
         self.swap();
         self.ly += 1;
         self.update_lyc();
@@ -262,7 +262,7 @@ impl Lcd {
         self.next_vblank_start_cycle += SCREEN_CYCLE_TIME;
     }
 
-    pub fn do_vblank_end(&mut self, cycle: u64) {
+    pub fn do_vblank_end(&mut self) {
         self.ly = 0;
         self.update_lyc();
         self.stat = (self.stat & 0b1111_1100) | MODE_00_MASK;

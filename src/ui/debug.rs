@@ -8,8 +8,8 @@ use sdl2::render::{TextureCreator, WindowCanvas};
 use sdl2::ttf;
 use sdl2::video::WindowContext;
 
-use emu::cpu::{Cpu, Interrupt};
 use emu::cpu::Register8;
+use emu::cpu::{Cpu, Interrupt};
 use emu::mem::{Address, MemDevice};
 use emu::system::System;
 
