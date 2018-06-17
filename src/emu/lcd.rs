@@ -281,18 +281,26 @@ impl Lcd {
         if !self.is_bg_enabled() {
             return;
         }
-
-        let screen_y = self.ly;
-        let translated_y = Wrapping(screen_y) + Wrapping(self.sy); // Implicit % 256
+        let row = self.render_tile_row(self.ly, self.sx, self.sy, self.get_bg_code_dat_start());
         for screen_x in 0..SCREEN_SIZE.0 {
-            let translated_x = Wrapping(screen_x as u8) + Wrapping(self.sx); // Implicit % 256
+            let screen_y = self.ly;
+            self.get_back_framebuffer()[screen_y as usize][screen_x as usize] =
+                row[screen_x as usize];
+        }
+    }
+
+    fn render_tile_row(&self, screen_y: u8, scx: u8, scy: u8, code_dat_start: Address) -> FrameRow {
+        let mut row = [COLOR_WHITE; SCREEN_SIZE.0];
+        let translated_y = Wrapping(screen_y) + Wrapping(scy); // Implicit % 256
+        for screen_x in 0..SCREEN_SIZE.0 {
+            let translated_x = Wrapping(screen_x as u8) + Wrapping(scx); // Implicit % 256
 
             let char_y_offset = Wrapping(u16::from(translated_y.0))
                 / Wrapping(u16::from(PIXEL_PER_CHAR))
                 * Wrapping(u16::from(BG_CHARS_PER_ROW));
             let char_offset = Wrapping(u16::from(translated_x.0))
                 / Wrapping(u16::from(PIXEL_PER_CHAR)) + char_y_offset;
-            let char_addr = self.get_bg_code_dat_start() + Address(char_offset.0);
+            let char_addr = code_dat_start + Address(char_offset.0);
             let char_ = self.read(char_addr).unwrap();
             let (base_addr, signed) = self.get_bg_char_addr_start();
             let char_row =
@@ -300,9 +308,10 @@ impl Lcd {
 
             let color_index = char_row[(translated_x % Wrapping(8)).0 as usize];
             let corrected_index = palette_convert(color_index, self.bgp) as usize;
-            self.get_back_framebuffer()[screen_y as usize][screen_x as usize] =
-                COLORS[corrected_index];
+            row[screen_x as usize] = COLORS[corrected_index];
         }
+
+        row
     }
 
     fn read_char_row_at(&self, char_: u8, row: u8, base_address: Address, signed: bool) -> CharRow {
