@@ -1,3 +1,4 @@
+use std::cmp::max;
 use std::num::Wrapping;
 
 use super::cpu::{Interrupt, CLOCK_RATE};
@@ -49,10 +50,12 @@ const _MODE_11_MASK: u8 = 0b11;
 
 const LYC_MATCH_FLAG: u8 = 0b0000_0100;
 const BG_ENABLED_FLAG: u8 = 0b0000_0001;
+const WINDOW_ENABLED_FLAG: u8 = 0b0010_0000;
 const OAM_ENABLED_FLAG: u8 = 0b0000_0010;
 const OAM_TALL_FLAG: u8 = 0b0000_0100;
 const BGD_CHAR_DAT_FLAG: u8 = 0b0001_0000;
 const BGD_CODE_DAT_FLAG: u8 = 0b0000_1000;
+const WINDOW_CODE_DAT_FLAG: u8 = 0b0100_0000;
 const OBJ_PAL_FLAG: u8 = 0b0001_0000;
 const OBJ_XFLIP_FLAG: u8 = 0b0010_0000;
 const OBJ_YFLIP_FLAG: u8 = 0b0100_0000;
@@ -236,6 +239,7 @@ impl Lcd {
         if self.ly < SCREEN_SIZE.1 as u8 {
             if self.should_render_this_frame(cycle) {
                 self.render_background_row();
+                self.render_window_row();
                 self.render_oam_row();
             }
             self.stat = (self.stat & 0b1111_1100) | MODE_00_MASK;
@@ -289,6 +293,26 @@ impl Lcd {
         }
     }
 
+    fn render_window_row(&mut self) {
+        if !self.is_window_enabled() {
+            return;
+        }
+
+        let adjusted_wx = max(self.wx, 7) - 7;
+        if self.wy > self.ly || adjusted_wx >= SCREEN_SIZE.0 as u8 {
+            return;
+        }
+
+        let translated_y = self.ly - self.wy;
+        let row = self.render_tile_row(translated_y, 0, 0, self.get_window_code_dat_start());
+
+        let screen_y = self.ly;
+        for screen_x in adjusted_wx..(SCREEN_SIZE.0 as u8) {
+            self.get_back_framebuffer()[screen_y as usize][screen_x as usize] =
+                row[screen_x as usize];
+        }
+    }
+
     fn render_tile_row(&self, screen_y: u8, scx: u8, scy: u8, code_dat_start: Address) -> FrameRow {
         let mut row = [COLOR_WHITE; SCREEN_SIZE.0];
         let translated_y = Wrapping(screen_y) + Wrapping(scy); // Implicit % 256
@@ -336,6 +360,10 @@ impl Lcd {
         self.lcdc & BG_ENABLED_FLAG != 0
     }
 
+    fn is_window_enabled(&self) -> bool {
+        self.lcdc & WINDOW_ENABLED_FLAG != 0
+    }
+
     fn is_oam_enabled(&self) -> bool {
         self.lcdc & OAM_ENABLED_FLAG != 0
     }
@@ -362,6 +390,14 @@ impl Lcd {
 
     fn get_bg_code_dat_start(&self) -> Address {
         if self.lcdc & BGD_CODE_DAT_FLAG == 0 {
+            Address(0x9800)
+        } else {
+            Address(0x9C00)
+        }
+    }
+
+    fn get_window_code_dat_start(&self) -> Address {
+        if self.lcdc & WINDOW_CODE_DAT_FLAG == 0 {
             Address(0x9800)
         } else {
             Address(0x9C00)
