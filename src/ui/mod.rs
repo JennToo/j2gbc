@@ -2,6 +2,8 @@ use sdl2;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
+use std::fs::File;
+use std::io::Write;
 use std::time::{Duration, Instant};
 
 use emu::input::Button;
@@ -16,10 +18,11 @@ use self::fb::{Framebuffers, RenderingState};
 pub struct Window {
     ctx: sdl2::Sdl,
     window_canvas: sdl2::render::WindowCanvas,
+    save_file: String,
 }
 
 impl Window {
-    pub fn new() -> Result<Window, String> {
+    pub fn new(save_file: String) -> Result<Window, String> {
         let ctx = sdl2::init()?;
         let video = ctx.video()?;
         let window = video
@@ -35,7 +38,11 @@ impl Window {
             .build()
             .map_err(|e| format!("{}", e))?;
 
-        Ok(Window { ctx, window_canvas })
+        Ok(Window {
+            ctx,
+            window_canvas,
+            save_file,
+        })
     }
 
     pub fn run(&mut self, mut system: System) -> Result<(), String> {
@@ -46,6 +53,7 @@ impl Window {
 
         let mut debug = debug::Debug::new(&ttf_ctx)?;
         let mut super_speed = false;
+        let mut save_timer = Duration::from_secs(0);
 
         fbs.rendering_state = RenderingState::Debug;
         system.cpu.debug_halted = true;
@@ -141,6 +149,15 @@ impl Window {
             dt = Instant::now();
             if !was_debugging && system.cpu.debug_halted {
                 debug.start_debugging(&mut system);
+            }
+
+            save_timer += elapsed;
+            if save_timer > Duration::from_secs(1) {
+                save_timer = Duration::from_secs(0);
+
+                let mut f = File::create(self.save_file.as_str()).map_err(|e| e.to_string())?;
+                f.write(system.cpu.mmu.cart.get_sram())
+                    .map_err(|e| e.to_string())?;
             }
 
             self.window_canvas.set_draw_color(Color::RGB(100, 100, 100));

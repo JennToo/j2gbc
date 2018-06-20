@@ -61,6 +61,14 @@ impl Cart {
             ExtendedAddress(u32::from(a.0))
         }
     }
+
+    pub fn get_sram(&self) -> &[u8] {
+        self.mbc.get_sram()
+    }
+
+    pub fn set_sram(&mut self, buf: &[u8]) {
+        self.mbc.set_sram(buf);
+    }
 }
 
 impl MemDevice for Cart {

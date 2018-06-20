@@ -90,4 +90,14 @@ impl Mbc for Mbc1 {
 
         ExtendedAddress((RNG_ROM_BANK1.len() * (self.lower_bank_select - 1)) as u32 + a.0 as u32)
     }
+
+    fn get_sram(&self) -> &[u8] {
+        self.ram.data.as_slice()
+    }
+
+    fn set_sram(&mut self, buf: &[u8]) {
+        for i in 0..buf.len() {
+            self.ram.data[i] = buf[i];
+        }
+    }
 }
