@@ -62,6 +62,7 @@ const OBJ_YFLIP_FLAG: u8 = 0b0100_0000;
 const OBJ_PRI_FLAG: u8 = 0b1000_0000;
 
 const TILE_COUNT: usize = 384;
+const OBJ_COUNT: usize = 40;
 
 pub type Framebuffer = [FrameRow; SCREEN_SIZE.1];
 type FrameRow = [Pixel; SCREEN_SIZE.0];
@@ -99,11 +100,13 @@ pub struct Lcd {
     running_until_cycle: u64,
 
     tiles: [Tile; TILE_COUNT],
+    objs: [Obj; OBJ_COUNT],
 }
 
 #[derive(Copy, Clone)]
 struct Tile([TileRow; 8]);
 
+#[derive(Copy, Clone)]
 struct Obj {
     x: u8,
     y: u8,
@@ -112,6 +115,15 @@ struct Obj {
 }
 
 impl Obj {
+    fn new() -> Obj {
+        Obj {
+            x: 0,
+            y: 0,
+            char_: 0,
+            flags: 0,
+        }
+    }
+
     fn high_palette(&self) -> bool {
         self.flags & OBJ_PAL_FLAG != 0
     }
@@ -163,7 +175,9 @@ impl Lcd {
             next_mode_10_end_cycle: LINE_CYCLE_TIME,
             running_until_cycle: 0,
             ly: 0,
+
             tiles: [Tile::new(); TILE_COUNT],
+            objs: [Obj::new(); OBJ_COUNT],
         }
     }
 
@@ -477,8 +491,8 @@ impl Lcd {
             return;
         }
 
-        for i in 0..40 {
-            let obj = self.get_obj(i);
+        for i in 0..OBJ_COUNT {
+            let obj = self.objs[i];
 
             let (char_, hi_y) = if self.lcdc & OAM_TALL_FLAG != 0 {
                 (obj.char_ & 0b1111_1110, 16)
@@ -539,6 +553,12 @@ impl Lcd {
         }
 
         self.tiles[char_offset as usize].0[row_offset as usize] = row;
+    }
+
+    fn update_obj_at(&mut self, a: Address) {
+        let byte_offset = a - RNG_LCD_OAM.0;
+        let obj_index = byte_offset.0 / (RNG_LCD_OAM.len() / OBJ_COUNT) as u16;
+        self.objs[obj_index as usize] = self.get_obj(obj_index as u8);
     }
 }
 
@@ -608,7 +628,9 @@ impl MemDevice for Lcd {
             self.update_tile_at(Address(a.0 - a.0 % 2));
             Ok(())
         } else if a.in_(RNG_LCD_OAM) {
-            self.oam.write(a - RNG_LCD_OAM.0, v)
+            self.oam.write(a - RNG_LCD_OAM.0, v)?;
+            self.update_obj_at(a);
+            Ok(())
         } else {
             match a {
                 REG_LY => {
