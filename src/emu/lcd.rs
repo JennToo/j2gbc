@@ -33,7 +33,7 @@ const MODE_10_DURATION: u64 = CLOCK_RATE * 19_000 / 1_000_000_000; // Src: GBCPU
 const _VBLANK_DURATION: u64 = LINE_CYCLE_TIME * 10; // Src: Official GB manual
 const SCREEN_CYCLE_TIME: u64 = 154 * LINE_CYCLE_TIME;
 const BYTES_PER_CHAR: u16 = 16;
-const BYTES_PER_CHAR_ROW: u16 = 2;
+const BYTES_PER_ROW: u16 = 2;
 const BG_CHARS_PER_ROW: u8 = 32;
 const PIXEL_PER_CHAR: u8 = 8;
 const CHARS_PER_BANK: u8 = 255;
@@ -61,11 +61,13 @@ const OBJ_XFLIP_FLAG: u8 = 0b0010_0000;
 const OBJ_YFLIP_FLAG: u8 = 0b0100_0000;
 const OBJ_PRI_FLAG: u8 = 0b1000_0000;
 
+const TILE_COUNT: usize = 384;
+
 pub type Framebuffer = [FrameRow; SCREEN_SIZE.1];
 type FrameRow = [Pixel; SCREEN_SIZE.0];
 pub type BgBuffer = [BgRow; 256];
 type BgRow = [Pixel; 256];
-type CharRow = [u8; 8];
+type TileRow = [u8; 8];
 
 pub struct Lcd {
     lcdc: u8,
@@ -95,7 +97,12 @@ pub struct Lcd {
     next_mode_10_end_cycle: u64,
 
     running_until_cycle: u64,
+
+    tiles: [Tile; TILE_COUNT],
 }
+
+#[derive(Copy, Clone)]
+struct Tile([TileRow; 8]);
 
 struct Obj {
     x: u8,
@@ -119,6 +126,12 @@ impl Obj {
 
     fn priority(&self) -> bool {
         self.flags & OBJ_PRI_FLAG != 0
+    }
+}
+
+impl Tile {
+    pub fn new() -> Tile {
+        Tile([[0; 8]; 8])
     }
 }
 
@@ -150,6 +163,7 @@ impl Lcd {
             next_mode_10_end_cycle: LINE_CYCLE_TIME,
             running_until_cycle: 0,
             ly: 0,
+            tiles: [Tile::new(); TILE_COUNT],
         }
     }
 
@@ -326,9 +340,8 @@ impl Lcd {
                 / Wrapping(u16::from(PIXEL_PER_CHAR)) + char_y_offset;
             let char_addr = code_dat_start + Address(char_offset.0);
             let char_ = self.read(char_addr).unwrap();
-            let (base_addr, signed) = self.get_bg_char_addr_start();
-            let char_row =
-                self.read_char_row_at(char_, (translated_y % Wrapping(8)).0, base_addr, signed);
+            let signed = self.get_bg_char_addr_start();
+            let char_row = self.read_char_row_at(char_, (translated_y % Wrapping(8)).0, signed);
 
             let color_index = char_row[(translated_x % Wrapping(8)).0 as usize];
             let corrected_index = palette_convert(color_index, self.bgp) as usize;
@@ -338,22 +351,18 @@ impl Lcd {
         row
     }
 
-    fn read_char_row_at(&self, char_: u8, row: u8, base_address: Address, signed: bool) -> CharRow {
-        let char_address = if signed {
-            let chari = i32::from(char_ as i8);
-            let a = i32::from(base_address.0) + i32::from(BYTES_PER_CHAR) * chari;
-            Address(a as u16)
+    fn read_char_row_at(&self, char_: u8, row: u8, signed: bool) -> TileRow {
+        let index = if signed {
+            (256 + isize::from(char_ as i8)) as usize
         } else {
-            base_address + Address(BYTES_PER_CHAR * u16::from(char_))
+            char_ as usize
         };
-        let row_address = char_address + Address(BYTES_PER_CHAR_ROW * u16::from(row));
-        let b1 = self.read(row_address).unwrap();
-        let b2 = self.read(row_address + Address(1)).unwrap();
-        let mut row = [0; 8];
-        for i in 0..8 {
-            row[i] = read_bit(b1, (7 - i) as u8) | (read_bit(b2, (7 - i) as u8) << 1);
+
+        if row >= 8 {
+            self.tiles[index + 1].0[row as usize - 8]
+        } else {
+            self.tiles[index].0[row as usize]
         }
-        row
     }
 
     fn is_bg_enabled(&self) -> bool {
@@ -380,12 +389,8 @@ impl Lcd {
         self.stat & MODE_10_INT_FLAG != 0
     }
 
-    fn get_bg_char_addr_start(&self) -> (Address, bool) {
-        if self.lcdc & BGD_CHAR_DAT_FLAG == 0 {
-            (Address(0x9000), true)
-        } else {
-            (Address(0x8000), false)
-        }
+    fn get_bg_char_addr_start(&self) -> bool {
+        self.lcdc & BGD_CHAR_DAT_FLAG == 0
     }
 
     fn get_bg_code_dat_start(&self) -> Address {
@@ -406,11 +411,6 @@ impl Lcd {
 
     pub fn render_char_dat(&self, high: bool) -> Box<Framebuffer> {
         let mut fb = Box::new([[Pixel(255, 255, 0, 255); SCREEN_SIZE.0]; SCREEN_SIZE.1]);
-        let (start_addr, signed) = if high {
-            (Address(0x9000), false)
-        } else {
-            (Address(0x8000), false)
-        };
 
         const CHARS_PER_ROW: u8 = (SCREEN_SIZE.0 as u8 / PIXEL_PER_CHAR);
         for char_ in 0..CHARS_PER_BANK {
@@ -418,7 +418,7 @@ impl Lcd {
             let base_y = (char_ / CHARS_PER_ROW) * 8;
 
             for y in 0..PIXEL_PER_CHAR {
-                let row = self.read_char_row_at(char_, y, start_addr, signed);
+                let row = self.read_char_row_at(char_, y, high);
                 for x in 0..PIXEL_PER_CHAR {
                     let color_index = row[x as usize];
                     let corrected_index = palette_convert(color_index, self.bgp) as usize;
@@ -438,7 +438,7 @@ impl Lcd {
         } else {
             Address(0x9C00)
         };
-        let (start_addr, signed) = self.get_bg_char_addr_start();
+        let signed = self.get_bg_char_addr_start();
 
         for char_y in 0..BG_CHARS_PER_ROW {
             for char_x in 0..BG_CHARS_PER_ROW {
@@ -447,7 +447,7 @@ impl Lcd {
                 let char_ = self.read(code_start + char_offset).unwrap();
 
                 for y in 0..PIXEL_PER_CHAR {
-                    let row = self.read_char_row_at(char_, y, start_addr, signed);
+                    let row = self.read_char_row_at(char_, y, signed);
                     for x in 0..PIXEL_PER_CHAR {
                         let color_index = row[x as usize];
                         let corrected_index = palette_convert(color_index, self.bgp) as usize;
@@ -493,7 +493,7 @@ impl Lcd {
                 }
 
                 let index_y = if obj.yflip() { hi_y - 1 - y } else { y };
-                let row = self.read_char_row_at(char_, index_y, Address(0x8000), false);
+                let row = self.read_char_row_at(char_, index_y, false);
                 for x in 0..8 {
                     let full_x = x as isize + obj.x as isize - 8;
 
@@ -524,6 +524,21 @@ impl Lcd {
                 }
             }
         }
+    }
+
+    fn update_tile_at(&mut self, a: Address) {
+        let byte_offset = a - RNG_CHAR_DAT.0;
+        let char_offset = byte_offset.0 / BYTES_PER_CHAR;
+        let row_offset = (byte_offset.0 % BYTES_PER_CHAR) / BYTES_PER_ROW;
+
+        let b1 = self.cdata.read(byte_offset).unwrap();
+        let b2 = self.cdata.read(byte_offset + Address(1)).unwrap();
+        let mut row = [0; 8];
+        for i in 0..8 {
+            row[i] = read_bit(b1, (7 - i) as u8) | (read_bit(b2, (7 - i) as u8) << 1);
+        }
+
+        self.tiles[char_offset as usize].0[row_offset as usize] = row;
     }
 }
 
@@ -589,7 +604,9 @@ impl MemDevice for Lcd {
         } else if a.in_(RNG_LCD_BGDD2) {
             self.bgdd2.write(a - RNG_LCD_BGDD2.0, v)
         } else if a.in_(RNG_CHAR_DAT) {
-            self.cdata.write(a - RNG_CHAR_DAT.0, v)
+            self.cdata.write(a - RNG_CHAR_DAT.0, v)?;
+            self.update_tile_at(Address(a.0 - a.0 % 2));
+            Ok(())
         } else if a.in_(RNG_LCD_OAM) {
             self.oam.write(a - RNG_LCD_OAM.0, v)
         } else {
