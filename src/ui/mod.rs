@@ -141,12 +141,13 @@ impl Window {
             } else {
                 dt.elapsed()
             };
+            dt = Instant::now();
+
             if elapsed > Duration::from_millis(17) {
                 //println!("Warning: Slow frame {:?}", elapsed);
             }
             let was_debugging = system.cpu.debug_halted;
             system.run_for_duration(&elapsed);
-            dt = Instant::now();
             if !was_debugging && system.cpu.debug_halted {
                 debug.start_debugging(&mut system);
             }
