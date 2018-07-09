@@ -5,6 +5,7 @@ use std::time::Duration;
 
 use super::{Arith, Cpu, Instruction, Load, Operand, Register16, Register8};
 use emu::alu::Flags;
+use emu::audio::NullSink;
 use emu::cart::Cart;
 use emu::mem::{Address, MemDevice};
 use emu::system::System;
@@ -222,7 +223,7 @@ fn test_load_indirect_decrement() {
 
 fn make_test_cpu() -> Cpu {
     let mock_cart = Cart::load(Cursor::new(Vec::new())).expect("Failed to create mock cart");
-    let mut cpu = Cpu::new(mock_cart);
+    let mut cpu = Cpu::new(mock_cart, Box::new(NullSink));
     cpu.pc = INTIAL_PC;
     for (r, v) in reg_defaults().iter() {
         cpu[*r] = *v;
@@ -388,7 +389,7 @@ fn test_blarg_11_op_a_hl() {
 fn run_blarg_test(path: &str, sec_to_run: u64, expected: &[u8], expected_addr: Address) {
     let cart_file = File::open(path).unwrap();
     let cart = Cart::load(cart_file).unwrap();
-    let cpu = Cpu::new(cart);
+    let cpu = Cpu::new(cart, Box::new(NullSink));
     let mut system = System::new(cpu);
 
     system.run_for_duration(&Duration::from_secs(sec_to_run));

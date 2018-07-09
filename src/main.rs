@@ -35,7 +35,7 @@ fn main() {
     info!("ROM Size: {} bytes", c.rom_size());
     info!("RAM Size: {} bytes", c.ram_size());
 
-    let cpu = emu::cpu::Cpu::new(c);
+    let cpu = emu::cpu::Cpu::new(c, Box::new(emu::audio::NullSink));
     let system = emu::system::System::new(cpu);
 
     let mut window = ui::Window::new(save_path).unwrap();

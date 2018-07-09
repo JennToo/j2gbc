@@ -5,6 +5,7 @@ use std::ops::{Index, IndexMut};
 use std::time::Duration;
 
 use super::alu::*;
+use super::audio::AudioSink;
 use super::cart::Cart;
 use super::inst::{Arith, Bits, Control, Instruction, Load, Logic};
 use super::mem::{Address, ExtendedAddress, MemDevice};
@@ -37,14 +38,14 @@ pub struct Cpu {
 }
 
 impl Cpu {
-    pub fn new(c: Cart) -> Cpu {
+    pub fn new(c: Cart, audio_sink: Box<AudioSink>) -> Cpu {
         let initial_breakpoints = HashSet::new();
 
         let mut cpu = Cpu {
             registers: [0, 0, 0, 0, 0, 0, 0, 0],
             sp: Address(0xFFFE),
             pc: Address(0x100),
-            mmu: Mmu::new(c),
+            mmu: Mmu::new(c, audio_sink),
             cycle: 0,
             interrupt_master_enable: false,
             halted: false,

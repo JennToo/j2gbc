@@ -45,10 +45,24 @@ pub struct Audio {
     nr50: u8,
     nr51: u8,
     nr52: u8,
+
+    sink: Box<AudioSink>,
+}
+
+pub trait AudioSink {
+    fn emit_sample(&mut self, sample: f32);
+}
+
+pub struct NullSink;
+
+impl AudioSink for NullSink {
+    fn emit_sample(&mut self, _: f32) {
+        // Do nothing
+    }
 }
 
 impl Audio {
-    pub fn new() -> Audio {
+    pub fn new(sink: Box<AudioSink>) -> Audio {
         Audio {
             wav: Ram::new(RNG_SND_WAV_RAM.len()),
             nr10: 0,
@@ -72,6 +86,7 @@ impl Audio {
             nr50: 0,
             nr51: 0,
             nr52: 0,
+            sink,
         }
     }
 }
@@ -205,11 +220,5 @@ impl MemDevice for Audio {
                 }
             }
         }
-    }
-}
-
-impl Default for Audio {
-    fn default() -> Audio {
-        Audio::new()
     }
 }

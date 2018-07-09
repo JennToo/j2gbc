@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use super::audio::Audio;
+use super::audio::{Audio, AudioSink};
 use super::cart::Cart;
 use super::input::Input;
 use super::lcd::Lcd;
@@ -22,7 +22,7 @@ pub struct Mmu {
 }
 
 impl Mmu {
-    pub fn new(cart: Cart) -> Mmu {
+    pub fn new(cart: Cart, audio_sink: Box<AudioSink>) -> Mmu {
         Mmu {
             internal_ram: Ram::new(RNG_INT_RAM.len()),
             tiny_ram: Ram::new(RNG_INT_TINY_RAM.len()),
@@ -30,7 +30,7 @@ impl Mmu {
             interrupt_flag: 0,
             cart,
             lcd: Box::new(Lcd::new()),
-            audio: Audio::new(),
+            audio: Audio::new(audio_sink),
             timer: Timer::new(),
             input: Input::new(),
 
