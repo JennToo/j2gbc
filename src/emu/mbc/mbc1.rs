@@ -1,5 +1,7 @@
 use super::Mbc;
-use emu::mem::{Address, AddressRange, ExtendedAddress, MemDevice, RNG_ROM_BANK1, Ram, RNG_EXT_RAM};
+use emu::mem::{
+    Address, AddressRange, ExtendedAddress, MemDevice, RNG_ROM_BANK1, Ram, RNG_EXT_RAM,
+};
 
 const RNG_LOWER_BANK_SELECT: AddressRange = AddressRange(Address(0x2000), Address(0x4000));
 const RNG_RAMCS: AddressRange = AddressRange(Address(0x0000), Address(0x2000));

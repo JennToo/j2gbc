@@ -59,14 +59,19 @@ impl MemDevice for Mmu {
             Err(())
         } else if a.in_(RNG_INT_RAM) {
             self.internal_ram.read(a - RNG_INT_RAM.0)
-        } else if a.in_(RNG_ROM_BANK0) || a.in_(RNG_ROM_BANK1) || a.in_(RNG_EXT_RAM)
+        } else if a.in_(RNG_ROM_BANK0)
+            || a.in_(RNG_ROM_BANK1)
+            || a.in_(RNG_EXT_RAM)
             || a.in_(RNG_INTR_TABLE)
         {
             self.cart.read(a)
         } else if a.in_(RNG_INT_TINY_RAM) {
             self.tiny_ram.read(a - RNG_INT_TINY_RAM.0)
-        } else if a.in_(RNG_LCD_MM_REG) || a.in_(RNG_CHAR_DAT) || a.in_(RNG_LCD_BGDD1)
-            || a.in_(RNG_LCD_BGDD2) || a.in_(RNG_LCD_OAM)
+        } else if a.in_(RNG_LCD_MM_REG)
+            || a.in_(RNG_CHAR_DAT)
+            || a.in_(RNG_LCD_BGDD1)
+            || a.in_(RNG_LCD_BGDD2)
+            || a.in_(RNG_LCD_OAM)
         {
             self.lcd.read(a)
         } else if a.in_(RNG_SND_WAV_RAM) || a.in_(RNG_SND_REGS) {
@@ -94,14 +99,19 @@ impl MemDevice for Mmu {
             self.dma(Address((u16::from(v)) << 8))
         } else if a.in_(RNG_INT_RAM) {
             self.internal_ram.write(a - RNG_INT_RAM.0, v)
-        } else if a.in_(RNG_ROM_BANK0) || a.in_(RNG_ROM_BANK1) || a.in_(RNG_EXT_RAM)
+        } else if a.in_(RNG_ROM_BANK0)
+            || a.in_(RNG_ROM_BANK1)
+            || a.in_(RNG_EXT_RAM)
             || a.in_(RNG_INTR_TABLE)
         {
             self.cart.write(a, v)
         } else if a.in_(RNG_INT_TINY_RAM) {
             self.tiny_ram.write(a - RNG_INT_TINY_RAM.0, v)
-        } else if a.in_(RNG_LCD_MM_REG) || a.in_(RNG_CHAR_DAT) || a.in_(RNG_LCD_BGDD1)
-            || a.in_(RNG_LCD_BGDD2) || a.in_(RNG_LCD_OAM)
+        } else if a.in_(RNG_LCD_MM_REG)
+            || a.in_(RNG_CHAR_DAT)
+            || a.in_(RNG_LCD_BGDD1)
+            || a.in_(RNG_LCD_BGDD2)
+            || a.in_(RNG_LCD_OAM)
         {
             self.lcd.write(a, v)
         } else if a.in_(RNG_SND_WAV_RAM) || a.in_(RNG_SND_REGS) {

@@ -2,7 +2,9 @@ use std::cmp::max;
 use std::num::Wrapping;
 
 use super::cpu::{Interrupt, CLOCK_RATE};
-use super::mem::{Address, MemDevice, RNG_LCD_BGDD1, RNG_LCD_BGDD2, Ram, RNG_CHAR_DAT, RNG_LCD_OAM};
+use super::mem::{
+    Address, MemDevice, RNG_LCD_BGDD1, RNG_LCD_BGDD2, Ram, RNG_CHAR_DAT, RNG_LCD_OAM,
+};
 
 const REG_LCDC: Address = Address(0xFF40);
 const REG_STAT: Address = Address(0xFF41);
