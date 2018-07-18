@@ -14,7 +14,7 @@ pub struct Mmu {
     pub interrupt_enable: u8,
     pub interrupt_flag: u8,
     pub lcd: Box<Lcd>,
-    audio: Audio,
+    pub audio: Audio,
     pub timer: Timer,
     pub input: Input,
 

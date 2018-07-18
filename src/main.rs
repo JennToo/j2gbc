@@ -4,6 +4,10 @@
 extern crate lazy_static;
 #[macro_use]
 extern crate log;
+
+extern crate cpal;
+extern crate hound;
+extern crate rb;
 extern crate sdl2;
 
 use std::fs::File;
@@ -35,9 +39,12 @@ fn main() {
     info!("ROM Size: {} bytes", c.rom_size());
     info!("RAM Size: {} bytes", c.ram_size());
 
-    let cpu = emu::cpu::Cpu::new(c, Box::new(emu::audio::NullSink));
+    let sink = ui::audio::CpalSink::new().unwrap();
+
+    let cpu = emu::cpu::Cpu::new(c, Box::new(sink));
     let system = emu::system::System::new(cpu);
 
     let mut window = ui::Window::new(save_path).unwrap();
     window.run(system).unwrap();
+    info!("Exiting gracefully");
 }

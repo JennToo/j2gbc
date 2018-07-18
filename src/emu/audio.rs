@@ -1,3 +1,4 @@
+use super::cpu::CLOCK_RATE;
 use super::mem::{Address, MemDevice, Ram, RNG_SND_WAV_RAM};
 
 const REG_NR10: Address = Address(0xFF10);
@@ -47,17 +48,28 @@ pub struct Audio {
     nr52: u8,
 
     sink: Box<AudioSink>,
+    sink_rate: u64,
+    next_sample_clock: u64,
+
+    audio_cycle: u64,
+
+    chan1: SquareChannel,
 }
 
 pub trait AudioSink {
-    fn emit_sample(&mut self, sample: f32);
+    fn emit_sample(&mut self, sample: (f32, f32));
+    fn sample_rate(&self) -> u64;
 }
 
 pub struct NullSink;
 
 impl AudioSink for NullSink {
-    fn emit_sample(&mut self, _: f32) {
+    fn emit_sample(&mut self, _: (f32, f32)) {
         // Do nothing
+    }
+
+    fn sample_rate(&self) -> u64 {
+        1
     }
 }
 
@@ -86,7 +98,28 @@ impl Audio {
             nr50: 0,
             nr51: 0,
             nr52: 0,
+
+            sink_rate: sink.sample_rate(),
             sink,
+            next_sample_clock: 0,
+
+            audio_cycle: 0,
+
+            chan1: SquareChannel::new(120),
+        }
+    }
+
+    pub fn get_next_event_cycle(&self) -> u64 {
+        self.next_sample_clock
+    }
+
+    pub fn pump_cycle(&mut self, cpu_cycle: u64) {
+        if cpu_cycle >= self.next_sample_clock {
+            let value = self.chan1.sample(cpu_cycle);
+            self.sink.emit_sample((value, value));
+
+            self.next_sample_clock += CLOCK_RATE / self.sink_rate;
+            self.audio_cycle += 1;
         }
     }
 }
@@ -219,6 +252,29 @@ impl MemDevice for Audio {
                     Err(())
                 }
             }
+        }
+    }
+}
+
+struct SquareChannel {
+    period: u64,
+}
+
+impl SquareChannel {
+    pub fn new(frequency: u64) -> SquareChannel {
+        SquareChannel {
+            period: CLOCK_RATE / frequency,
+        }
+    }
+
+    pub fn sample(&mut self, cpu_cycle: u64) -> f32 {
+        let phase = cpu_cycle % self.period;
+
+        // Assuming the 12.5% duty cycle
+        if phase >= 7 * (self.period / 8) {
+            1.0
+        } else {
+            -1.0
         }
     }
 }

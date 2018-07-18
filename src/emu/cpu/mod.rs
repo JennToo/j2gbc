@@ -621,8 +621,11 @@ impl Cpu {
 
             if self.halted {
                 self.cycle = min(
-                    self.mmu.lcd.get_next_event_cycle(),
-                    min(self.mmu.timer.get_next_event_cycle(), stop_at_cycle),
+                    self.mmu.audio.get_next_event_cycle(),
+                    min(
+                        self.mmu.lcd.get_next_event_cycle(),
+                        min(self.mmu.timer.get_next_event_cycle(), stop_at_cycle),
+                    ),
                 );
                 if self.drive_peripherals().is_err() {
                     self.debug_halted = true;
@@ -632,6 +635,8 @@ impl Cpu {
     }
 
     fn drive_peripherals(&mut self) -> Result<(), ()> {
+        self.mmu.audio.pump_cycle(self.cycle);
+
         if let Some(i) = self.mmu.lcd.pump_cycle(self.cycle) {
             self.request_interrupt(i);
         }

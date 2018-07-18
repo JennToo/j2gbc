@@ -6,6 +6,9 @@ authors = ["Jennifer Wilcox <jennifer@nitori.nl>"]
 [dependencies]
 log = "*"
 lazy_static = "*"
+cpal = "*"
+rb = "*"
+hound = "*"
 
 [dependencies.sdl2]
 version = "*"

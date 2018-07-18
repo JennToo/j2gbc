@@ -10,6 +10,7 @@ use emu::input::Button;
 use emu::lcd::SCREEN_SIZE;
 use emu::system::System;
 
+pub mod audio;
 pub mod debug;
 mod fb;
 
@@ -55,9 +56,9 @@ impl Window {
         let mut super_speed = false;
         let mut save_timer = Duration::from_secs(0);
 
-        fbs.rendering_state = RenderingState::Debug;
-        system.cpu.debug_halted = true;
-        debug.start_debugging(&mut system);
+        //fbs.rendering_state = RenderingState::Debug;
+        //system.cpu.debug_halted = true;
+        //debug.start_debugging(&mut system);
 
         loop {
             for event in self.ctx.event_pump().unwrap().poll_iter() {

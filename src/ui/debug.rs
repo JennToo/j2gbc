@@ -1,4 +1,5 @@
 use std;
+use std::io::Write;
 use std::sync::Mutex;
 
 use log::{set_logger, set_max_level, LevelFilter, Log, Metadata, Record};
@@ -251,6 +252,8 @@ impl<'a> Debug<'a> {
 
 struct DebugLogger {
     log: Mutex<Vec<String>>,
+    event_file: Mutex<std::fs::File>,
+    started: std::time::Instant,
 }
 
 lazy_static! {
@@ -258,6 +261,10 @@ lazy_static! {
         set_max_level(LevelFilter::Debug);
         DebugLogger {
             log: Mutex::new(Vec::new()),
+            event_file: Mutex::new(
+                std::fs::File::create("events.csv").expect("Failed to open event file"),
+            ),
+            started: std::time::Instant::now(),
         }
     };
 }
@@ -269,8 +276,20 @@ impl Log for DebugLogger {
 
     fn log(&self, record: &Record) {
         let r = record.args().to_string();
-        let mut l = self.log.lock().unwrap();
-        l.push(r);
+
+        let timestamp = self.started.elapsed();
+        write!(
+            *self.event_file.lock().unwrap(),
+            "{}:{},{}\r\n",
+            timestamp.as_secs(),
+            timestamp.subsec_nanos(),
+            r,
+        ).expect("Failed to write to event file");
+
+        if record.target() != "events" {
+            let mut l = self.log.lock().unwrap();
+            l.push(r);
+        }
     }
 
     fn flush(&self) {}
