@@ -50,10 +50,8 @@ impl Mmu {
 
         Ok(())
     }
-}
 
-impl MemDevice for Mmu {
-    fn read(&self, a: Address) -> Result<u8, ()> {
+    fn _read(&self, a: Address) -> Result<u8, ()> {
         if self.watchpoints.contains(&a) {
             info!("Read watchpoint for {:?}", a);
             Err(())
@@ -91,7 +89,7 @@ impl MemDevice for Mmu {
         }
     }
 
-    fn write(&mut self, a: Address, v: u8) -> Result<(), ()> {
+    fn _write(&mut self, a: Address, v: u8) -> Result<(), ()> {
         if self.watchpoints.contains(&a) {
             info!("Write watchpoint for {:?}", a);
             Err(())
@@ -135,5 +133,18 @@ impl MemDevice for Mmu {
                 }
             }
         }
+    }
+}
+
+impl MemDevice for Mmu {
+    fn read(&self, a: Address) -> Result<u8, ()> {
+        // self._read(a).or(Ok(0))
+        self._read(a)
+    }
+
+    fn write(&mut self, a: Address, v: u8) -> Result<(), ()> {
+        // self._write(a, v);
+        // Ok(())
+        self._write(a, v)
     }
 }

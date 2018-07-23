@@ -1,3 +1,5 @@
+use std::cmp::min;
+
 use super::cpu::CLOCK_RATE;
 use super::mem::{Address, MemDevice, Ram, RNG_SND_WAV_RAM};
 
@@ -49,11 +51,16 @@ pub struct Audio {
 
     sink: Box<AudioSink>,
     sink_rate: u64,
+
     next_sample_clock: u64,
+    next_len_clock: u64,
+    next_env_clock: u64,
+    next_freq_clock: u64,
 
     audio_cycle: u64,
 
     chan1: SquareChannel,
+    chan2: SquareChannel,
 }
 
 pub trait AudioSink {
@@ -101,25 +108,69 @@ impl Audio {
 
             sink_rate: sink.sample_rate(),
             sink,
+
             next_sample_clock: 0,
+            next_len_clock: 0,
+            next_env_clock: 0,
+            next_freq_clock: 0,
 
             audio_cycle: 0,
 
-            chan1: SquareChannel::new(120),
+            chan1: SquareChannel::new(),
+            chan2: SquareChannel::new(),
         }
     }
 
     pub fn get_next_event_cycle(&self) -> u64 {
-        self.next_sample_clock
+        min(self.next_sample_clock, self.next_len_clock)
     }
 
     pub fn pump_cycle(&mut self, cpu_cycle: u64) {
         if cpu_cycle >= self.next_sample_clock {
-            let value = self.chan1.sample(cpu_cycle);
-            self.sink.emit_sample((value, value));
+            let value_1 = self.chan1.sample(cpu_cycle);
+            let value_2 = self.chan1.sample(cpu_cycle);
+
+            let mut value_l = 0.;
+            let mut value_r = 0.;
+
+            if self.nr51 & 0b1 != 0 {
+                value_l += value_1;
+            }
+            if self.nr51 & 0b0001_0000 != 0 {
+                value_r += value_1;
+            }
+
+            if self.nr51 & 0b10 != 0 {
+                value_l += value_2;
+            }
+            if self.nr51 & 0b0010_0000 != 0 {
+                value_r += value_2;
+            }
+
+            self.sink.emit_sample((value_l / 2., value_r / 2.));
 
             self.next_sample_clock += CLOCK_RATE / self.sink_rate;
             self.audio_cycle += 1;
+        }
+
+        if cpu_cycle >= self.next_len_clock {
+            self.chan1.decrement_length();
+            self.chan2.decrement_length();
+
+            self.next_len_clock += CLOCK_RATE / 256;
+        }
+
+        if cpu_cycle >= self.next_env_clock {
+            self.chan1.volume_env_update();
+            self.chan2.volume_env_update();
+
+            self.next_env_clock += CLOCK_RATE / 64;
+        }
+
+        if cpu_cycle >= self.next_freq_clock {
+            self.chan1.freq_sweep_update();
+
+            self.next_env_clock += CLOCK_RATE / 128;
         }
     }
 }
@@ -165,38 +216,56 @@ impl MemDevice for Audio {
             match a {
                 REG_NR10 => {
                     self.nr10 = v;
+                    self.chan1
+                        .set_freqeuncy_sweepers(v >> 4 & 0b111, v & 0b111, v & 0b1000 != 0);
                     Ok(())
                 }
                 REG_NR11 => {
                     self.nr11 = v;
+                    self.chan1.set_duty_cycle(v >> 6);
+                    self.chan1.update_length(v & 0b111111);
                     Ok(())
                 }
                 REG_NR12 => {
                     self.nr12 = v;
+                    self.chan1.set_vol_env_period(v & 0b111);
+                    self.chan1.increment_vol_env(v & 0b1000 != 0);
+                    self.chan1.set_volume(v >> 4);
                     Ok(())
                 }
                 REG_NR13 => {
                     self.nr13 = v;
+                    self.chan1.set_frequency_from_bits(self.nr14, self.nr13);
                     Ok(())
                 }
                 REG_NR14 => {
                     self.nr14 = v;
+                    self.chan1.set_frequency_from_bits(self.nr14, self.nr13);
+                    self.chan1.use_length_counter(v & 0b0100_0000 != 0);
                     Ok(())
                 }
                 REG_NR21 => {
                     self.nr21 = v;
+                    self.chan2.set_duty_cycle(v >> 6);
+                    self.chan2.update_length(v & 0b111111);
                     Ok(())
                 }
                 REG_NR22 => {
                     self.nr22 = v;
+                    self.chan2.set_vol_env_period(v & 0b111);
+                    self.chan2.increment_vol_env(v & 0b1000 != 0);
+                    self.chan2.set_volume(v >> 4);
                     Ok(())
                 }
                 REG_NR23 => {
                     self.nr23 = v;
+                    self.chan2.set_frequency_from_bits(self.nr24, self.nr23);
                     Ok(())
                 }
                 REG_NR24 => {
                     self.nr24 = v;
+                    self.chan2.set_frequency_from_bits(self.nr24, self.nr23);
+                    self.chan2.use_length_counter(v & 0b0100_0000 != 0);
                     Ok(())
                 }
                 REG_NR30 => {
@@ -258,23 +327,157 @@ impl MemDevice for Audio {
 
 struct SquareChannel {
     period: u64,
+    duty_cycle: u8,
+    use_len: bool,
+    len: u8,
+
+    vol: u8,
+    vol_env_period: u8,
+    vol_env_counter: u8,
+    vol_env_increment: bool,
+
+    frequency: u64,
+    frequency_period: u8,
+    frequency_counter: u8,
+    frequency_shift: u8,
+    frequency_increment: bool,
 }
 
+const DUTY_VALUES: [[f32; 8]; 4] = [
+    [-1., -1., -1., -1., -1., -1., -1., 1.],
+    [1., -1., -1., -1., -1., -1., -1., 1.],
+    [1., -1., -1., -1., -1., 1., 1., 1.],
+    [-1., 1., 1., 1., 1., 1., 1., -1.],
+];
+
 impl SquareChannel {
-    pub fn new(frequency: u64) -> SquareChannel {
+    fn new() -> SquareChannel {
         SquareChannel {
-            period: CLOCK_RATE / frequency,
+            period: 0,
+            duty_cycle: 0,
+            use_len: false,
+            len: 0,
+
+            vol: 0,
+            vol_env_period: 0,
+            vol_env_counter: 0,
+            vol_env_increment: false,
+
+            frequency: 0,
+            frequency_period: 0,
+            frequency_counter: 0,
+            frequency_shift: 0,
+            frequency_increment: false,
         }
     }
 
-    pub fn sample(&mut self, cpu_cycle: u64) -> f32 {
+    fn set_volume(&mut self, vol: u8) {
+        self.vol = vol;
+    }
+
+    fn set_vol_env_period(&mut self, p: u8) {
+        self.vol_env_period = p;
+    }
+
+    fn increment_vol_env(&mut self, inc: bool) {
+        self.vol_env_increment = inc;
+    }
+
+    fn set_freqeuncy_sweepers(
+        &mut self,
+        freqeuncy_period: u8,
+        freqeuncy_shift: u8,
+        freqeuncy_increment: bool,
+    ) {
+        self.frequency_period = freqeuncy_period;
+        self.frequency_shift = freqeuncy_shift;
+        self.frequency_increment = freqeuncy_increment;
+    }
+
+    fn freq_sweep_update(&mut self) {
+        if self.frequency_period == 0 {
+            return;
+        }
+
+        self.frequency_counter += 1;
+        if self.frequency_counter >= self.frequency_period {
+            let operand = self.frequency >> self.frequency_shift;
+            let mut new_f = self.frequency;
+            if self.frequency_increment {
+                new_f += operand;
+                if new_f > 2049 {
+                    new_f = 2049;
+                }
+            } else {
+                if self.frequency_shift != 0 && new_f >= operand {
+                    new_f -= operand;
+                }
+            }
+            self.frequency = new_f;
+            self.update_from_frequency();
+            self.frequency_counter = 0;
+        }
+    }
+
+    fn set_frequency_from_bits(&mut self, hi: u8, lo: u8) {
+        let x = (0b111 & (hi as u64) << 8) | lo as u64;
+        self.frequency = x;
+        self.update_from_frequency();
+    }
+
+    fn update_from_frequency(&mut self) {
+        if self.frequency <= 2048 {
+            let f = 131072 / (2048 - self.frequency);
+            self.period = CLOCK_RATE / f;
+            //self.period = (2048 - self.frequency) * 4;
+        }
+    }
+
+    fn set_duty_cycle(&mut self, duty_cycle: u8) {
+        self.duty_cycle = duty_cycle;
+    }
+
+    fn decrement_length(&mut self) {
+        if self.len > 0 {
+            self.len -= 1;
+        }
+    }
+
+    fn update_length(&mut self, len: u8) {
+        self.len = len;
+    }
+
+    fn use_length_counter(&mut self, use_len: bool) {
+        self.use_len = use_len;
+    }
+
+    fn volume_env_update(&mut self) {
+        if self.vol_env_period == 0 {
+            return;
+        }
+
+        self.vol_env_counter += 1;
+        if self.vol_env_counter >= self.vol_env_period {
+            if self.vol_env_increment && self.vol < 15 {
+                self.vol += 1;
+            } else if self.vol != 0 {
+                self.vol -= 1;
+            }
+            self.vol_env_counter = 0;
+        }
+    }
+
+    fn sample(&mut self, cpu_cycle: u64) -> f32 {
+        if self.period == 0 || self.frequency > 2048 {
+            return 0.;
+        }
         let phase = cpu_cycle % self.period;
 
-        // Assuming the 12.5% duty cycle
-        if phase >= 7 * (self.period / 8) {
-            1.0
-        } else {
-            -1.0
+        let mut duty_cycle_step = phase / (self.period / 8);
+        if duty_cycle_step > 7 {
+            duty_cycle_step = 7;
         }
+
+        DUTY_VALUES[self.duty_cycle as usize][duty_cycle_step as usize] * (self.vol as f32 / 15.0)
     }
 }
