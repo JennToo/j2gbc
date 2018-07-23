@@ -621,7 +621,7 @@ impl Cpu {
 
             if self.halted {
                 self.cycle = min(
-                    self.mmu.audio.get_next_event_cycle(),
+                    self.mmu.audio.synth.get_next_event_cycle(),
                     min(
                         self.mmu.lcd.get_next_event_cycle(),
                         min(self.mmu.timer.get_next_event_cycle(), stop_at_cycle),
@@ -635,7 +635,7 @@ impl Cpu {
     }
 
     fn drive_peripherals(&mut self) -> Result<(), ()> {
-        self.mmu.audio.pump_cycle(self.cycle);
+        self.mmu.audio.synth.pump_cycle(self.cycle);
 
         if let Some(i) = self.mmu.lcd.pump_cycle(self.cycle) {
             self.request_interrupt(i);
