@@ -43,7 +43,10 @@ impl Synth {
     }
 
     pub fn get_next_event_cycle(&self) -> u64 {
-        min(self.next_sample_clock, self.next_len_clock)
+        min(
+            min(self.next_sample_clock, self.next_len_clock),
+            self.next_freq_clock,
+        )
     }
 
     pub fn pump_cycle(&mut self, cpu_cycle: u64) {
@@ -51,8 +54,8 @@ impl Synth {
             let samples = [
                 self.chan1.sample(cpu_cycle),
                 self.chan1.sample(cpu_cycle),
-                self.chan1.sample(cpu_cycle),
-                self.chan1.sample(cpu_cycle),
+                self.chan2.sample(cpu_cycle),
+                self.chan2.sample(cpu_cycle),
             ];
 
             self.sink.emit_sample(self.mixer.mix(samples));
@@ -78,7 +81,7 @@ impl Synth {
         if cpu_cycle >= self.next_freq_clock {
             self.chan1.freq_sweep_update();
 
-            self.next_env_clock += CLOCK_RATE / 128;
+            self.next_freq_clock += CLOCK_RATE / 128;
         }
     }
 }
