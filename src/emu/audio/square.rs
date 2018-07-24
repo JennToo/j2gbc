@@ -12,10 +12,9 @@ pub struct SquareChannel {
     vol_counter: Counter,
 
     frequency: u64,
-    frequency_period: u8,
-    frequency_counter: u8,
     frequency_shift: u8,
     frequency_increment: bool,
+    frequency_sweep_counter: Counter,
 }
 
 const DUTY_VALUES: [[f32; 8]; 4] = [
@@ -38,10 +37,9 @@ impl SquareChannel {
             vol_counter: Counter::new(0),
 
             frequency: 0,
-            frequency_period: 0,
-            frequency_counter: 0,
             frequency_shift: 0,
             frequency_increment: false,
+            frequency_sweep_counter: Counter::new(0),
         }
     }
 
@@ -63,18 +61,17 @@ impl SquareChannel {
         freqeuncy_shift: u8,
         freqeuncy_increment: bool,
     ) {
-        self.frequency_period = freqeuncy_period;
+        self.frequency_sweep_counter.period = freqeuncy_period as u64;
         self.frequency_shift = freqeuncy_shift;
         self.frequency_increment = freqeuncy_increment;
     }
 
     pub fn freq_sweep_update(&mut self) {
-        if self.frequency_period == 0 {
+        if self.frequency_sweep_counter.period == 0 {
             return;
         }
 
-        self.frequency_counter += 1;
-        if self.frequency_counter >= self.frequency_period {
+        if self.frequency_sweep_counter.tick() {
             let operand = self.frequency >> self.frequency_shift;
             let mut new_f = self.frequency;
             if self.frequency_increment {
@@ -89,7 +86,6 @@ impl SquareChannel {
             }
             self.frequency = new_f;
             self.update_from_frequency();
-            self.frequency_counter = 0;
         }
     }
 
