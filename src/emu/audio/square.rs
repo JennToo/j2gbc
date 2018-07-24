@@ -1,4 +1,5 @@
 use emu::cpu::CLOCK_RATE;
+use emu::util::Counter;
 
 pub struct SquareChannel {
     period: u64,
@@ -7,9 +8,8 @@ pub struct SquareChannel {
     len: u8,
 
     vol: u8,
-    vol_env_period: u8,
-    vol_env_counter: u8,
     vol_env_increment: bool,
+    vol_counter: Counter,
 
     frequency: u64,
     frequency_period: u8,
@@ -34,9 +34,8 @@ impl SquareChannel {
             len: 0,
 
             vol: 0,
-            vol_env_period: 0,
-            vol_env_counter: 0,
             vol_env_increment: false,
+            vol_counter: Counter::new(0),
 
             frequency: 0,
             frequency_period: 0,
@@ -51,7 +50,7 @@ impl SquareChannel {
     }
 
     pub fn set_vol_env_period(&mut self, p: u8) {
-        self.vol_env_period = p;
+        self.vol_counter.period = p as u64;
     }
 
     pub fn increment_vol_env(&mut self, inc: bool) {
@@ -102,9 +101,7 @@ impl SquareChannel {
 
     fn update_from_frequency(&mut self) {
         if self.frequency <= 2048 {
-            let f = 131072 / (2048 - self.frequency);
-            self.period = CLOCK_RATE / f;
-            //self.period = (2048 - self.frequency) * 4;
+            self.period = CLOCK_RATE * (2048 - self.frequency) / 131072;
         }
     }
 
@@ -127,18 +124,16 @@ impl SquareChannel {
     }
 
     pub fn volume_env_update(&mut self) {
-        if self.vol_env_period == 0 {
+        if self.vol_counter.period == 0 {
             return;
         }
 
-        self.vol_env_counter += 1;
-        if self.vol_env_counter >= self.vol_env_period {
+        if self.vol_counter.tick() {
             if self.vol_env_increment && self.vol < 15 {
                 self.vol += 1;
             } else if self.vol != 0 {
                 self.vol -= 1;
             }
-            self.vol_env_counter = 0;
         }
     }
 
@@ -148,7 +143,7 @@ impl SquareChannel {
         }
         let phase = cpu_cycle % self.period;
 
-        let mut duty_cycle_step = phase / (self.period / 8);
+        let mut duty_cycle_step = phase * 8 / self.period;
         if duty_cycle_step > 7 {
             duty_cycle_step = 7;
         }

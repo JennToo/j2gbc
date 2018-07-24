@@ -247,7 +247,7 @@ impl MemDevice for Audio {
                 }
                 REG_NR51 => {
                     self.nr51 = v;
-                    self.synth.mixer.set_enabled(
+                    self.synth.mixer.set_enabled_channels(
                         [
                             v & 0b0000_0001 != 0,
                             v & 0b0000_0010 != 0,

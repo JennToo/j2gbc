@@ -31,7 +31,7 @@ impl Mixer {
         (left_val, right_val)
     }
 
-    pub fn set_enabled(&mut self, left_enable: [bool; 4], right_enable: [bool; 4]) {
+    pub fn set_enabled_channels(&mut self, left_enable: [bool; 4], right_enable: [bool; 4]) {
         self.left_enable = left_enable;
         self.right_enable = right_enable;
     }
