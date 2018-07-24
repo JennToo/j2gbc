@@ -1,4 +1,3 @@
-use emu::cpu::CLOCK_RATE;
 use emu::util::Counter;
 
 pub struct SquareChannel {
@@ -41,6 +40,11 @@ impl SquareChannel {
             frequency_increment: false,
             frequency_sweep_counter: Counter::new(0),
         }
+    }
+
+    pub fn reset(&mut self) {
+        self.frequency_sweep_counter.reset();
+        self.vol_counter.reset();
     }
 
     pub fn set_volume(&mut self, vol: u8) {
@@ -97,7 +101,7 @@ impl SquareChannel {
 
     fn update_from_frequency(&mut self) {
         if self.frequency <= 2048 {
-            self.period = CLOCK_RATE * (2048 - self.frequency) / 131072;
+            self.period = 4 * 8 * (2048 - self.frequency);
         }
     }
 
@@ -139,11 +143,12 @@ impl SquareChannel {
         }
         let phase = cpu_cycle % self.period;
 
-        let mut duty_cycle_step = phase * 8 / self.period;
-        if duty_cycle_step > 7 {
-            duty_cycle_step = 7;
-        }
+        let duty_cycle_step = phase * 8 / self.period;
 
         DUTY_VALUES[self.duty_cycle as usize][duty_cycle_step as usize] * (self.vol as f32 / 15.0)
+    }
+
+    pub fn is_active(&self) -> bool {
+        !self.use_len || self.len > 0
     }
 }

@@ -126,7 +126,16 @@ impl MemDevice for Audio {
                 REG_NR44 => Ok(self.nr44),
                 REG_NR50 => Ok(self.nr50),
                 REG_NR51 => Ok(self.nr51),
-                REG_NR52 => Ok(self.nr52),
+                REG_NR52 => {
+                    let mut v = 0b1000_0000 & self.nr52;
+                    if self.synth.chan1.is_active() {
+                        v |= 0b0000_0001;
+                    }
+                    if self.synth.chan2.is_active() {
+                        v |= 0b0000_0010;
+                    }
+                    Ok(v)
+                }
                 _ => {
                     error!("Unimplemented sound register {:?}", a);
                     Err(())
@@ -175,6 +184,9 @@ impl MemDevice for Audio {
                         .chan1
                         .set_frequency_from_bits(self.nr14, self.nr13);
                     self.synth.chan1.use_length_counter(v & 0b0100_0000 != 0);
+                    if v & 0b1000_0000 != 0 {
+                        self.synth.chan1.reset();
+                    }
                     Ok(())
                 }
                 REG_NR21 => {
@@ -203,6 +215,9 @@ impl MemDevice for Audio {
                         .chan2
                         .set_frequency_from_bits(self.nr24, self.nr23);
                     self.synth.chan2.use_length_counter(v & 0b0100_0000 != 0);
+                    if v & 0b1000_0000 != 0 {
+                        self.synth.chan2.reset();
+                    }
                     Ok(())
                 }
                 REG_NR30 => {
