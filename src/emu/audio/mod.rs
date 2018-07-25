@@ -3,6 +3,7 @@ use super::mem::{Address, MemDevice, Ram, RNG_SND_WAV_RAM};
 mod mixer;
 mod square;
 mod synth;
+mod wave;
 
 const REG_NR10: Address = Address(0xFF10);
 const REG_NR11: Address = Address(0xFF11);
@@ -134,6 +135,9 @@ impl MemDevice for Audio {
                     if self.synth.chan2.is_active() {
                         v |= 0b0000_0010;
                     }
+                    if self.synth.chan3.is_active() {
+                        v |= 0b0000_0100;
+                    }
                     Ok(v)
                 }
                 _ => {
@@ -146,7 +150,15 @@ impl MemDevice for Audio {
 
     fn write(&mut self, a: Address, v: u8) -> Result<(), ()> {
         if a.in_(RNG_SND_WAV_RAM) {
-            self.wav.write(a - RNG_SND_WAV_RAM.0, v)
+            let offset = a - RNG_SND_WAV_RAM.0;
+            self.wav.write(offset, v).unwrap();
+            self.synth
+                .chan3
+                .write_sample(bits_to_sample(v & 0b1111), offset.0 as usize * 2 + 1);
+            self.synth
+                .chan3
+                .write_sample(bits_to_sample(v >> 4), offset.0 as usize * 2);
+            Ok(())
         } else {
             match a {
                 REG_NR10 => {
@@ -222,10 +234,12 @@ impl MemDevice for Audio {
                 }
                 REG_NR30 => {
                     self.nr30 = v;
+                    self.synth.chan3.enabled = v & 0b1000_0000 != 0;
                     Ok(())
                 }
                 REG_NR31 => {
                     self.nr31 = v;
+                    self.synth.chan3.set_len(v);
                     Ok(())
                 }
                 REG_NR32 => {
@@ -234,10 +248,20 @@ impl MemDevice for Audio {
                 }
                 REG_NR33 => {
                     self.nr33 = v;
+                    self.synth
+                        .chan3
+                        .set_frequency_from_bits(self.nr34, self.nr33);
                     Ok(())
                 }
                 REG_NR34 => {
                     self.nr34 = v;
+                    self.synth
+                        .chan3
+                        .set_frequency_from_bits(self.nr34, self.nr33);
+                    self.synth.chan3.use_len = v & 0b0100_0000 != 0;
+                    if v & 0b1000_0000 != 0 {
+                        self.synth.chan3.reset();
+                    }
                     Ok(())
                 }
                 REG_NR41 => {
@@ -289,4 +313,15 @@ impl MemDevice for Audio {
             }
         }
     }
+}
+
+fn bits_to_sample(b: u8) -> f32 {
+    ((b as f32) - 8.) / 8.
+}
+
+#[test]
+fn test_bits_to_sample() {
+    assert_eq!(bits_to_sample(0), -1.);
+    assert_eq!(bits_to_sample(8), 0.);
+    assert_eq!(bits_to_sample(16), 1.);
 }

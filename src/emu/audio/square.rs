@@ -7,6 +7,7 @@ pub struct SquareChannel {
     len: u8,
 
     vol: u8,
+    vol_orig: u8,
     vol_env_increment: bool,
     vol_counter: Counter,
 
@@ -32,6 +33,7 @@ impl SquareChannel {
             len: 0,
 
             vol: 0,
+            vol_orig: 0,
             vol_env_increment: false,
             vol_counter: Counter::new(0),
 
@@ -45,10 +47,15 @@ impl SquareChannel {
     pub fn reset(&mut self) {
         self.frequency_sweep_counter.reset();
         self.vol_counter.reset();
+        if self.len == 0 {
+            self.len = 64;
+        }
+        self.vol = self.vol_orig;
     }
 
     pub fn set_volume(&mut self, vol: u8) {
         self.vol = vol;
+        self.vol_orig = vol;
     }
 
     pub fn set_vol_env_period(&mut self, p: u8) {
@@ -94,8 +101,7 @@ impl SquareChannel {
     }
 
     pub fn set_frequency_from_bits(&mut self, hi: u8, lo: u8) {
-        let x = (0b111 & (hi as u64) << 8) | lo as u64;
-        self.frequency = x;
+        self.frequency = (hi as u64 & 0b111) << 8 | lo as u64;
         self.update_from_frequency();
     }
 
@@ -137,8 +143,8 @@ impl SquareChannel {
         }
     }
 
-    pub fn sample(&mut self, cpu_cycle: u64) -> f32 {
-        if self.period == 0 || self.frequency > 2048 {
+    pub fn sample(&self, cpu_cycle: u64) -> f32 {
+        if self.period == 0 || self.frequency > 2048 || !self.is_active() {
             return 0.;
         }
         let phase = cpu_cycle % self.period;

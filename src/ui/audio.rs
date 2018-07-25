@@ -70,8 +70,8 @@ impl AudioSink for CpalSink {
             }
         }
 
-        self.samples.push(sample.0);
-        self.samples.push(sample.1);
+        // self.samples.push(sample.0);
+        // self.samples.push(sample.1);
     }
 
     fn sample_rate(&self) -> u64 {

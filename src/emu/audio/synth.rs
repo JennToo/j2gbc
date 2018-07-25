@@ -2,6 +2,7 @@ use std::cmp::min;
 
 use super::mixer::Mixer;
 use super::square::SquareChannel;
+use super::wave::WaveChannel;
 use super::AudioSink;
 use emu::cpu::CLOCK_RATE;
 
@@ -14,12 +15,11 @@ pub struct Synth {
     next_env_clock: u64,
     next_freq_clock: u64,
 
-    audio_cycle: u64,
-
     pub mixer: Mixer,
 
     pub chan1: SquareChannel,
     pub chan2: SquareChannel,
+    pub chan3: WaveChannel,
 }
 
 impl Synth {
@@ -33,19 +33,21 @@ impl Synth {
             next_env_clock: 0,
             next_freq_clock: 0,
 
-            audio_cycle: 0,
-
             mixer: Mixer::new(),
 
             chan1: SquareChannel::new(),
             chan2: SquareChannel::new(),
+            chan3: WaveChannel::new(),
         }
     }
 
     pub fn get_next_event_cycle(&self) -> u64 {
         min(
-            min(self.next_sample_clock, self.next_len_clock),
-            self.next_freq_clock,
+            min(
+                min(self.next_sample_clock, self.next_len_clock),
+                self.next_freq_clock,
+            ),
+            self.next_env_clock,
         )
     }
 
@@ -53,20 +55,19 @@ impl Synth {
         if cpu_cycle >= self.next_sample_clock {
             let samples = [
                 self.chan1.sample(cpu_cycle),
-                self.chan1.sample(cpu_cycle),
                 self.chan2.sample(cpu_cycle),
-                self.chan2.sample(cpu_cycle),
+                self.chan3.sample(cpu_cycle),
+                0.,
             ];
-
             self.sink.emit_sample(self.mixer.mix(samples));
 
             self.next_sample_clock += CLOCK_RATE / self.sink_rate;
-            self.audio_cycle += 1;
         }
 
         if cpu_cycle >= self.next_len_clock {
             self.chan1.decrement_length();
             self.chan2.decrement_length();
+            self.chan3.decrement_length();
 
             self.next_len_clock += CLOCK_RATE / 256;
         }
