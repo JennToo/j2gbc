@@ -1,6 +1,7 @@
 use super::mem::{Address, MemDevice, Ram, RNG_SND_WAV_RAM};
 
 mod mixer;
+mod noise;
 mod square;
 mod synth;
 mod wave;
@@ -138,6 +139,9 @@ impl MemDevice for Audio {
                     if self.synth.chan3.is_active() {
                         v |= 0b0000_0100;
                     }
+                    if self.synth.chan4.is_active() {
+                        v |= 0b0000_1000;
+                    }
                     Ok(v)
                 }
                 _ => {
@@ -173,7 +177,7 @@ impl MemDevice for Audio {
                 REG_NR11 => {
                     self.nr11 = v;
                     self.synth.chan1.set_duty_cycle(v >> 6);
-                    self.synth.chan1.update_length(v & 0b111111);
+                    self.synth.chan1.update_length(v & 0b0011_1111);
                     Ok(())
                 }
                 REG_NR12 => {
@@ -204,7 +208,7 @@ impl MemDevice for Audio {
                 REG_NR21 => {
                     self.nr21 = v;
                     self.synth.chan2.set_duty_cycle(v >> 6);
-                    self.synth.chan2.update_length(v & 0b111111);
+                    self.synth.chan2.update_length(v & 0b0011_1111);
                     Ok(())
                 }
                 REG_NR22 => {
@@ -273,18 +277,27 @@ impl MemDevice for Audio {
                 }
                 REG_NR41 => {
                     self.nr41 = v;
+                    self.synth.chan4.set_len(v & 0b0011_1111);
                     Ok(())
                 }
                 REG_NR42 => {
                     self.nr42 = v;
+                    self.synth.chan4.set_vol_env_period(v & 0b111);
+                    self.synth.chan4.increment_vol_env(v & 0b1000 != 0);
+                    self.synth.chan4.set_volume(v >> 4);
                     Ok(())
                 }
                 REG_NR43 => {
                     self.nr43 = v;
+                    self.synth.chan4.set_frequency_from_bits(v);
                     Ok(())
                 }
                 REG_NR44 => {
                     self.nr44 = v;
+                    self.synth.chan4.use_len = v & 0b0100_0000 != 0;
+                    if v & 0b1000_0000 != 0 {
+                        self.synth.chan4.reset();
+                    }
                     Ok(())
                 }
                 REG_NR50 => {
