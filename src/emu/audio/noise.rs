@@ -2,6 +2,7 @@ use emu::util::Counter;
 
 pub struct NoiseChannel {
     lfsr: u16,
+    lfsr_half: bool,
 
     period: u64,
 
@@ -22,7 +23,8 @@ const DIVISORS: [u64; 8] = [8, 16, 32, 48, 64, 80, 96, 112];
 impl NoiseChannel {
     pub fn new() -> NoiseChannel {
         NoiseChannel {
-            lfsr: 0b1111_0111,
+            lfsr: 0b1111_1111,
+            lfsr_half: false,
 
             period: 0,
 
@@ -43,6 +45,8 @@ impl NoiseChannel {
         let s = (bits >> 4) & 0b1111;
         let r = DIVISORS[(bits & 0b111) as usize];
         self.period = r << (s + 1);
+
+        self.lfsr_half = bits & 0b0000_1000 != 0;
     }
 
     pub fn set_len(&mut self, len: u8) {
@@ -88,16 +92,21 @@ impl NoiseChannel {
         }
 
         while self.next_lfsr_shift_cycle <= cpu_cycle {
+            let shift = if self.lfsr_half { 6 } else { 14 };
+
+            let downshifted = self.lfsr >> 1;
             let bit_1 = self.lfsr & 0b1;
-            let bit_2 = (self.lfsr >> 1) & 0b1;
-            let new_15 = (bit_1 ^ bit_2) << 15;
-            self.lfsr = (self.lfsr >> 1) | new_15;
+            let bit_2 = downshifted & 0b1;
+            let new_bit = (bit_1 ^ bit_2) << shift;
+            let cleared = downshifted & !(1 << shift);
+
+            self.lfsr = cleared | new_bit;
 
             self.next_lfsr_shift_cycle += self.period;
         }
         self.last_cpu_cycle = cpu_cycle;
 
-        (self.vol as f32 / 15.) * if self.lfsr & 0b1 != 0 { 0. } else { 1. }
+        (self.vol as f32 / 15.) * if self.lfsr & 0b1 != 0 { -1. } else { 1. }
     }
 
     pub fn is_active(&self) -> bool {
