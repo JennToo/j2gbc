@@ -6,6 +6,8 @@ pub struct WaveChannel {
 
     pub enabled: bool,
 
+    pub vol_multiplier: f32,
+
     position_offset_cycle: u64,
     last_cpu_cycle: u64,
 }
@@ -19,6 +21,7 @@ impl WaveChannel {
             len: 0,
 
             enabled: false,
+            vol_multiplier: 0.,
 
             position_offset_cycle: 0,
             last_cpu_cycle: 0,
@@ -52,7 +55,7 @@ impl WaveChannel {
 
         let phase = (cpu_cycle + self.position_offset_cycle) % self.period;
         let position = phase * 32 / self.period;
-        self.samples[position as usize]
+        self.samples[position as usize] * self.vol_multiplier
     }
 
     pub fn is_active(&self) -> bool {

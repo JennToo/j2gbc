@@ -244,6 +244,13 @@ impl MemDevice for Audio {
                 }
                 REG_NR32 => {
                     self.nr32 = v;
+                    self.synth.chan3.vol_multiplier = match (v >> 5) & 0b11 {
+                        0 => 0.,
+                        1 => 1.,
+                        2 => 0.5,
+                        3 => 0.25,
+                        _ => unreachable!(),
+                    };
                     Ok(())
                 }
                 REG_NR33 => {
