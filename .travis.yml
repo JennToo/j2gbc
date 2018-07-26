@@ -12,4 +12,5 @@ addons:
     packages:
       - libsdl2-dev
       - libasound2-dev
-      - libfreetype6-dev
+      - libsdl2-ttf-dev
+
