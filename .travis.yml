@@ -7,3 +7,5 @@ matrix:
   allow_failures:
     - rust: nightly
   fast_finish: true
+before_install:
+  - apt-get install -y libsdl2-dev libasound2-dev libfreetype6-dev
