@@ -44,7 +44,7 @@ impl NoiseChannel {
     pub fn set_frequency_from_bits(&mut self, bits: u8) {
         let s = (bits >> 4) & 0b1111;
         let r = DIVISORS[(bits & 0b111) as usize];
-        self.period = r << (s + 1);
+        self.period = r << s;
 
         self.lfsr_half = bits & 0b0000_1000 != 0;
     }
@@ -115,9 +115,10 @@ impl NoiseChannel {
 
     pub fn reset(&mut self) {
         if self.len == 0 {
-            self.len = 255;
+            self.len = 64;
         }
         self.next_lfsr_shift_cycle = self.period + self.last_cpu_cycle;
         self.vol = self.vol_orig;
+        self.lfsr = 0b1111_1111;
     }
 }
