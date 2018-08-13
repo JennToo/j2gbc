@@ -11,7 +11,7 @@ use super::inst::{Arith, Bits, Control, Instruction, Load, Logic};
 use super::mem::{Address, ExtendedAddress, MemDevice};
 use super::mmu::Mmu;
 
-pub const CLOCK_RATE: u64 = 4_190_000;
+pub const CLOCK_RATE: u64 = 4_194_304;
 pub const LONGEST_INSTRUCTION_CYCLE: u64 = 20; // LD (a16),SP
 
 mod interrupt;
