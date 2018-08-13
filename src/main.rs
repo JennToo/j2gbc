@@ -7,7 +7,7 @@ extern crate log;
 
 extern crate cpal;
 extern crate hound;
-extern crate rb;
+extern crate j2ds;
 extern crate sdl2;
 
 use std::fs::File;

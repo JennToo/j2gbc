@@ -58,7 +58,8 @@ impl Input {
     }
 
     fn active_input_bits(&self, output_bits: u8) -> u8 {
-        (!self.active
+        (!self
+            .active
             .iter()
             .filter(|x| x.selected_by_output(output_bits))
             .map(Button::output)

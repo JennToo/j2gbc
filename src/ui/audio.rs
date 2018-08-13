@@ -1,15 +1,16 @@
 use std::ops::DerefMut;
+use std::sync::{Arc, Mutex};
 use std::thread;
 
 use cpal;
 use hound;
-use rb;
-use rb::{RbConsumer, RbProducer, RB};
+use j2ds::ElasticRingBuffer;
 
 use emu::audio::AudioSink;
 
 pub struct CpalSink {
-    prod: rb::Producer<f32>,
+    queue: Arc<Mutex<ElasticRingBuffer<(f32, f32)>>>,
+    local_queue: Vec<(f32, f32)>,
     rate: u64,
 
     samples: Vec<f32>,
@@ -29,32 +30,38 @@ impl CpalSink {
             .map_err(|e| e.to_string())?;
         event_loop.play_stream(stream_id);
 
-        let buffer = rb::SpscRb::new(format.sample_rate.0 as usize * format.channels as usize);
-        let prod = buffer.producer();
-        let consumer = buffer.consumer();
+        let queue = Arc::new(Mutex::new(ElasticRingBuffer::new(
+            format.sample_rate.0 as usize / 4,
+            (0., 0.),
+            format.sample_rate.0 as usize / 8,
+        )));
+        let q2 = queue.clone();
 
         thread::spawn(move || {
+            let mut temp_buffer = Vec::new();
             event_loop.run(move |_, data| match data {
                 cpal::StreamData::Output {
                     buffer: cpal::UnknownTypeOutputBuffer::F32(mut buffer),
-                } => match consumer.read(buffer.deref_mut()) {
-                    Ok(read) => {
-                        let shortfall = buffer.deref_mut().len() - read;
-                        if shortfall > 0 {
-                            warn!(target: "events", "Audio shortfall {}", shortfall);
-                        }
+                } => {
+                    temp_buffer.resize(buffer.deref_mut().len() / 2, (0., 0.));
+                    queue
+                        .lock()
+                        .unwrap()
+                        .pop_front_slice(temp_buffer.as_mut_slice());
+
+                    for i in 0..temp_buffer.len() {
+                        buffer.deref_mut()[2 * i] = temp_buffer[i].0;
+                        buffer.deref_mut()[2 * i + 1] = temp_buffer[i].1;
                     }
-                    Err(shortfall) => {
-                        warn!(target: "events", "Audio {}", shortfall);
-                    }
-                },
+                }
 
                 _ => (),
             });
         });
 
         Ok(CpalSink {
-            prod,
+            queue: q2,
+            local_queue: Vec::with_capacity(10),
             rate: format.sample_rate.0 as u64,
             samples: Vec::new(),
         })
@@ -63,13 +70,14 @@ impl CpalSink {
 
 impl AudioSink for CpalSink {
     fn emit_sample(&mut self, sample: (f32, f32)) {
-        match self.prod.write(&[sample.0, sample.1]) {
-            Ok(_) => {}
-            Err(_) => {
-                warn!(target: "events", "Audio buffer overflow");
-            }
+        self.local_queue.push(sample);
+        if self.local_queue.len() >= 10 {
+            self.queue
+                .lock()
+                .unwrap()
+                .push_back_slice(self.local_queue.as_slice());
+            self.local_queue.clear();
         }
-
         // self.samples.push(sample.0);
         // self.samples.push(sample.1);
     }

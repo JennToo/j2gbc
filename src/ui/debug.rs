@@ -24,7 +24,8 @@ pub struct Debug<'a> {
 impl<'a> Debug<'a> {
     pub fn new(ctx: &ttf::Sdl2TtfContext) -> Result<Debug, String> {
         Ok(Debug {
-            font: ctx.load_font("MOZART_0.ttf", 24)
+            font: ctx
+                .load_font("MOZART_0.ttf", 24)
                 .map_err(|e| e.to_string())?,
             console_scollback: 0,
             command_buffer: String::new(),
@@ -170,7 +171,8 @@ impl<'a> Debug<'a> {
         if line.len() == 0 {
             return Ok(());
         }
-        let s = self.font
+        let s = self
+            .font
             .render(line)
             .solid(Color::RGB(255, 255, 255))
             .map_err(|e| e.to_string())?;

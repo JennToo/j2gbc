@@ -30,7 +30,8 @@ impl Cart {
 
     pub fn name(&self) -> String {
         let b = &self.data.as_slice()[OFF_CART_NAME_START..OFF_CART_NAME_END];
-        let s = b.iter()
+        let s = b
+            .iter()
             .take_while(|n| **n != 0)
             .map(|n| *n)
             .collect::<Vec<u8>>();

@@ -172,11 +172,16 @@ version = "3.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
+name = "j2ds"
+version = "0.1.0"
+
+[[package]]
 name = "j2gbc"
 version = "0.1.0"
 dependencies = [
  "cpal 0.8.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "hound 3.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "j2ds 0.1.0",
  "lazy_static 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "rb 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
