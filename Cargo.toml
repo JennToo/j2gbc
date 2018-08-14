@@ -10,9 +10,11 @@ cpal = "*"
 rb = "*"
 hound = "*"
 
+
 [dependencies.sdl2]
 version = "*"
 features = ["ttf"]
 
 [dependencies.j2ds]
-path = "../j2ds"
+version = "*"
+
