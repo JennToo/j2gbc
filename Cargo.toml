@@ -17,4 +17,3 @@ features = ["ttf"]
 
 [dependencies.j2ds]
 version = "*"
-

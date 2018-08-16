@@ -145,7 +145,7 @@ impl Window {
             dt = Instant::now();
 
             if elapsed > Duration::from_millis(17) {
-                //println!("Warning: Slow frame {:?}", elapsed);
+                info!(target: "events", "Slow frame {:?}", elapsed);
             }
             let was_debugging = system.cpu.debug_halted;
             system.run_for_duration(&elapsed);
