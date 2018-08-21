@@ -1,4 +1,4 @@
-use emu::util::Counter;
+use j2ds::Clock;
 
 pub struct NoiseChannel {
     lfsr: u16,
@@ -15,7 +15,7 @@ pub struct NoiseChannel {
     vol: u8,
     vol_orig: u8,
     vol_env_increment: bool,
-    vol_counter: Counter,
+    vol_counter: Clock,
 }
 
 const DIVISORS: [u64; 8] = [8, 16, 32, 48, 64, 80, 96, 112];
@@ -37,7 +37,7 @@ impl NoiseChannel {
             vol: 0,
             vol_orig: 0,
             vol_env_increment: false,
-            vol_counter: Counter::new(0),
+            vol_counter: Clock::new(0),
         }
     }
 
@@ -65,7 +65,7 @@ impl NoiseChannel {
     }
 
     pub fn set_vol_env_period(&mut self, p: u8) {
-        self.vol_counter.period = p as u64;
+        self.vol_counter = Clock::new(p as u64);
     }
 
     pub fn increment_vol_env(&mut self, inc: bool) {
@@ -73,7 +73,7 @@ impl NoiseChannel {
     }
 
     pub fn volume_env_update(&mut self) {
-        if self.vol_counter.period == 0 {
+        if self.vol_counter.period() == 0 {
             return;
         }
 

@@ -1,4 +1,4 @@
-use emu::util::Counter;
+use j2ds::Clock;
 
 pub struct SquareChannel {
     period: u64,
@@ -9,12 +9,12 @@ pub struct SquareChannel {
     vol: u8,
     vol_orig: u8,
     vol_env_increment: bool,
-    vol_counter: Counter,
+    vol_counter: Clock,
 
     frequency: u64,
     frequency_shift: u8,
     frequency_increment: bool,
-    frequency_sweep_counter: Counter,
+    frequency_sweep_counter: Clock,
 }
 
 const DUTY_VALUES: [[f32; 8]; 4] = [
@@ -35,12 +35,12 @@ impl SquareChannel {
             vol: 0,
             vol_orig: 0,
             vol_env_increment: false,
-            vol_counter: Counter::new(0),
+            vol_counter: Clock::new(0),
 
             frequency: 0,
             frequency_shift: 0,
             frequency_increment: false,
-            frequency_sweep_counter: Counter::new(0),
+            frequency_sweep_counter: Clock::new(0),
         }
     }
 
@@ -59,7 +59,7 @@ impl SquareChannel {
     }
 
     pub fn set_vol_env_period(&mut self, p: u8) {
-        self.vol_counter.period = p as u64;
+        self.vol_counter = Clock::new(p as u64);
     }
 
     pub fn increment_vol_env(&mut self, inc: bool) {
@@ -72,13 +72,13 @@ impl SquareChannel {
         freqeuncy_shift: u8,
         freqeuncy_increment: bool,
     ) {
-        self.frequency_sweep_counter.period = freqeuncy_period as u64;
+        self.frequency_sweep_counter = Clock::new(freqeuncy_period as u64);
         self.frequency_shift = freqeuncy_shift;
         self.frequency_increment = freqeuncy_increment;
     }
 
     pub fn freq_sweep_update(&mut self) {
-        if self.frequency_sweep_counter.period == 0 {
+        if self.frequency_sweep_counter.period() == 0 {
             return;
         }
 
@@ -130,7 +130,7 @@ impl SquareChannel {
     }
 
     pub fn volume_env_update(&mut self) {
-        if self.vol_counter.period == 0 {
+        if self.vol_counter.period() == 0 {
             return;
         }
 

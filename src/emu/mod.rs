@@ -10,4 +10,3 @@ pub mod mem;
 pub mod mmu;
 pub mod system;
 pub mod timer;
-pub mod util;
