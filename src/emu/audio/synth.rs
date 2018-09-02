@@ -1,4 +1,4 @@
-use std::cmp::min;
+use j2ds::{next_timer_event, Timer, TimerEvent};
 
 use super::mixer::Mixer;
 use super::noise::NoiseChannel;
@@ -9,12 +9,11 @@ use emu::cpu::CLOCK_RATE;
 
 pub struct Synth {
     sink: Box<AudioSink>,
-    sink_rate: u64,
 
-    next_sample_clock: u64,
-    next_len_clock: u64,
-    next_env_clock: u64,
-    next_freq_clock: u64,
+    sample_clock: Timer,
+    len_clock: Timer,
+    env_clock: Timer,
+    freq_clock: Timer,
 
     pub mixer: Mixer,
 
@@ -27,13 +26,12 @@ pub struct Synth {
 impl Synth {
     pub fn new(sink: Box<AudioSink>) -> Synth {
         Synth {
-            sink_rate: sink.sample_rate(),
-            sink,
+            sample_clock: Timer::new(CLOCK_RATE / sink.sample_rate(), 0, 0),
+            len_clock: Timer::new(CLOCK_RATE / 256, 0, 0),
+            env_clock: Timer::new(CLOCK_RATE / 64, 0, 0),
+            freq_clock: Timer::new(CLOCK_RATE / 128, 0, 0),
 
-            next_sample_clock: 0,
-            next_len_clock: 0,
-            next_env_clock: 0,
-            next_freq_clock: 0,
+            sink,
 
             mixer: Mixer::new(),
 
@@ -45,17 +43,16 @@ impl Synth {
     }
 
     pub fn get_next_event_cycle(&self) -> u64 {
-        min(
-            min(
-                min(self.next_sample_clock, self.next_len_clock),
-                self.next_freq_clock,
-            ),
-            self.next_env_clock,
-        )
+        next_timer_event(&[
+            self.sample_clock,
+            self.len_clock,
+            self.env_clock,
+            self.freq_clock,
+        ])
     }
 
     pub fn pump_cycle(&mut self, cpu_cycle: u64) {
-        if cpu_cycle >= self.next_sample_clock {
+        if self.sample_clock.update(cpu_cycle) == Some(TimerEvent::RisingEdge) {
             let samples = [
                 self.chan1.sample(cpu_cycle),
                 self.chan2.sample(cpu_cycle),
@@ -63,31 +60,23 @@ impl Synth {
                 self.chan4.sample(cpu_cycle),
             ];
             self.sink.emit_sample(self.mixer.mix(samples));
-
-            self.next_sample_clock += CLOCK_RATE / self.sink_rate;
         }
 
-        if cpu_cycle >= self.next_len_clock {
+        if self.len_clock.update(cpu_cycle) == Some(TimerEvent::RisingEdge) {
             self.chan1.decrement_length();
             self.chan2.decrement_length();
             self.chan3.decrement_length();
             self.chan4.decrement_length();
-
-            self.next_len_clock += CLOCK_RATE / 256;
         }
 
-        if cpu_cycle >= self.next_env_clock {
+        if self.env_clock.update(cpu_cycle) == Some(TimerEvent::RisingEdge) {
             self.chan1.volume_env_update();
             self.chan2.volume_env_update();
             self.chan4.volume_env_update();
-
-            self.next_env_clock += CLOCK_RATE / 64;
         }
 
-        if cpu_cycle >= self.next_freq_clock {
+        if self.freq_clock.update(cpu_cycle) == Some(TimerEvent::RisingEdge) {
             self.chan1.freq_sweep_update();
-
-            self.next_freq_clock += CLOCK_RATE / 128;
         }
     }
 }

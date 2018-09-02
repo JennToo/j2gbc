@@ -1,6 +1,8 @@
 use std::cmp::max;
 use std::num::Wrapping;
 
+use j2ds::{next_timer_event, Timer, TimerEvent};
+
 use super::cpu::{Interrupt, CLOCK_RATE};
 use super::mem::{
     Address, MemDevice, RNG_LCD_BGDD1, RNG_LCD_BGDD2, Ram, RNG_CHAR_DAT, RNG_LCD_OAM,
@@ -32,7 +34,7 @@ const COLORS: [Pixel; 4] = [COLOR_WHITE, COLOR_LIGHT_GRAY, COLOR_DARK_GRAY, COLO
 const LINE_CYCLE_TIME: u64 = CLOCK_RATE * 108_700 / 1_000_000_000; // Src: Official GB manual
 const HBLANK_DURATION: u64 = CLOCK_RATE * 48_600 / 1_000_000_000; // Src: GBCPUMan.pdf
 const MODE_10_DURATION: u64 = CLOCK_RATE * 19_000 / 1_000_000_000; // Src: GBCPUMan.pdf
-const _VBLANK_DURATION: u64 = LINE_CYCLE_TIME * 10; // Src: Official GB manual
+const VBLANK_DURATION: u64 = LINE_CYCLE_TIME * 10; // Src: Official GB manual
 const SCREEN_CYCLE_TIME: u64 = 154 * LINE_CYCLE_TIME;
 const BYTES_PER_CHAR: u16 = 16;
 const BYTES_PER_ROW: u16 = 2;
@@ -92,12 +94,9 @@ pub struct Lcd {
     fbs: [Framebuffer; 2],
     fbi: usize,
 
-    next_hblank_start_cycle: u64,
-    next_hblank_end_cycle: u64,
-    next_vblank_start_cycle: u64,
-    next_vblank_end_cycle: u64,
-    next_mode_10_start_cycle: u64,
-    next_mode_10_end_cycle: u64,
+    hblank_timer: Timer,
+    vblank_timer: Timer,
+    mode10_timer: Timer,
 
     running_until_cycle: u64,
 
@@ -169,12 +168,21 @@ impl Lcd {
             fbs: [[[COLOR_WHITE; SCREEN_SIZE.0]; SCREEN_SIZE.1]; 2],
             fbi: 0,
 
-            next_hblank_start_cycle: LINE_CYCLE_TIME - HBLANK_DURATION - MODE_10_DURATION,
-            next_hblank_end_cycle: LINE_CYCLE_TIME - MODE_10_DURATION,
-            next_vblank_start_cycle: SCREEN_SIZE.1 as u64 * LINE_CYCLE_TIME,
-            next_vblank_end_cycle: SCREEN_CYCLE_TIME,
-            next_mode_10_start_cycle: LINE_CYCLE_TIME - HBLANK_DURATION,
-            next_mode_10_end_cycle: LINE_CYCLE_TIME,
+            hblank_timer: Timer::new(
+                LINE_CYCLE_TIME,
+                LINE_CYCLE_TIME - HBLANK_DURATION - MODE_10_DURATION,
+                HBLANK_DURATION,
+            ),
+            vblank_timer: Timer::new(
+                SCREEN_CYCLE_TIME,
+                SCREEN_SIZE.1 as u64 * LINE_CYCLE_TIME,
+                VBLANK_DURATION,
+            ),
+            mode10_timer: Timer::new(
+                LINE_CYCLE_TIME,
+                LINE_CYCLE_TIME - HBLANK_DURATION,
+                HBLANK_DURATION,
+            ),
             running_until_cycle: 0,
             ly: 0,
 
@@ -204,16 +212,7 @@ impl Lcd {
     }
 
     pub fn get_next_event_cycle(&self) -> u64 {
-        *[
-            self.next_hblank_start_cycle,
-            self.next_hblank_end_cycle,
-            self.next_mode_10_start_cycle,
-            self.next_mode_10_end_cycle,
-            self.next_vblank_start_cycle,
-            self.next_vblank_end_cycle,
-        ].iter()
-            .min()
-            .unwrap()
+        next_timer_event(&[self.hblank_timer, self.vblank_timer, self.mode10_timer])
     }
 
     pub fn set_running_until(&mut self, cycle: u64) {
@@ -221,48 +220,52 @@ impl Lcd {
     }
 
     pub fn pump_cycle(&mut self, cycle: u64) -> Option<Interrupt> {
-        if cycle >= self.next_hblank_start_cycle {
-            self.do_hblank_start(cycle);
-
-            if self.is_hblank_int_enabled() && self.ly < SCREEN_SIZE.1 as u8 {
-                Some(Interrupt::LCDC)
-            } else {
-                None
+        match self.hblank_timer.update(cycle) {
+            Some(TimerEvent::RisingEdge) => {
+                self.do_hblank_start(cycle);
+                if self.is_hblank_int_enabled() && self.ly < SCREEN_SIZE.1 as u8 {
+                    return Some(Interrupt::LCDC);
+                }
             }
-        } else if cycle >= self.next_hblank_end_cycle {
-            self.do_hblank_end();
-            if self.ly == self.lyc && self.is_lyc_int_enabled() {
-                Some(Interrupt::LCDC)
-            } else {
-                None
+            Some(TimerEvent::FallingEdge) => {
+                self.do_hblank_end();
+                if self.ly == self.lyc && self.is_lyc_int_enabled() {
+                    return Some(Interrupt::LCDC);
+                }
             }
-        } else if cycle >= self.next_mode_10_start_cycle {
-            self.next_mode_10_start_cycle = cycle + LINE_CYCLE_TIME;
-            self.stat = (self.stat & 0b1111_1100) | MODE_10_MASK;
-
-            if self.is_mode_10_int_enabled() {
-                Some(Interrupt::LCDC)
-            } else {
-                None
-            }
-        } else if cycle >= self.next_mode_10_end_cycle {
-            self.next_mode_10_end_cycle = cycle + LINE_CYCLE_TIME;
-            self.stat = (self.stat & 0b1111_1100) | MODE_00_MASK;
-            None
-        } else if cycle >= self.next_vblank_start_cycle {
-            self.do_vblank_start();
-            Some(Interrupt::VBlank)
-        } else if cycle >= self.next_vblank_end_cycle {
-            self.do_vblank_end();
-
-            if self.ly == self.lyc && self.is_lyc_int_enabled() {
-                Some(Interrupt::LCDC)
-            } else {
-                None
-            }
-        } else {
-            None
+            None => {}
         }
+
+        match self.mode10_timer.update(cycle) {
+            Some(TimerEvent::RisingEdge) => {
+                self.stat = (self.stat & 0b1111_1100) | MODE_10_MASK;
+
+                if self.is_mode_10_int_enabled() {
+                    return Some(Interrupt::LCDC);
+                }
+            }
+            Some(TimerEvent::FallingEdge) => {
+                self.stat = (self.stat & 0b1111_1100) | MODE_00_MASK;
+            }
+            None => {}
+        }
+
+        match self.vblank_timer.update(cycle) {
+            Some(TimerEvent::RisingEdge) => {
+                self.do_vblank_start();
+                return Some(Interrupt::VBlank);
+            }
+            Some(TimerEvent::FallingEdge) => {
+                self.do_vblank_end();
+
+                if self.ly == self.lyc && self.is_lyc_int_enabled() {
+                    return Some(Interrupt::LCDC);
+                }
+            }
+            None => {}
+        }
+
+        None
     }
 
     fn do_hblank_start(&mut self, cycle: u64) {
@@ -274,7 +277,6 @@ impl Lcd {
             }
             self.stat = (self.stat & 0b1111_1100) | MODE_00_MASK;
         }
-        self.next_hblank_start_cycle += LINE_CYCLE_TIME;
     }
 
     fn should_render_this_frame(&self, cycle: u64) -> bool {
@@ -285,7 +287,6 @@ impl Lcd {
     fn do_hblank_end(&mut self) {
         self.ly += 1;
         self.update_lyc();
-        self.next_hblank_end_cycle += LINE_CYCLE_TIME;
     }
 
     pub fn do_vblank_start(&mut self) {
@@ -293,14 +294,12 @@ impl Lcd {
         self.ly += 1;
         self.update_lyc();
         self.stat = (self.stat & 0b1111_1100) | MODE_01_MASK;
-        self.next_vblank_start_cycle += SCREEN_CYCLE_TIME;
     }
 
     pub fn do_vblank_end(&mut self) {
         self.ly = 0;
         self.update_lyc();
         self.stat = (self.stat & 0b1111_1100) | MODE_00_MASK;
-        self.next_vblank_end_cycle += SCREEN_CYCLE_TIME;
     }
 
     fn update_lyc(&mut self) {
