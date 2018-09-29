@@ -5,7 +5,7 @@ use super::noise::NoiseChannel;
 use super::square::SquareChannel;
 use super::wave::WaveChannel;
 use super::AudioSink;
-use emu::cpu::CLOCK_RATE;
+use cpu::CLOCK_RATE;
 
 pub struct Synth {
     sink: Box<AudioSink>,

@@ -1,7 +1,7 @@
 use std::fmt;
 use std::fmt::Display;
 
-use emu::cpu::{Operand, Register16};
+use cpu::{Operand, Register16};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Arith {

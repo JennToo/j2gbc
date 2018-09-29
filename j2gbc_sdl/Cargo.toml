@@ -1,5 +1,5 @@
 [package]
-name = "j2gbc"
+name = "j2gbc_sdl"
 version = "0.1.0"
 authors = ["Jennifer Wilcox <jennifer@nitori.nl>"]
 
@@ -9,7 +9,7 @@ lazy_static = "*"
 cpal = "*"
 rb = "*"
 hound = "*"
-
+j2gbc = { path = "../j2gbc" }
 
 [dependencies.sdl2]
 version = "*"

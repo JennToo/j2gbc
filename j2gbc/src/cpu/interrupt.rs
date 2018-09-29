@@ -1,4 +1,4 @@
-use emu::mem::Address;
+use mem::Address;
 
 // TODO: Eventually move the interrupt handler to in here
 

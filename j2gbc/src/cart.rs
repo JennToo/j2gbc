@@ -4,7 +4,7 @@ use std::io::Read;
 use super::mbc::mbc1::Mbc1;
 use super::mbc::Mbc;
 use super::mem::{
-    Address, ExtendedAddress, MemDevice, RNG_ROM_BANK0, RNG_ROM_BANK1, RNG_INTR_TABLE,
+    Address, ExtendedAddress, MemDevice, RNG_INTR_TABLE, RNG_ROM_BANK0, RNG_ROM_BANK1,
 };
 
 pub struct Cart {

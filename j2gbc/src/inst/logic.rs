@@ -1,7 +1,7 @@
 use std::fmt;
 use std::fmt::Display;
 
-use emu::cpu::Register8;
+use cpu::Register8;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Logic {

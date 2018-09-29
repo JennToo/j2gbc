@@ -3,8 +3,8 @@ use sdl2::rect::Rect;
 use sdl2::render::{Texture, TextureCreator, WindowCanvas};
 use sdl2::video::WindowContext;
 
-use emu::lcd::{BgBuffer, Framebuffer, SCREEN_SIZE};
-use emu::system::System;
+use j2gbc::lcd::{BgBuffer, Framebuffer, SCREEN_SIZE};
+use j2gbc::system::System;
 
 #[derive(PartialEq, Eq, Copy, Clone)]
 pub enum RenderingState {
@@ -142,8 +142,7 @@ fn copy_framebuffer<'r>(fb: &Framebuffer, gb_screen: &mut Texture<'r>) -> Result
                     outfb[index + 3] = pixel.0;
                 }
             }
-        })
-        .map_err(|e| e.to_string())
+        }).map_err(|e| e.to_string())
 }
 
 fn copy_bgbuffer<'r>(fb: &BgBuffer, gb_screen: &mut Texture<'r>) -> Result<(), String> {
@@ -160,6 +159,5 @@ fn copy_bgbuffer<'r>(fb: &BgBuffer, gb_screen: &mut Texture<'r>) -> Result<(), S
                     outfb[index + 3] = pixel.0;
                 }
             }
-        })
-        .map_err(|e| e.to_string())
+        }).map_err(|e| e.to_string())
 }

@@ -1,8 +1,8 @@
 use std::fmt;
 use std::fmt::Display;
 
-use emu::cpu::{Operand, Register16};
-use emu::mem::Address;
+use cpu::{Operand, Register16};
+use mem::Address;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Load {

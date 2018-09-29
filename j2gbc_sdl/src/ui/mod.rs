@@ -6,9 +6,9 @@ use std::fs::File;
 use std::io::Write;
 use std::time::{Duration, Instant};
 
-use emu::input::Button;
-use emu::lcd::SCREEN_SIZE;
-use emu::system::System;
+use j2gbc::input::Button;
+use j2gbc::lcd::SCREEN_SIZE;
+use j2gbc::system::System;
 
 pub mod audio;
 pub mod debug;

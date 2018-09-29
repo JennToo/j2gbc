@@ -5,7 +5,6 @@ authors = ["Jennifer Wilcox <jennifer@nitori.nl>"]
 
 [dependencies]
 log = "*"
-lazy_static = "*"
 
 [dependencies.j2ds]
 version = "*"

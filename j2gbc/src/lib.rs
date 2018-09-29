@@ -1,3 +1,9 @@
+#![allow(unknown_lints)]
+
+#[macro_use]
+extern crate log;
+extern crate j2ds;
+
 pub mod alu;
 pub mod audio;
 pub mod cart;

@@ -5,7 +5,7 @@ use j2ds::{next_timer_event, Timer, TimerEvent};
 
 use super::cpu::{Interrupt, CLOCK_RATE};
 use super::mem::{
-    Address, MemDevice, RNG_LCD_BGDD1, RNG_LCD_BGDD2, Ram, RNG_CHAR_DAT, RNG_LCD_OAM,
+    Address, MemDevice, Ram, RNG_CHAR_DAT, RNG_LCD_BGDD1, RNG_LCD_BGDD2, RNG_LCD_OAM,
 };
 
 const REG_LCDC: Address = Address(0xFF40);
@@ -352,7 +352,8 @@ impl Lcd {
                 / Wrapping(u16::from(PIXEL_PER_CHAR))
                 * Wrapping(u16::from(BG_CHARS_PER_ROW));
             let char_offset = Wrapping(u16::from(translated_x.0))
-                / Wrapping(u16::from(PIXEL_PER_CHAR)) + char_y_offset;
+                / Wrapping(u16::from(PIXEL_PER_CHAR))
+                + char_y_offset;
             let char_addr = code_dat_start + Address(char_offset.0);
             let char_ = self.read(char_addr).unwrap();
             let signed = self.get_bg_char_addr_start();

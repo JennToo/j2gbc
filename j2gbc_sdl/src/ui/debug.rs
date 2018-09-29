@@ -9,10 +9,10 @@ use sdl2::render::{TextureCreator, WindowCanvas};
 use sdl2::ttf;
 use sdl2::video::WindowContext;
 
-use emu::cpu::Register8;
-use emu::cpu::{Cpu, Interrupt};
-use emu::mem::{Address, MemDevice};
-use emu::system::System;
+use j2gbc::cpu::Register8;
+use j2gbc::cpu::{Cpu, Interrupt};
+use j2gbc::mem::{Address, MemDevice};
+use j2gbc::system::System;
 
 pub struct Debug<'a> {
     font: ttf::Font<'a, 'static>,
@@ -25,7 +25,7 @@ impl<'a> Debug<'a> {
     pub fn new(ctx: &ttf::Sdl2TtfContext) -> Result<Debug, String> {
         Ok(Debug {
             font: ctx
-                .load_font("MOZART_0.ttf", 24)
+                .load_font("j2gbc_sdl/MOZART_0.ttf", 24)
                 .map_err(|e| e.to_string())?,
             console_scollback: 0,
             command_buffer: String::new(),

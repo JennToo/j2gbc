@@ -6,7 +6,7 @@ use cpal;
 use hound;
 use j2ds::{ElasticPopResult, ElasticRingBuffer};
 
-use emu::audio::AudioSink;
+use j2gbc::audio::AudioSink;
 
 pub struct CpalSink {
     queue: Arc<Mutex<ElasticRingBuffer<(f32, f32)>>>,

@@ -1,7 +1,7 @@
 use std::fmt;
 use std::fmt::Display;
 
-use emu::mem::Address;
+use mem::Address;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum Register8 {

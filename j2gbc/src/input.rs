@@ -63,7 +63,8 @@ impl Input {
             .iter()
             .filter(|x| x.selected_by_output(output_bits))
             .map(Button::output)
-            .fold(0, u8::bitor)) & INPUT_MASK
+            .fold(0, u8::bitor))
+            & INPUT_MASK
     }
 
     fn recalculate(&mut self) {

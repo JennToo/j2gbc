@@ -1,0 +1,5 @@
+[workspace]
+members = [
+    "j2gbc",
+    "j2gbc_sdl",
+]

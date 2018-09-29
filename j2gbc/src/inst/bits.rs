@@ -1,7 +1,7 @@
 use std::fmt;
 use std::fmt::Display;
 
-use emu::cpu::Operand;
+use cpu::Operand;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Bits {
