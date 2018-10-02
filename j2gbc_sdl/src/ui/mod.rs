@@ -178,7 +178,7 @@ fn handle_buttons(e: &Event, system: &mut System) {
         Event::KeyDown {
             keycode: Some(k), ..
         } => {
-            if let Some(b) = keycode_to_button(k) {
+            if let Some(b) = keycode_to_button(*k) {
                 system.cpu.mmu.input.activate_button(b);
                 system.cpu.request_p1_int();
             }
@@ -186,7 +186,7 @@ fn handle_buttons(e: &Event, system: &mut System) {
         Event::KeyUp {
             keycode: Some(k), ..
         } => {
-            if let Some(b) = keycode_to_button(k) {
+            if let Some(b) = keycode_to_button(*k) {
                 system.cpu.mmu.input.deactivate_button(b);
             }
         }
@@ -195,7 +195,7 @@ fn handle_buttons(e: &Event, system: &mut System) {
     }
 }
 
-fn keycode_to_button(keycode: &Keycode) -> Option<Button> {
+fn keycode_to_button(keycode: Keycode) -> Option<Button> {
     match keycode {
         Keycode::Up => Some(Button::Up),
         Keycode::Down => Some(Button::Down),

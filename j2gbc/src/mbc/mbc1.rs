@@ -67,7 +67,7 @@ impl MemDevice for Mbc1 {
                 self.ram.write(mapped, v)
             }
         } else if a.in_(RNG_RAMCS) {
-            self.ram_protected = !(v == 0x0A);
+            self.ram_protected = v != 0x0A;
             Ok(())
         } else if a.in_(RNG_UPPER_BANK_SELECT) {
             self.upper_bank_select = (v & MAKS_UPPER_BANK_SELCET) as usize;
@@ -88,7 +88,9 @@ impl Mbc for Mbc1 {
             unimplemented!();
         }
 
-        ExtendedAddress((RNG_ROM_BANK1.len() * (self.lower_bank_select - 1)) as u32 + a.0 as u32)
+        ExtendedAddress(
+            (RNG_ROM_BANK1.len() * (self.lower_bank_select - 1)) as u32 + u32::from(a.0),
+        )
     }
 
     fn get_sram(&self) -> &[u8] {
@@ -96,8 +98,6 @@ impl Mbc for Mbc1 {
     }
 
     fn set_sram(&mut self, buf: &[u8]) {
-        for i in 0..buf.len() {
-            self.ram.data[i] = buf[i];
-        }
+        self.ram.data[..buf.len()].clone_from_slice(buf);
     }
 }

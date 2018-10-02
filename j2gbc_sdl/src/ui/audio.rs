@@ -38,13 +38,13 @@ impl CpalSink {
         let q2 = queue.clone();
 
         thread::spawn(move || {
-            feed_cpal_events(event_loop, q2);
+            feed_cpal_events(&event_loop, q2);
         });
 
         Ok(CpalSink {
             queue,
             local_queue: Vec::with_capacity(10),
-            rate: format.sample_rate.0 as u64,
+            rate: u64::from(format.sample_rate.0),
             samples: Vec::new(),
         })
     }
@@ -78,13 +78,16 @@ impl Drop for CpalSink {
             sample_format: hound::SampleFormat::Float,
         };
         let mut writer = hound::WavWriter::create("audio.wav", spec).unwrap();
-        for s in self.samples.iter() {
+        for s in &self.samples {
             writer.write_sample(*s).unwrap();
         }
     }
 }
 
-fn feed_cpal_events(event_loop: cpal::EventLoop, queue: Arc<Mutex<ElasticRingBuffer<(f32, f32)>>>) {
+fn feed_cpal_events(
+    event_loop: &cpal::EventLoop,
+    queue: Arc<Mutex<ElasticRingBuffer<(f32, f32)>>>,
+) {
     let mut temp_buffer = Vec::new();
     event_loop.run(move |_, data| match data {
         cpal::StreamData::Output {

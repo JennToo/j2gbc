@@ -336,7 +336,7 @@ impl MemDevice for Audio {
 }
 
 fn bits_to_sample(b: u8) -> f32 {
-    ((b as f32) - 8.) / 8.
+    (f32::from(b) - 8.) / 8.
 }
 
 #[test]

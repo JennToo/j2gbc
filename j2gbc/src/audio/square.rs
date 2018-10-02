@@ -59,7 +59,7 @@ impl SquareChannel {
     }
 
     pub fn set_vol_env_period(&mut self, p: u8) {
-        self.vol_counter = Clock::new(p as u64);
+        self.vol_counter = Clock::new(u64::from(p));
     }
 
     pub fn increment_vol_env(&mut self, inc: bool) {
@@ -72,7 +72,7 @@ impl SquareChannel {
         freqeuncy_shift: u8,
         freqeuncy_increment: bool,
     ) {
-        self.frequency_sweep_counter = Clock::new(freqeuncy_period as u64);
+        self.frequency_sweep_counter = Clock::new(u64::from(freqeuncy_period));
         self.frequency_shift = freqeuncy_shift;
         self.frequency_increment = freqeuncy_increment;
     }
@@ -90,10 +90,8 @@ impl SquareChannel {
                 if new_f > 2049 {
                     new_f = 2049;
                 }
-            } else {
-                if self.frequency_shift != 0 && new_f >= operand {
-                    new_f -= operand;
-                }
+            } else if self.frequency_shift != 0 && new_f >= operand {
+                new_f -= operand;
             }
             self.frequency = new_f;
             self.update_from_frequency();
@@ -101,7 +99,7 @@ impl SquareChannel {
     }
 
     pub fn set_frequency_from_bits(&mut self, hi: u8, lo: u8) {
-        self.frequency = (hi as u64 & 0b111) << 8 | lo as u64;
+        self.frequency = (u64::from(hi) & 0b111) << 8 | u64::from(lo);
         self.update_from_frequency();
     }
 
@@ -151,7 +149,8 @@ impl SquareChannel {
 
         let duty_cycle_step = phase * 8 / self.period;
 
-        DUTY_VALUES[self.duty_cycle as usize][duty_cycle_step as usize] * (self.vol as f32 / 15.0)
+        DUTY_VALUES[self.duty_cycle as usize][duty_cycle_step as usize]
+            * (f32::from(self.vol) / 15.0)
     }
 
     pub fn is_active(&self) -> bool {

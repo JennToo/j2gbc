@@ -182,7 +182,7 @@ impl Cpu {
             }
             Arith::AddSP(v) => {
                 let v1 = self.read_r16(Register16::SP);
-                let v2 = (v as i16) as u16;
+                let v2 = i16::from(v) as u16;
                 let (v3, _) = add16(v1, v2, self.flags());
                 // Flags are based on 8-bit addition
                 let (_, mut flags) = add(v1 as u8, v as u8);
@@ -460,7 +460,7 @@ impl Cpu {
                 flags.set_zero(false);
                 flags.set_subtract(false);
 
-                let (v, _) = add16(v1, (v as i16) as u16, self.flags());
+                let (v, _) = add16(v1, i16::from(v) as u16, self.flags());
                 flags.set_zero(false);
                 flags.set_subtract(false);
                 self.write_r16(Register16::HL, v);

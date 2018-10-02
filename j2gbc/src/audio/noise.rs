@@ -106,7 +106,7 @@ impl NoiseChannel {
         }
         self.last_cpu_cycle = cpu_cycle;
 
-        (self.vol as f32 / 15.) * if self.lfsr & 0b1 != 0 { -1. } else { 1. }
+        (f32::from(self.vol) / 15.) * if self.lfsr & 0b1 != 0 { -1. } else { 1. }
     }
 
     pub fn is_active(&self) -> bool {

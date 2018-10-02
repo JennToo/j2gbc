@@ -125,19 +125,19 @@ impl Obj {
         }
     }
 
-    fn high_palette(&self) -> bool {
+    fn high_palette(self) -> bool {
         self.flags & OBJ_PAL_FLAG != 0
     }
 
-    fn xflip(&self) -> bool {
+    fn xflip(self) -> bool {
         self.flags & OBJ_XFLIP_FLAG != 0
     }
 
-    fn yflip(&self) -> bool {
+    fn yflip(self) -> bool {
         self.flags & OBJ_YFLIP_FLAG != 0
     }
 
-    fn priority(&self) -> bool {
+    fn priority(self) -> bool {
         self.flags & OBJ_PRI_FLAG != 0
     }
 }

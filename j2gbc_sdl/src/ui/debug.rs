@@ -108,12 +108,7 @@ impl<'a> Debug<'a> {
     ) -> Result<(), String> {
         let line_spacing = self.font.height() + 4;
         let column = 1000;
-        self.draw_line(
-            canvas,
-            texture_creator,
-            "Registers:",
-            (column, 0 * line_spacing),
-        )?;
+        self.draw_line(canvas, texture_creator, "Registers:", (column, 0))?;
         self.draw_line(
             canvas,
             texture_creator,
@@ -123,7 +118,7 @@ impl<'a> Debug<'a> {
                 system.cpu[Register8::F],
                 system.cpu.sp
             ),
-            (column, 1 * line_spacing),
+            (column, line_spacing),
         )?;
         self.draw_line(
             canvas,
@@ -168,21 +163,21 @@ impl<'a> Debug<'a> {
         line: &str,
         (x, y): (i32, i32),
     ) -> Result<(), String> {
-        if line.len() == 0 {
+        if line.is_empty() {
             return Ok(());
         }
-        let s = self
+        let surface = self
             .font
             .render(line)
             .solid(Color::RGB(255, 255, 255))
             .map_err(|e| e.to_string())?;
-        let w = s.width();
-        let h = s.height();
-        let t = texture_creator
-            .create_texture_from_surface(s)
+        let w = surface.width();
+        let h = surface.height();
+        let tex = texture_creator
+            .create_texture_from_surface(surface)
             .map_err(|e| e.to_string())?;
         let target = Rect::new(x, y, w, h);
-        canvas.copy(&t, None, target).map_err(|e| e.to_string())
+        canvas.copy(&tex, None, target).map_err(|e| e.to_string())
     }
 
     pub fn start_debugging(&mut self, system: &mut System) {

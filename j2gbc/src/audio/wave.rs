@@ -29,7 +29,7 @@ impl WaveChannel {
     }
 
     pub fn set_frequency_from_bits(&mut self, hi: u8, lo: u8) {
-        let f = (hi as u64 & 0b111) << 8 | lo as u64;
+        let f = (u64::from(hi) & 0b111) << 8 | u64::from(lo);
         self.period = (2048 - f) * 2 * 32;
     }
 

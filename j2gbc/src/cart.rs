@@ -33,7 +33,7 @@ impl Cart {
         let s = b
             .iter()
             .take_while(|n| **n != 0)
-            .map(|n| *n)
+            .cloned()
             .collect::<Vec<u8>>();
         String::from_utf8_lossy(&s[..]).into_owned()
     }

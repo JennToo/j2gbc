@@ -27,7 +27,7 @@ const INPUT_MASK: u8 = P10 | P11 | P12 | P13;
 const OUTPUT_MASK: u8 = P14 | P15;
 
 impl Button {
-    fn selected_by_output(&self, output: u8) -> bool {
+    fn selected_by_output(self, output: u8) -> bool {
         match self {
             Button::Left | Button::Right | Button::Down | Button::Up => (output & P14) == 0,
             Button::A | Button::B | Button::Start | Button::Select => (output & P15) == 0,
