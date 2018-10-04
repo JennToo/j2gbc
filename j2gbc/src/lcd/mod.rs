@@ -8,6 +8,8 @@ use super::mem::{
     Address, MemDevice, Ram, RNG_CHAR_DAT, RNG_LCD_BGDD1, RNG_LCD_BGDD2, RNG_LCD_OAM,
 };
 
+mod tile;
+
 const REG_LCDC: Address = Address(0xFF40);
 const REG_STAT: Address = Address(0xFF41);
 const REG_SCY: Address = Address(0xFF42);
@@ -72,7 +74,6 @@ pub type Framebuffer = [FrameRow; SCREEN_SIZE.1];
 type FrameRow = [Pixel; SCREEN_SIZE.0];
 pub type BgBuffer = [BgRow; 256];
 type BgRow = [Pixel; 256];
-type TileRow = [u8; 8];
 
 pub struct Lcd {
     lcdc: u8,
@@ -100,12 +101,9 @@ pub struct Lcd {
 
     running_until_cycle: u64,
 
-    tiles: [Tile; TILE_COUNT],
+    tiles: [tile::MonoTile; TILE_COUNT],
     objs: [Obj; OBJ_COUNT],
 }
-
-#[derive(Copy, Clone)]
-struct Tile([TileRow; 8]);
 
 #[derive(Copy, Clone)]
 struct Obj {
@@ -139,12 +137,6 @@ impl Obj {
 
     fn priority(self) -> bool {
         self.flags & OBJ_PRI_FLAG != 0
-    }
-}
-
-impl Tile {
-    pub fn new() -> Tile {
-        Tile([[0; 8]; 8])
     }
 }
 
@@ -186,7 +178,7 @@ impl Lcd {
             running_until_cycle: 0,
             ly: 0,
 
-            tiles: [Tile::new(); TILE_COUNT],
+            tiles: [tile::MonoTile::default(); TILE_COUNT],
             objs: [Obj::new(); OBJ_COUNT],
         }
     }
@@ -367,7 +359,7 @@ impl Lcd {
         row
     }
 
-    fn read_char_row_at(&self, char_: u8, row: u8, signed: bool) -> TileRow {
+    fn read_char_row_at(&self, char_: u8, row: u8, signed: bool) -> tile::MonoTileRow {
         let index = if signed {
             (256 + isize::from(char_ as i8)) as usize
         } else {
@@ -375,9 +367,9 @@ impl Lcd {
         };
 
         if row >= 8 {
-            self.tiles[index + 1].0[row as usize - 8]
+            self.tiles[index + 1].read_row(row as usize - 8)
         } else {
-            self.tiles[index].0[row as usize]
+            self.tiles[index].read_row(row as usize)
         }
     }
 
@@ -555,12 +547,7 @@ impl Lcd {
 
         let b1 = self.cdata.read(byte_offset).unwrap();
         let b2 = self.cdata.read(byte_offset + Address(1)).unwrap();
-        let mut row = [0; 8];
-        for i in 0..8 {
-            row[i] = read_bit(b1, (7 - i) as u8) | (read_bit(b2, (7 - i) as u8) << 1);
-        }
-
-        self.tiles[char_offset as usize].0[row_offset as usize] = row;
+        self.tiles[char_offset as usize].update_row(row_offset as usize, b1, b2);
     }
 
     fn update_obj_at(&mut self, a: Address) {
