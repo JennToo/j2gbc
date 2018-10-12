@@ -9,6 +9,7 @@ use super::mem::{
 };
 
 mod tile;
+mod obj;
 
 const REG_LCDC: Address = Address(0xFF40);
 const REG_STAT: Address = Address(0xFF41);
@@ -62,10 +63,6 @@ const OAM_TALL_FLAG: u8 = 0b0000_0100;
 const BGD_CHAR_DAT_FLAG: u8 = 0b0001_0000;
 const BGD_CODE_DAT_FLAG: u8 = 0b0000_1000;
 const WINDOW_CODE_DAT_FLAG: u8 = 0b0100_0000;
-const OBJ_PAL_FLAG: u8 = 0b0001_0000;
-const OBJ_XFLIP_FLAG: u8 = 0b0010_0000;
-const OBJ_YFLIP_FLAG: u8 = 0b0100_0000;
-const OBJ_PRI_FLAG: u8 = 0b1000_0000;
 
 const TILE_COUNT: usize = 384;
 const OBJ_COUNT: usize = 40;
@@ -102,42 +99,7 @@ pub struct Lcd {
     running_until_cycle: u64,
 
     tiles: [tile::MonoTile; TILE_COUNT],
-    objs: [Obj; OBJ_COUNT],
-}
-
-#[derive(Copy, Clone)]
-struct Obj {
-    x: u8,
-    y: u8,
-    char_: u8,
-    flags: u8,
-}
-
-impl Obj {
-    fn new() -> Obj {
-        Obj {
-            x: 0,
-            y: 0,
-            char_: 0,
-            flags: 0,
-        }
-    }
-
-    fn high_palette(self) -> bool {
-        self.flags & OBJ_PAL_FLAG != 0
-    }
-
-    fn xflip(self) -> bool {
-        self.flags & OBJ_XFLIP_FLAG != 0
-    }
-
-    fn yflip(self) -> bool {
-        self.flags & OBJ_YFLIP_FLAG != 0
-    }
-
-    fn priority(self) -> bool {
-        self.flags & OBJ_PRI_FLAG != 0
-    }
+    objs: [obj::Obj; OBJ_COUNT],
 }
 
 impl Lcd {
@@ -179,7 +141,7 @@ impl Lcd {
             ly: 0,
 
             tiles: [tile::MonoTile::default(); TILE_COUNT],
-            objs: [Obj::new(); OBJ_COUNT],
+            objs: [obj::Obj::default(); OBJ_COUNT],
         }
     }
 
@@ -469,10 +431,10 @@ impl Lcd {
         fb
     }
 
-    fn get_obj(&self, index: u8) -> Obj {
+    fn read_obj(&self, index: u8) -> obj::Obj {
         let a = RNG_LCD_OAM.0 + Address(u16::from(index) * 4);
 
-        Obj {
+        obj::Obj {
             y: self.read(a).unwrap(),
             x: self.read(a + Address(1)).unwrap(),
             char_: self.read(a + Address(2)).unwrap(),
@@ -553,13 +515,8 @@ impl Lcd {
     fn update_obj_at(&mut self, a: Address) {
         let byte_offset = a - RNG_LCD_OAM.0;
         let obj_index = byte_offset.0 / (RNG_LCD_OAM.len() / OBJ_COUNT) as u16;
-        self.objs[obj_index as usize] = self.get_obj(obj_index as u8);
+        self.objs[obj_index as usize] = self.read_obj(obj_index as u8);
     }
-}
-
-fn read_bit(value: u8, bit: u8) -> u8 {
-    let mask = 1 << bit;
-    (value & mask) >> bit
 }
 
 fn palette_convert(v: u8, p: u8) -> u8 {
@@ -571,12 +528,6 @@ fn test_palette_convert() {
     assert_eq!(0b11, palette_convert(0, 0b11));
     assert_eq!(0b00, palette_convert(3, 0b00111111));
     assert_eq!(0b01, palette_convert(1, 0b0100));
-}
-
-#[test]
-fn test_read_bit() {
-    assert_eq!(read_bit(0b0000_0100, 2), 1);
-    assert_eq!(read_bit(0b0000_0100, 3), 0);
 }
 
 impl MemDevice for Lcd {
