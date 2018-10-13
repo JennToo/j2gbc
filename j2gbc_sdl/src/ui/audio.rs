@@ -77,7 +77,7 @@ impl Drop for CpalSink {
             bits_per_sample: 32,
             sample_format: hound::SampleFormat::Float,
         };
-        let mut writer = hound::WavWriter::create("audio.wav", spec).unwrap();
+        let mut writer = hound::WavWriter::create("target/audio.wav", spec).unwrap();
         for s in &self.samples {
             writer.write_sample(*s).unwrap();
         }

@@ -259,7 +259,7 @@ lazy_static! {
         DebugLogger {
             log: Mutex::new(Vec::new()),
             event_file: Mutex::new(
-                std::fs::File::create("events.csv").expect("Failed to open event file"),
+                std::fs::File::create("target/events.csv").expect("Failed to open event file"),
             ),
             started: std::time::Instant::now(),
         }
