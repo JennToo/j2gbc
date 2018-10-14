@@ -387,7 +387,11 @@ impl Lcd {
                 for x in 0..PIXEL_PER_CHAR {
                     let color_index = row[x as usize];
                     let corrected_index = palette_convert(color_index, self.bgp) as usize;
-                    fb.set((base_x + x) as usize, (base_y + y) as usize, fb::COLORS[corrected_index]);
+                    fb.set(
+                        (base_x + x) as usize,
+                        (base_y + y) as usize,
+                        fb::COLORS[corrected_index],
+                    );
                 }
             }
         }

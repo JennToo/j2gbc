@@ -3,8 +3,8 @@ use sdl2::rect::Rect;
 use sdl2::render::{Texture, TextureCreator, WindowCanvas};
 use sdl2::video::WindowContext;
 
-use j2gbc::lcd::BgBuffer;
 use j2gbc::lcd::fb::{Framebuffer, SCREEN_SIZE};
+use j2gbc::lcd::BgBuffer;
 use j2gbc::system::System;
 
 #[derive(PartialEq, Eq, Copy, Clone)]
