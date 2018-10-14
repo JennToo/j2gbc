@@ -7,7 +7,7 @@ use std::io::Write;
 use std::time::{Duration, Instant};
 
 use j2gbc::input::Button;
-use j2gbc::lcd::SCREEN_SIZE;
+use j2gbc::lcd::fb::SCREEN_SIZE;
 use j2gbc::system::System;
 
 pub mod audio;

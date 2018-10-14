@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use super::cpu::Cpu;
-use super::lcd::Framebuffer;
+use super::lcd::fb::Framebuffer;
 
 pub struct System {
     pub cpu: Cpu,
