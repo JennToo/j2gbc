@@ -1,0 +1,11 @@
+[package]
+name = "j2gbc_gfx"
+version = "0.1.0"
+authors = ["Jennifer Wilcox <jennifer@nitori.org>"]
+
+[dependencies]
+gfx = "*"
+gfx_window_glutin = "*"
+glutin = "*"
+j2gbc = { path = "../j2gbc" }
+log = "*"

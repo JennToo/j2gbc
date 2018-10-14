@@ -2,4 +2,5 @@
 members = [
     "j2gbc",
     "j2gbc_sdl",
+    "j2gbc_gfx",
 ]
