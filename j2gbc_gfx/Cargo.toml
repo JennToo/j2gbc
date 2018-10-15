@@ -6,6 +6,7 @@ authors = ["Jennifer Wilcox <jennifer@nitori.org>"]
 [dependencies]
 gfx = "*"
 gfx_window_glutin = "*"
+gfx_device_gl = "*"
 glutin = "*"
 j2gbc = { path = "../j2gbc" }
 log = "*"
