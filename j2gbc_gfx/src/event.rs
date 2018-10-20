@@ -1,18 +1,26 @@
 use std;
+use std::time::Duration;
 
 use glutin::{ElementState, Event, EventsLoop, KeyboardInput, VirtualKeyCode, WindowEvent};
 use j2gbc::input::Button;
 use j2gbc::system::System;
 
 use render::Renderer;
+use timer::DeltaTimer;
 
 pub struct EventHandler {
     events_loop: EventsLoop,
+    pub elapsed: Duration,
+    timer: DeltaTimer,
 }
 
 impl EventHandler {
     pub fn new(events_loop: EventsLoop) -> EventHandler {
-        EventHandler { events_loop }
+        EventHandler {
+            events_loop,
+            timer: DeltaTimer::new(),
+            elapsed: Duration::new(0, 0),
+        }
     }
 
     pub fn handle_events(&mut self, system: &mut System, renderer: &mut Renderer) {
@@ -38,6 +46,11 @@ impl EventHandler {
                 }
             }
         });
+
+        self.elapsed = self.timer.elapsed();
+        if self.elapsed > Duration::from_millis(17) {
+            info!(target: "events", "Slow frame {:?}", self.elapsed);
+        }
     }
 }
 

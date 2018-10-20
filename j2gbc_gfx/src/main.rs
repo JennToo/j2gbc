@@ -10,7 +10,6 @@ extern crate j2gbc;
 
 use std::fs::File;
 use std::io::Read;
-use std::time::Duration;
 
 use j2gbc::system::System;
 
@@ -46,7 +45,6 @@ fn load_system(cart_path: &str) -> System {
 pub fn main() {
     let mut args = std::env::args();
     let cart_path = args.nth(1).unwrap();
-    let mut timer = timer::DeltaTimer::new();
     let mut system = load_system(&cart_path);
 
     let events_loop = glutin::EventsLoop::new();
@@ -57,18 +55,13 @@ pub fn main() {
         .with_gl(glutin::GlRequest::Specific(glutin::Api::OpenGl, (3, 2)))
         .with_vsync(true);
     let gl_window = glutin::GlWindow::new(window_config, context, &events_loop).unwrap();
-    let mut events = event::EventHandler::new(events_loop);
 
+    let mut events = event::EventHandler::new(events_loop);
     let mut renderer = render::Renderer::new(gl_window);
 
     loop {
         events.handle_events(&mut system, &mut renderer);
-        let elapsed = timer.elapsed();
-        if elapsed > Duration::from_millis(17) {
-            info!(target: "events", "Slow frame {:?}", elapsed);
-        }
-        system.run_for_duration(&elapsed);
-
+        system.run_for_duration(&events.elapsed);
         renderer.draw(&system);
     }
 }
