@@ -12,12 +12,13 @@ use std::fs::File;
 use std::io::Read;
 use std::time::Duration;
 
-use glutin::{Event, KeyboardInput, VirtualKeyCode, WindowEvent};
+use j2gbc::system::System;
 
+mod event;
 mod render;
 mod timer;
 
-fn load_system(cart_path: &str) -> j2gbc::system::System {
+fn load_system(cart_path: &str) -> System {
     let cart_file = File::open(cart_path.clone()).unwrap();
     let mut c = j2gbc::cart::Cart::load(cart_file).unwrap();
     let save_path = format!("{}.sav", cart_path);
@@ -39,7 +40,7 @@ fn load_system(cart_path: &str) -> j2gbc::system::System {
     let sink = j2gbc::audio::NullSink;
 
     let cpu = j2gbc::cpu::Cpu::new(c, Box::new(sink));
-    j2gbc::system::System::new(cpu)
+    System::new(cpu)
 }
 
 pub fn main() {
@@ -48,7 +49,7 @@ pub fn main() {
     let mut timer = timer::DeltaTimer::new();
     let mut system = load_system(&cart_path);
 
-    let mut events_loop = glutin::EventsLoop::new();
+    let events_loop = glutin::EventsLoop::new();
     let window_config = glutin::WindowBuilder::new()
         .with_title(format!("j2gbc -- {}", cart_path))
         .with_dimensions((1024, 768).into());
@@ -56,31 +57,12 @@ pub fn main() {
         .with_gl(glutin::GlRequest::Specific(glutin::Api::OpenGl, (3, 2)))
         .with_vsync(true);
     let gl_window = glutin::GlWindow::new(window_config, context, &events_loop).unwrap();
+    let mut events = event::EventHandler::new(events_loop);
 
     let mut renderer = render::Renderer::new(gl_window);
 
-    let mut running = true;
-    while running {
-        events_loop.poll_events(|event| {
-            if let Event::WindowEvent { event, .. } = event {
-                match event {
-                    WindowEvent::CloseRequested
-                    | WindowEvent::KeyboardInput {
-                        input:
-                            KeyboardInput {
-                                virtual_keycode: Some(VirtualKeyCode::Escape),
-                                ..
-                            },
-                        ..
-                    } => running = false,
-                    WindowEvent::Resized(size) => {
-                        renderer.resize(size);
-                    }
-                    _ => (),
-                }
-            }
-        });
-
+    loop {
+        events.handle_events(&mut system, &mut renderer);
         let elapsed = timer.elapsed();
         if elapsed > Duration::from_millis(17) {
             info!(target: "events", "Slow frame {:?}", elapsed);
