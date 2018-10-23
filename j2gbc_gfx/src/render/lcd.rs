@@ -1,16 +1,15 @@
 use gfx;
 use gfx::traits::{Factory, FactoryExt};
-use gfx_device_gl;
 use j2gbc::lcd::fb::SCREEN_SIZE;
 use j2gbc::system::System;
 
-use super::{ColorFormat, SurfaceFormat};
+use super::*;
 
 pub struct LcdRender {
-    lcd_tex: gfx::handle::Texture<gfx_device_gl::Resources, SurfaceFormat>,
-    pso: gfx::PipelineState<gfx_device_gl::Resources, pipe::Meta>,
-    data: pipe::Data<gfx_device_gl::Resources>,
-    slice: gfx::Slice<gfx_device_gl::Resources>,
+    lcd_tex: gfx::handle::Texture<ResourcesT, SurfaceFormat>,
+    pso: gfx::PipelineState<ResourcesT, pipe::Meta>,
+    data: pipe::Data<ResourcesT>,
+    slice: gfx::Slice<ResourcesT>,
 }
 
 gfx_defines!{
@@ -54,11 +53,7 @@ const QUAD: [Vertex; 6] = [
 ];
 
 impl LcdRender {
-    pub fn new(
-        device: &gfx_device_gl::Device,
-        factory: &mut gfx_device_gl::Factory,
-        main_color: &gfx::handle::RenderTargetView<gfx_device_gl::Resources, ColorFormat>,
-    ) -> LcdRender {
+    pub fn new(factory: &mut FactoryT, main_color: &ColorHandle) -> LcdRender {
         let lcd_tex = factory
             .create_texture::<SurfaceFormat>(
                 gfx::texture::Kind::D2(
@@ -109,11 +104,7 @@ impl LcdRender {
         }
     }
 
-    pub fn draw(
-        &mut self,
-        encoder: &mut gfx::Encoder<gfx_device_gl::Resources, gfx_device_gl::CommandBuffer>,
-        system: &System,
-    ) {
+    pub fn draw(&mut self, encoder: &mut EncoderT, system: &System) {
         encoder
             .update_texture::<SurfaceFormat, (SurfaceFormat, gfx::format::Unorm)>(
                 &self.lcd_tex,

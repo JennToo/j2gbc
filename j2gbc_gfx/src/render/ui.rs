@@ -1,24 +1,21 @@
-use gfx;
-use gfx_device_gl;
-use glutin;
-use imgui::{FontGlyphRange, FrameSize, ImFontConfig, ImGui, ImVec4, ImGuiCond};
+use imgui::{FontGlyphRange, FrameSize, ImFontConfig, ImGui, ImVec4};
 use imgui_gfx_renderer::{Renderer, Shaders};
 use std::time::Duration;
 
-use render::ColorFormat;
+use super::*;
 
 pub struct UiRender {
-    renderer: Renderer<gfx_device_gl::Resources>,
+    renderer: Renderer<ResourcesT>,
     frame_size: FrameSize,
     ctx: ImGui,
 }
 
 impl UiRender {
     pub fn new(
-        device: &gfx_device_gl::Device,
-        window: &glutin::GlWindow,
-        factory: &mut gfx_device_gl::Factory,
-        main_color: &gfx::handle::RenderTargetView<gfx_device_gl::Resources, ColorFormat>,
+        device: &DeviceT,
+        window: &Window,
+        factory: &mut FactoryT,
+        main_color: &ColorHandle,
     ) -> UiRender {
         let shaders = {
             let version = device.get_info().shading_language;
@@ -100,19 +97,9 @@ impl UiRender {
         }
     }
 
-    pub fn draw(
-        &mut self,
-        delta_time: Duration,
-        encoder: &mut gfx::Encoder<gfx_device_gl::Resources, gfx_device_gl::CommandBuffer>,
-        factory: &mut gfx_device_gl::Factory,
-    ) {
+    pub fn draw(&mut self, delta_time: Duration, encoder: &mut EncoderT, factory: &mut FactoryT) {
         let ui = self.ctx.frame(self.frame_size, delta_time.as_secs() as f32);
 
-        // ui.window(im_str!("Test Window"))
-        //     .size((300.0, 100.0), ImGuiCond::FirstUseEver)
-        //     .build(|| {
-        //         ui.text(im_str!("Hello world!"));
-        //     });
         let mut b = true;
         ui.show_demo_window(&mut b);
 
