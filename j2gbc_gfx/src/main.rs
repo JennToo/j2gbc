@@ -5,6 +5,9 @@ extern crate gfx_window_glutin;
 extern crate glutin;
 #[macro_use]
 extern crate log;
+#[macro_use]
+extern crate imgui;
+extern crate imgui_gfx_renderer;
 
 extern crate j2gbc;
 
@@ -16,6 +19,7 @@ use j2gbc::system::System;
 mod event;
 mod render;
 mod timer;
+mod ui;
 
 fn load_system(cart_path: &str) -> System {
     let cart_file = File::open(cart_path.clone()).unwrap();
@@ -62,6 +66,6 @@ pub fn main() {
     loop {
         events.handle_events(&mut system, &mut renderer);
         system.run_for_duration(&events.elapsed);
-        renderer.draw(&system);
+        renderer.draw(&system, events.elapsed);
     }
 }

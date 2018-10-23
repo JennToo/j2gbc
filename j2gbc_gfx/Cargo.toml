@@ -10,3 +10,5 @@ gfx_device_gl = "*"
 glutin = "*"
 j2gbc = { path = "../j2gbc" }
 log = "*"
+imgui = "*"
+imgui-gfx-renderer = "*"

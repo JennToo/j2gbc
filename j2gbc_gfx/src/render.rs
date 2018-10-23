@@ -7,6 +7,9 @@ use glutin;
 use glutin::GlContext;
 use j2gbc::lcd::fb::SCREEN_SIZE;
 use j2gbc::system::System;
+use std::time::Duration;
+
+use ui;
 
 pub type ColorFormat = gfx::format::Rgba8;
 pub type DepthFormat = gfx::format::DepthStencil;
@@ -61,9 +64,11 @@ pub struct Renderer {
     window: glutin::GlWindow,
     pso: gfx::PipelineState<gfx_device_gl::Resources, pipe::Meta>,
     depth: gfx::handle::DepthStencilView<gfx_device_gl::Resources, DepthFormat>,
+    factory: gfx_device_gl::Factory,
 
     lcd_tex: gfx::handle::Texture<gfx_device_gl::Resources, SurfaceFormat>,
     slice: gfx::Slice<gfx_device_gl::Resources>,
+    ui: ui::UiRender,
 }
 
 impl Renderer {
@@ -72,7 +77,7 @@ impl Renderer {
             include_bytes!("../shader/lcd_vert.glsl").to_vec(),
             include_bytes!("../shader/lcd_frag.glsl").to_vec(),
         );
-        let (device, mut factory, main_color, depth) =
+        let (device, mut factory, mut main_color, depth) =
             gfx_window_glutin::init_existing::<ColorFormat, DepthFormat>(&window);
         let encoder = gfx::Encoder::from(factory.create_command_buffer());
 
@@ -104,6 +109,8 @@ impl Renderer {
             gfx::texture::WrapMode::Clamp,
         ));
 
+        let ui = ui::UiRender::new(&device, &window, &mut factory, &mut main_color);
+
         let pso = factory
             .create_pipeline_simple(&vs_code, &fs_code, pipe::new())
             .unwrap();
@@ -123,10 +130,12 @@ impl Renderer {
             pso,
             slice,
             depth,
+            factory,
+            ui,
         }
     }
 
-    pub fn draw(&mut self, system: &System) {
+    pub fn draw(&mut self, system: &System, dt: Duration) {
         self.encoder.clear(&self.data.out, CLEAR_COLOR);
         self.encoder
             .update_texture::<SurfaceFormat, (SurfaceFormat, gfx::format::Unorm)>(
@@ -137,6 +146,9 @@ impl Renderer {
             ).unwrap();
 
         self.encoder.draw(&self.slice, &self.pso, &self.data);
+
+        self.ui.draw(dt, &mut self.encoder, &mut self.factory);
+
         self.encoder.flush(&mut self.device);
         self.window.swap_buffers().unwrap();
         self.device.cleanup();

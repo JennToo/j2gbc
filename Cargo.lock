@@ -380,6 +380,35 @@ version = "3.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
+name = "imgui"
+version = "0.0.21"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "imgui-sys 0.0.21 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "imgui-gfx-renderer"
+version = "0.0.21"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "gfx 0.17.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "imgui 0.0.21 (registry+https://github.com/rust-lang/crates.io-index)",
+ "imgui-sys 0.0.21 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "imgui-sys"
+version = "0.0.21"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "bitflags 1.0.4 (registry+https://github.com/rust-lang/crates.io-index)",
+ "cc 1.0.25 (registry+https://github.com/rust-lang/crates.io-index)",
+ "gfx 0.17.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.43 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "itertools"
 version = "0.5.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -408,6 +437,8 @@ dependencies = [
  "gfx_device_gl 0.15.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "gfx_window_glutin 0.26.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "glutin 0.18.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "imgui 0.0.21 (registry+https://github.com/rust-lang/crates.io-index)",
+ "imgui-gfx-renderer 0.0.21 (registry+https://github.com/rust-lang/crates.io-index)",
  "j2gbc 0.1.0",
  "log 0.4.5 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -1102,6 +1133,9 @@ dependencies = [
 "checksum glob 0.2.11 (registry+https://github.com/rust-lang/crates.io-index)" = "8be18de09a56b60ed0edf84bc9df007e30040691af7acd1c41874faac5895bfb"
 "checksum glutin 0.18.0 (registry+https://github.com/rust-lang/crates.io-index)" = "0be84b852c1dcccde4b1329be778e5bd9c0801b8bbb8766ea327a3f813c6eafe"
 "checksum hound 3.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "8a164bb2ceaeff4f42542bdb847c41517c78a60f5649671b2a07312b6e117549"
+"checksum imgui 0.0.21 (registry+https://github.com/rust-lang/crates.io-index)" = "42ce4bcdc6187241a000565b7944cb6e866e7defb7247f2d6404410f904e161f"
+"checksum imgui-gfx-renderer 0.0.21 (registry+https://github.com/rust-lang/crates.io-index)" = "fbee3424bcdbdb6e36f34671dd9437c827eb3bf03fd8053e1c1d45244d2562ec"
+"checksum imgui-sys 0.0.21 (registry+https://github.com/rust-lang/crates.io-index)" = "3c7c53417637b6d47ed92a2679015101e50acb13f07c95180b29ccca3d4e4f93"
 "checksum itertools 0.5.10 (registry+https://github.com/rust-lang/crates.io-index)" = "4833d6978da405305126af4ac88569b5d71ff758581ce5a987dbfa3755f694fc"
 "checksum j2ds 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)" = "1bc86b406e095da751542e07e168d5c3989448ea426c479ec8b548ac369b7cc5"
 "checksum kernel32-sys 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)" = "7507624b29483431c0ba2d82aece8ca6cdba9382bff4ddd0f7490560c056098d"
