@@ -69,7 +69,7 @@ impl UiRender {
         );
 
         imgui.fonts().add_font_with_config(
-            include_bytes!("../../j2gbc_sdl/MOZART_0.ttf"),
+            include_bytes!("../../../j2gbc_sdl/MOZART_0.ttf"),
             ImFontConfig::new()
                 .merge_mode(true)
                 .oversample_h(1)
@@ -108,11 +108,13 @@ impl UiRender {
     ) {
         let ui = self.ctx.frame(self.frame_size, delta_time.as_secs() as f32);
 
-        ui.window(im_str!("Test Window"))
-            .size((300.0, 100.0), ImGuiCond::FirstUseEver)
-            .build(|| {
-                ui.text(im_str!("Hello world!"));
-            });
+        // ui.window(im_str!("Test Window"))
+        //     .size((300.0, 100.0), ImGuiCond::FirstUseEver)
+        //     .build(|| {
+        //         ui.text(im_str!("Hello world!"));
+        //     });
+        let mut b = true;
+        ui.show_demo_window(&mut b);
 
         self.renderer.render(ui, factory, encoder).unwrap();
     }

@@ -9,7 +9,7 @@ use j2gbc::lcd::fb::SCREEN_SIZE;
 use j2gbc::system::System;
 use std::time::Duration;
 
-use ui;
+mod ui;
 
 pub type ColorFormat = gfx::format::Rgba8;
 pub type DepthFormat = gfx::format::DepthStencil;
@@ -74,8 +74,8 @@ pub struct Renderer {
 impl Renderer {
     pub fn new(window: glutin::GlWindow) -> Renderer {
         let (vs_code, fs_code) = (
-            include_bytes!("../shader/lcd_vert.glsl").to_vec(),
-            include_bytes!("../shader/lcd_frag.glsl").to_vec(),
+            include_bytes!("../../shader/lcd_vert.glsl").to_vec(),
+            include_bytes!("../../shader/lcd_frag.glsl").to_vec(),
         );
         let (device, mut factory, mut main_color, depth) =
             gfx_window_glutin::init_existing::<ColorFormat, DepthFormat>(&window);

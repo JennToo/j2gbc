@@ -19,7 +19,6 @@ use j2gbc::system::System;
 mod event;
 mod render;
 mod timer;
-mod ui;
 
 fn load_system(cart_path: &str) -> System {
     let cart_file = File::open(cart_path.clone()).unwrap();
