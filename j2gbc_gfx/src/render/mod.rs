@@ -32,7 +32,7 @@ pub struct Renderer {
     main_color: ColorHandle,
 
     lcd: lcd::LcdRender,
-    ui: ui::UiRender,
+    pub ui: ui::UiRender,
 }
 
 impl Renderer {

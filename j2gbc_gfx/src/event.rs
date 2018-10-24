@@ -25,6 +25,7 @@ impl EventHandler {
 
     pub fn handle_events(&mut self, system: &mut System, renderer: &mut Renderer) {
         self.events_loop.poll_events(|event| {
+            renderer.ui.handle_event(&event);
             if let Event::WindowEvent { event, .. } = event {
                 match event {
                     WindowEvent::CloseRequested
