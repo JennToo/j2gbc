@@ -1,9 +1,10 @@
-use imgui::{FontGlyphRange, FrameSize, ImFontConfig, ImGui, ImVec4};
-use imgui_gfx_renderer::{Renderer, Shaders};
-use imgui_glutin_support;
 use std::time::Duration;
 
 use glutin::Event;
+use imgui::*;
+use imgui_gfx_renderer::{Renderer, Shaders};
+use imgui_glutin_support;
+use j2gbc::cpu::Register8;
 
 use super::*;
 
@@ -16,7 +17,7 @@ pub struct UiRender {
 impl UiRender {
     pub fn new(
         device: &DeviceT,
-        window: &Window,
+        window: &super::Window,
         factory: &mut FactoryT,
         main_color: &ColorHandle,
     ) -> UiRender {
@@ -102,11 +103,42 @@ impl UiRender {
         }
     }
 
-    pub fn draw(&mut self, delta_time: Duration, encoder: &mut EncoderT, factory: &mut FactoryT) {
+    pub fn draw(
+        &mut self,
+        delta_time: Duration,
+        encoder: &mut EncoderT,
+        factory: &mut FactoryT,
+        system: &System,
+    ) {
         let ui = self.ctx.frame(self.frame_size, delta_time.as_secs() as f32);
 
-        let mut b = true;
-        ui.show_demo_window(&mut b);
+        ui.window(im_str!("Registers"))
+            .size((300.0, 100.0), ImGuiCond::FirstUseEver)
+            .build(|| {
+                ui.text(im_str!(
+                    " A: 0x{:02x}   F: 0x{:02x}    SP: {}",
+                    system.cpu[Register8::A],
+                    system.cpu[Register8::F],
+                    system.cpu.sp
+                ));
+                ui.text(im_str!(
+                    " B: 0x{:02x}   C: 0x{:02x}    PC: {}",
+                    system.cpu[Register8::B],
+                    system.cpu[Register8::C],
+                    system.cpu.pc
+                ));
+                ui.text(im_str!(
+                    " D: 0x{:02x}   E: 0x{:02x}   IME: {}",
+                    system.cpu[Register8::D],
+                    system.cpu[Register8::E],
+                    system.cpu.interrupt_master_enable
+                ));
+                ui.text(im_str!(
+                    " H: 0x{:02x}   L: 0x{:02x}",
+                    system.cpu[Register8::H],
+                    system.cpu[Register8::L]
+                ));
+            });
 
         self.renderer.render(ui, factory, encoder).unwrap();
     }

@@ -57,7 +57,8 @@ impl Renderer {
         self.encoder.clear(&self.main_color, CLEAR_COLOR);
 
         self.lcd.draw(&mut self.encoder, system);
-        self.ui.draw(dt, &mut self.encoder, &mut self.factory);
+        self.ui
+            .draw(dt, &mut self.encoder, &mut self.factory, system);
 
         self.encoder.flush(&mut self.device);
         self.window.swap_buffers().unwrap();
