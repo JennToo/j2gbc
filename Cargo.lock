@@ -398,6 +398,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "imgui-glutin-support"
+version = "0.0.21"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "glutin 0.18.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "imgui 0.0.21 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "imgui-sys"
 version = "0.0.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -439,6 +448,7 @@ dependencies = [
  "glutin 0.18.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "imgui 0.0.21 (registry+https://github.com/rust-lang/crates.io-index)",
  "imgui-gfx-renderer 0.0.21 (registry+https://github.com/rust-lang/crates.io-index)",
+ "imgui-glutin-support 0.0.21 (registry+https://github.com/rust-lang/crates.io-index)",
  "j2gbc 0.1.0",
  "log 0.4.5 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -1135,6 +1145,7 @@ dependencies = [
 "checksum hound 3.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "8a164bb2ceaeff4f42542bdb847c41517c78a60f5649671b2a07312b6e117549"
 "checksum imgui 0.0.21 (registry+https://github.com/rust-lang/crates.io-index)" = "42ce4bcdc6187241a000565b7944cb6e866e7defb7247f2d6404410f904e161f"
 "checksum imgui-gfx-renderer 0.0.21 (registry+https://github.com/rust-lang/crates.io-index)" = "fbee3424bcdbdb6e36f34671dd9437c827eb3bf03fd8053e1c1d45244d2562ec"
+"checksum imgui-glutin-support 0.0.21 (registry+https://github.com/rust-lang/crates.io-index)" = "0ef67d1d16187ebf50ae6a2cabd7f5602522b2dc1d61c27be6bc645c3a50c822"
 "checksum imgui-sys 0.0.21 (registry+https://github.com/rust-lang/crates.io-index)" = "3c7c53417637b6d47ed92a2679015101e50acb13f07c95180b29ccca3d4e4f93"
 "checksum itertools 0.5.10 (registry+https://github.com/rust-lang/crates.io-index)" = "4833d6978da405305126af4ac88569b5d71ff758581ce5a987dbfa3755f694fc"
 "checksum j2ds 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)" = "1bc86b406e095da751542e07e168d5c3989448ea426c479ec8b548ac369b7cc5"

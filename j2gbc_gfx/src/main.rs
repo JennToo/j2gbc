@@ -8,6 +8,7 @@ extern crate log;
 #[macro_use]
 extern crate imgui;
 extern crate imgui_gfx_renderer;
+extern crate imgui_glutin_support;
 
 extern crate j2gbc;
 

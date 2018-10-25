@@ -12,3 +12,4 @@ j2gbc = { path = "../j2gbc" }
 log = "*"
 imgui = "*"
 imgui-gfx-renderer = "*"
+imgui-glutin-support = "*"
