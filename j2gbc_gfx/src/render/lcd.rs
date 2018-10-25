@@ -1,5 +1,7 @@
-use gfx;
 use gfx::traits::{Factory, FactoryExt};
+use gfx::{
+    gfx_defines, gfx_impl_struct_meta, gfx_pipeline, gfx_pipeline_inner, gfx_vertex_struct_meta,
+};
 use j2gbc::lcd::fb::SCREEN_SIZE;
 use j2gbc::system::System;
 

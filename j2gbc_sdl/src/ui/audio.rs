@@ -2,9 +2,8 @@ use std::ops::DerefMut;
 use std::sync::{Arc, Mutex};
 use std::thread;
 
-use cpal;
-use hound;
 use j2ds::{ElasticPopResult, ElasticRingBuffer};
+use log::info;
 
 use j2gbc::audio::AudioSink;
 

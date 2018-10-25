@@ -1,7 +1,8 @@
-use std;
 use std::io::Write;
 use std::sync::Mutex;
 
+use lazy_static::lazy_static;
+use log::info;
 use log::{set_logger, set_max_level, LevelFilter, Log, Metadata, Record};
 use sdl2::pixels::Color;
 use sdl2::rect::Rect;

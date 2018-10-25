@@ -1,8 +1,7 @@
 #![allow(unknown_lints)]
 
-#[macro_use]
-extern crate log;
 extern crate j2ds;
+extern crate log;
 
 pub mod alu;
 pub mod audio;

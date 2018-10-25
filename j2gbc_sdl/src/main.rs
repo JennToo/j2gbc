@@ -1,18 +1,17 @@
 #![allow(unknown_lints)]
 
-#[macro_use]
-extern crate lazy_static;
-#[macro_use]
-extern crate log;
-
 extern crate cpal;
 extern crate hound;
 extern crate j2ds;
 extern crate j2gbc;
+extern crate lazy_static;
+extern crate log;
 extern crate sdl2;
 
 use std::fs::File;
 use std::io::Read;
+
+use log::info;
 
 pub mod ui;
 

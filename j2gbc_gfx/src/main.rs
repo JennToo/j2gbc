@@ -1,14 +1,11 @@
-#[macro_use]
 extern crate gfx;
 extern crate gfx_device_gl;
 extern crate gfx_window_glutin;
 extern crate glutin;
-#[macro_use]
-extern crate log;
-#[macro_use]
 extern crate imgui;
 extern crate imgui_gfx_renderer;
 extern crate imgui_glutin_support;
+extern crate log;
 
 extern crate j2gbc;
 
@@ -16,6 +13,7 @@ use std::fs::File;
 use std::io::Read;
 
 use j2gbc::system::System;
+use log::info;
 
 mod event;
 mod render;

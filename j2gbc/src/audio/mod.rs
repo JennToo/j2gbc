@@ -1,3 +1,5 @@
+use log::error;
+
 use super::mem::{Address, MemDevice, Ram, RNG_SND_WAV_RAM};
 
 mod mixer;

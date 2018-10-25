@@ -1,7 +1,3 @@
-use sdl2;
-use sdl2::event::Event;
-use sdl2::keyboard::Keycode;
-use sdl2::pixels::Color;
 use std::fs::File;
 use std::io::Write;
 use std::time::{Duration, Instant};
@@ -9,6 +5,10 @@ use std::time::{Duration, Instant};
 use j2gbc::input::Button;
 use j2gbc::lcd::fb::SCREEN_SIZE;
 use j2gbc::system::System;
+use log::info;
+use sdl2::event::Event;
+use sdl2::keyboard::Keycode;
+use sdl2::pixels::Color;
 
 pub mod audio;
 pub mod debug;

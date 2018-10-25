@@ -1,8 +1,5 @@
 use gfx;
 use gfx::Device;
-use gfx_device_gl;
-use gfx_window_glutin;
-use glutin;
 use glutin::GlContext;
 use j2gbc::system::System;
 use std::time::Duration;

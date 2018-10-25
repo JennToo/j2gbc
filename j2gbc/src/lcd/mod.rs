@@ -2,6 +2,7 @@ use std::cmp::max;
 use std::num::Wrapping;
 
 use j2ds::{next_timer_event, Timer, TimerEvent};
+use log::error;
 
 use super::cpu::{Interrupt, CLOCK_RATE};
 use super::mem::{

@@ -1,6 +1,8 @@
 use std::fmt;
 use std::fmt::Display;
 
+use log::error;
+
 use super::alu::hi_lo;
 use super::cpu::{Operand, Register16, Register8};
 use super::mem::Address;

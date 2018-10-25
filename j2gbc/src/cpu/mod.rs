@@ -4,6 +4,8 @@ use std::num::Wrapping;
 use std::ops::{Index, IndexMut};
 use std::time::Duration;
 
+use log::{debug, error};
+
 use super::alu::*;
 use super::audio::AudioSink;
 use super::cart::Cart;

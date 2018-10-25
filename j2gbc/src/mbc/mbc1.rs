@@ -1,3 +1,5 @@
+use log::error;
+
 use super::Mbc;
 use mem::{Address, AddressRange, ExtendedAddress, MemDevice, Ram, RNG_EXT_RAM, RNG_ROM_BANK1};
 

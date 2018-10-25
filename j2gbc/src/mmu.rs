@@ -1,11 +1,13 @@
 use std::collections::HashSet;
 
-use super::audio::{Audio, AudioSink};
-use super::cart::Cart;
-use super::input::Input;
-use super::lcd::Lcd;
-use super::mem::*;
-use super::timer::Timer;
+use log::{error, info};
+
+use audio::{Audio, AudioSink};
+use cart::Cart;
+use input::Input;
+use lcd::Lcd;
+use mem::*;
+use timer::Timer;
 
 pub struct Mmu {
     internal_ram: Ram,

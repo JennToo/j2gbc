@@ -4,6 +4,7 @@ use std::time::Duration;
 use glutin::{ElementState, Event, EventsLoop, KeyboardInput, VirtualKeyCode, WindowEvent};
 use j2gbc::input::Button;
 use j2gbc::system::System;
+use log::info;
 
 use render::Renderer;
 use timer::DeltaTimer;
