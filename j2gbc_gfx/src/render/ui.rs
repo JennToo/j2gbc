@@ -110,7 +110,8 @@ impl UiRender {
         factory: &mut FactoryT,
         system: &System,
     ) {
-        let ui = self.ctx.frame(self.frame_size, delta_time.as_secs() as f32);
+        let time = delta_time.as_secs() as f32 + delta_time.subsec_nanos() as f32 / 1_000_000_000.;
+        let ui = self.ctx.frame(self.frame_size, time);
 
         ui.window(im_str!("Registers"))
             .size((300.0, 100.0), ImGuiCond::FirstUseEver)
