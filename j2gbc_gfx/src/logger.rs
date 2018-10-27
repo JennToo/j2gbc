@@ -33,13 +33,11 @@ impl Log for DebugLogger {
         let r = record.args().to_string();
 
         let timestamp = self.started.elapsed();
-        //if record.target() != "events" {
-            let mut l = self.log.lock().unwrap();
-            l.push(LogRecord {
-                timestamp: timestamp,
-                message: r,
-            });
-        //}
+        let mut l = self.log.lock().unwrap();
+        l.push(LogRecord {
+            timestamp: timestamp,
+            message: r,
+        });
     }
 
     fn flush(&self) {}

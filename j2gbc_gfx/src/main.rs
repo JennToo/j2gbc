@@ -5,10 +5,10 @@ extern crate glutin;
 extern crate imgui;
 extern crate imgui_gfx_renderer;
 extern crate imgui_glutin_support;
-extern crate lazy_static;
-extern crate log;
 extern crate j2ds;
 extern crate j2gbc;
+extern crate lazy_static;
+extern crate log;
 
 use std::fs::File;
 use std::io::Read;
@@ -16,11 +16,11 @@ use std::io::Read;
 use j2gbc::system::System;
 use log::info;
 
+mod audio;
 mod event;
 mod logger;
 mod render;
 mod timer;
-mod audio;
 
 fn load_system(cart_path: &str) -> System {
     let cart_file = File::open(cart_path.clone()).unwrap();
