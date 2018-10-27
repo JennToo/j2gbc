@@ -64,6 +64,6 @@ pub fn main() {
     loop {
         events.handle_events(&mut system, &mut renderer);
         system.run_for_duration(&events.elapsed);
-        renderer.draw(&system, events.elapsed);
+        renderer.draw(&mut system, events.elapsed);
     }
 }

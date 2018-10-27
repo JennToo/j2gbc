@@ -53,7 +53,7 @@ impl Renderer {
         }
     }
 
-    pub fn draw(&mut self, system: &System, dt: Duration) {
+    pub fn draw(&mut self, system: &mut System, dt: Duration) {
         self.encoder.clear(&self.main_color, CLEAR_COLOR);
 
         self.lcd.draw(&mut self.encoder, system);

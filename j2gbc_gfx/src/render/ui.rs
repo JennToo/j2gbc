@@ -60,7 +60,7 @@ impl UiRender {
         // otherwise. This might or might not be what you want in a real application.
         let hidpi_factor = window.get_hidpi_factor().round();
 
-        let font_size = (13.0 * hidpi_factor) as f32;
+        let font_size = (14.0 * hidpi_factor) as f32;
 
         imgui.fonts().add_default_font_with_config(
             ImFontConfig::new()
@@ -70,13 +70,13 @@ impl UiRender {
         );
 
         imgui.fonts().add_font_with_config(
-            include_bytes!("../../../j2gbc_sdl/MOZART_0.ttf"),
+            include_bytes!("../../../assets/fonts/DejaVuSansMono.ttf"),
             ImFontConfig::new()
                 .merge_mode(true)
-                .oversample_h(1)
+                .oversample_h(2)
                 .pixel_snap_h(true)
                 .size_pixels(font_size)
-                .rasterizer_multiply(1.75),
+                .rasterizer_multiply(1.),
             &FontGlyphRange::japanese(),
         );
 
@@ -108,37 +108,70 @@ impl UiRender {
         delta_time: Duration,
         encoder: &mut EncoderT,
         factory: &mut FactoryT,
-        system: &System,
+        system: &mut System,
     ) {
         let time = delta_time.as_secs() as f32 + delta_time.subsec_nanos() as f32 / 1_000_000_000.;
         let ui = self.ctx.frame(self.frame_size, time);
 
-        ui.window(im_str!("Registers"))
-            .size((300.0, 100.0), ImGuiCond::FirstUseEver)
+        ui.window(im_str!("Debugger"))
+            .size((0., 0.), ImGuiCond::Always)
             .build(|| {
-                ui.text(im_str!(
-                    " A: 0x{:02x}   F: 0x{:02x}    SP: {}",
-                    system.cpu[Register8::A],
-                    system.cpu[Register8::F],
-                    system.cpu.sp
-                ));
-                ui.text(im_str!(
-                    " B: 0x{:02x}   C: 0x{:02x}    PC: {}",
-                    system.cpu[Register8::B],
-                    system.cpu[Register8::C],
-                    system.cpu.pc
-                ));
-                ui.text(im_str!(
-                    " D: 0x{:02x}   E: 0x{:02x}   IME: {}",
-                    system.cpu[Register8::D],
-                    system.cpu[Register8::E],
-                    system.cpu.interrupt_master_enable
-                ));
-                ui.text(im_str!(
-                    " H: 0x{:02x}   L: 0x{:02x}",
-                    system.cpu[Register8::H],
-                    system.cpu[Register8::L]
-                ));
+                if !system.cpu.debug_halted {
+                    if ui.button(im_str!("Pause"), ImVec2::new(100., 25.)) {
+                        system.cpu.debug_halted = true;
+                    }
+                } else {
+                    if ui.button(im_str!("Resume"), ImVec2::zero()) {
+                        system.cpu.debug_halted = false;
+                    }
+                    ui.same_line(0.);
+
+                    if ui.button(im_str!("Step"), ImVec2::zero()) {
+                        let _ = system.cpu.run_cycle();
+                    }
+
+                    ui.separator();
+
+                    ui.text(im_str!(
+                        " A: 0x{:02x}   F: 0x{:02x}    SP: {}",
+                        system.cpu[Register8::A],
+                        system.cpu[Register8::F],
+                        system.cpu.sp
+                    ));
+                    ui.text(im_str!(
+                        " B: 0x{:02x}   C: 0x{:02x}    PC: {}",
+                        system.cpu[Register8::B],
+                        system.cpu[Register8::C],
+                        system.cpu.pc
+                    ));
+                    ui.text(im_str!(
+                        " D: 0x{:02x}   E: 0x{:02x}   IME: {}",
+                        system.cpu[Register8::D],
+                        system.cpu[Register8::E],
+                        system.cpu.interrupt_master_enable
+                    ));
+                    ui.text(im_str!(
+                        " H: 0x{:02x}   L: 0x{:02x}",
+                        system.cpu[Register8::H],
+                        system.cpu[Register8::L]
+                    ));
+
+                    ui.separator();
+
+                    for &(a, i) in system
+                        .cpu
+                        .last_instructions
+                        .iter()
+                        .skip(system.cpu.last_instructions.len() - 10)
+                    {
+                        ui.text(im_str!("{}: {}", a, i));
+                    }
+
+                    match system.cpu.fetch_instruction() {
+                        Result::Ok((i, _)) => ui.text(im_str!(" => {}: {}", system.cpu.pc, i)),
+                        Result::Err(()) => ui.text(im_str!("    ERROR")),
+                    }
+                }
             });
 
         self.renderer.render(ui, factory, encoder).unwrap();
