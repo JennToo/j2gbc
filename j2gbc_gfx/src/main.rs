@@ -7,7 +7,7 @@ extern crate imgui_gfx_renderer;
 extern crate imgui_glutin_support;
 extern crate lazy_static;
 extern crate log;
-
+extern crate j2ds;
 extern crate j2gbc;
 
 use std::fs::File;
@@ -20,6 +20,7 @@ mod event;
 mod logger;
 mod render;
 mod timer;
+mod audio;
 
 fn load_system(cart_path: &str) -> System {
     let cart_file = File::open(cart_path.clone()).unwrap();
@@ -40,7 +41,7 @@ fn load_system(cart_path: &str) -> System {
     info!("ROM Size: {} bytes", c.rom_size());
     info!("RAM Size: {} bytes", c.ram_size());
 
-    let sink = j2gbc::audio::NullSink;
+    let sink = audio::CpalSink::new().unwrap();
 
     let cpu = j2gbc::cpu::Cpu::new(c, Box::new(sink));
     System::new(cpu)
