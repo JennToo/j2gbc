@@ -12,6 +12,7 @@ pub struct UiRender {
     renderer: Renderer<ResourcesT>,
     frame_size: FrameSize,
     ctx: ImGui,
+    debugger_ui: DebuggerUi,
 }
 
 impl UiRender {
@@ -100,9 +101,13 @@ impl UiRender {
             renderer,
             frame_size,
             ctx: imgui,
+            debugger_ui: DebuggerUi::default(),
         }
     }
 
+    // It is unfortunate how the UI actions are so tightly coupled to the rendering of that UI,
+    // but it seems to be a purposeful design decision in imgui, so there isn't much we can do
+    // about it
     pub fn draw(
         &mut self,
         delta_time: Duration,
@@ -111,73 +116,100 @@ impl UiRender {
         system: &mut System,
     ) {
         let time = delta_time.as_secs() as f32 + delta_time.subsec_nanos() as f32 / 1_000_000_000.;
-        let ui = self.ctx.frame(self.frame_size, time);
+        let mut ui = self.ctx.frame(self.frame_size, time);
+        self.debugger_ui.draw(&mut ui, system);
+        self.renderer.render(ui, factory, encoder).unwrap();
+    }
 
+    pub fn handle_event(&mut self, event: &Event) {
+        imgui_glutin_support::handle_event(&mut self.ctx, &event);
+    }
+}
+
+#[derive(Default)]
+struct DebuggerUi {
+    cache: Option<DebuggerCache>,
+}
+
+struct DebuggerCache {
+    registers: ImString,
+    disassembly: ImString,
+}
+
+impl DebuggerUi {
+    fn draw<'ui>(&mut self, ui: &mut Ui<'ui>, system: &mut System) {
         ui.window(im_str!("Debugger"))
             .size((0., 0.), ImGuiCond::Always)
             .build(|| {
                 if !system.cpu.debug_halted {
                     if ui.button(im_str!("Pause"), ImVec2::new(100., 25.)) {
                         system.cpu.debug_halted = true;
+                        self.cache = None;
                     }
                 } else {
                     if ui.button(im_str!("Resume"), ImVec2::zero()) {
                         system.cpu.debug_halted = false;
+                        self.cache = None;
                     }
                     ui.same_line(0.);
-
                     if ui.button(im_str!("Step"), ImVec2::zero()) {
                         let _ = system.cpu.run_cycle();
+                        self.cache = None;
                     }
 
                     ui.separator();
 
-                    ui.text(im_str!(
-                        " A: 0x{:02x}   F: 0x{:02x}    SP: {}",
-                        system.cpu[Register8::A],
-                        system.cpu[Register8::F],
-                        system.cpu.sp
-                    ));
-                    ui.text(im_str!(
-                        " B: 0x{:02x}   C: 0x{:02x}    PC: {}",
-                        system.cpu[Register8::B],
-                        system.cpu[Register8::C],
-                        system.cpu.pc
-                    ));
-                    ui.text(im_str!(
-                        " D: 0x{:02x}   E: 0x{:02x}   IME: {}",
-                        system.cpu[Register8::D],
-                        system.cpu[Register8::E],
-                        system.cpu.interrupt_master_enable
-                    ));
-                    ui.text(im_str!(
-                        " H: 0x{:02x}   L: 0x{:02x}",
-                        system.cpu[Register8::H],
-                        system.cpu[Register8::L]
-                    ));
+                    if self.cache.is_none() {
+                        self.cache = Some(Self::generate_cache(system));
+                    }
 
+                    let cache = self.cache.as_ref().unwrap();
+
+                    ui.text(&cache.registers);
                     ui.separator();
-
-                    for &(a, i) in system
-                        .cpu
-                        .last_instructions
-                        .iter()
-                        .skip(system.cpu.last_instructions.len() - 10)
-                    {
-                        ui.text(im_str!("{}: {}", a, i));
-                    }
-
-                    match system.cpu.fetch_instruction() {
-                        Result::Ok((i, _)) => ui.text(im_str!(" => {}: {}", system.cpu.pc, i)),
-                        Result::Err(()) => ui.text(im_str!("    ERROR")),
-                    }
+                    ui.text(&cache.disassembly);
                 }
             });
-
-        self.renderer.render(ui, factory, encoder).unwrap();
     }
 
-    pub fn handle_event(&mut self, event: &Event) {
-        imgui_glutin_support::handle_event(&mut self.ctx, &event);
+    fn generate_cache(system: &mut System) -> DebuggerCache {
+        let registers = im_str!(
+            " A: 0x{:02x}   F: 0x{:02x}    SP: {}
+ B: 0x{:02x}   C: 0x{:02x}    PC: {}
+ D: 0x{:02x}   E: 0x{:02x}   IME: {}
+ H: 0x{:02x}   L: 0x{:02x}",
+            system.cpu[Register8::A],
+            system.cpu[Register8::F],
+            system.cpu.sp,
+            system.cpu[Register8::B],
+            system.cpu[Register8::C],
+            system.cpu.pc,
+            system.cpu[Register8::D],
+            system.cpu[Register8::E],
+            system.cpu.interrupt_master_enable,
+            system.cpu[Register8::H],
+            system.cpu[Register8::L]
+        ).clone();
+
+        let mut disassembly = String::default();
+
+        for &(a, i) in system
+            .cpu
+            .last_instructions
+            .iter()
+            .skip(system.cpu.last_instructions.len() - 10)
+        {
+            disassembly += format!("{}: {}\n", a, i).as_str();
+        }
+
+        match system.cpu.fetch_instruction() {
+            Result::Ok((i, _)) => disassembly += format!(" => {}: {}", system.cpu.pc, i).as_str(),
+            Result::Err(()) => disassembly += format!("    ERROR").as_str(),
+        }
+
+        DebuggerCache {
+            registers,
+            disassembly: ImString::new(disassembly),
+        }
     }
 }
