@@ -13,6 +13,7 @@ pub struct UiRender {
     frame_size: FrameSize,
     ctx: ImGui,
     debugger_ui: DebuggerUi,
+    visibility_set: VisibilitySet,
 }
 
 impl UiRender {
@@ -101,7 +102,8 @@ impl UiRender {
             renderer,
             frame_size,
             ctx: imgui,
-            debugger_ui: DebuggerUi::new(),
+            debugger_ui: DebuggerUi::default(),
+            visibility_set: VisibilitySet::default(),
         }
     }
 
@@ -118,17 +120,18 @@ impl UiRender {
         let time = delta_time.as_secs() as f32 + delta_time.subsec_nanos() as f32 / 1_000_000_000.;
         let mut ui = self.ctx.frame(self.frame_size, time);
 
-        let mut make_debugger_visible = false;
+        let visibility_set = &mut self.visibility_set;
         ui.main_menu_bar(|| {
             ui.menu(im_str!("View")).build(|| {
-                make_debugger_visible = ui.menu_item(im_str!("Debugger")).build();
+                let ret = ui.menu_item(im_str!("Debugger")).build();
+                if ret {
+                    visibility_set.debugger_ui = true;
+                }
             });
         });
-        if make_debugger_visible {
-            self.debugger_ui.visible = true;
-        }
 
-        self.debugger_ui.draw(&mut ui, system);
+        self.debugger_ui
+            .draw(&mut ui, &mut visibility_set.debugger_ui, system);
         self.renderer.render(ui, factory, encoder).unwrap();
     }
 
@@ -138,9 +141,13 @@ impl UiRender {
 }
 
 #[derive(Default)]
+struct VisibilitySet {
+    debugger_ui: bool,
+}
+
+#[derive(Default)]
 struct DebuggerUi {
     cache: Option<DebuggerCache>,
-    visible: bool,
 }
 
 struct DebuggerCache {
@@ -149,20 +156,13 @@ struct DebuggerCache {
 }
 
 impl DebuggerUi {
-    pub fn new() -> DebuggerUi {
-        DebuggerUi {
-            cache: None,
-            visible: true,
-        }
-    }
-    fn draw<'ui>(&mut self, ui: &mut Ui<'ui>, system: &mut System) {
-        if !self.visible {
+    fn draw<'a, 'ui>(&mut self, ui: &mut Ui<'ui>, visibility: &'a mut bool, system: &mut System) {
+        if !*visibility {
             return;
         }
-        let mut visible = self.visible;
         ui.window(im_str!("Debugger"))
             .always_auto_resize(true)
-            .opened(&mut visible)
+            .opened(visibility)
             .collapsible(false)
             .build(|| {
                 if !system.cpu.debug_halted {
@@ -194,7 +194,6 @@ impl DebuggerUi {
                     ui.text(&cache.disassembly);
                 }
             });
-        self.visible = visible;
     }
 
     fn generate_cache(system: &mut System) -> DebuggerCache {
