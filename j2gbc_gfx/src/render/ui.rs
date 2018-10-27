@@ -13,6 +13,7 @@ pub struct UiRender {
     frame_size: FrameSize,
     ctx: ImGui,
     debugger_ui: DebuggerUi,
+    logger_ui: LoggerUi,
     visibility_set: VisibilitySet,
 }
 
@@ -103,6 +104,7 @@ impl UiRender {
             frame_size,
             ctx: imgui,
             debugger_ui: DebuggerUi::default(),
+            logger_ui: LoggerUi::default(),
             visibility_set: VisibilitySet::default(),
         }
     }
@@ -127,11 +129,16 @@ impl UiRender {
                 if ret {
                     visibility_set.debugger_ui = true;
                 }
+                let ret = ui.menu_item(im_str!("Logger")).build();
+                if ret {
+                    visibility_set.logger_ui = true;
+                }
             });
         });
 
         self.debugger_ui
             .draw(&mut ui, &mut visibility_set.debugger_ui, system);
+        self.logger_ui.draw(&mut ui, &mut visibility_set.logger_ui);
         self.renderer.render(ui, factory, encoder).unwrap();
     }
 
@@ -143,6 +150,7 @@ impl UiRender {
 #[derive(Default)]
 struct VisibilitySet {
     debugger_ui: bool,
+    logger_ui: bool,
 }
 
 #[derive(Default)]
@@ -235,5 +243,37 @@ impl DebuggerUi {
             registers,
             disassembly: ImString::new(disassembly),
         }
+    }
+}
+
+#[derive(Default)]
+struct LoggerUi;
+
+impl LoggerUi {
+    fn draw<'a, 'ui>(&mut self, ui: &mut Ui<'ui>, visibility: &'a mut bool) {
+        if !*visibility {
+            return;
+        }
+        ui.window(im_str!("Logger"))
+            .size((600., 300.), ImGuiCond::FirstUseEver)
+            .opened(visibility)
+            .build(|| {
+                let mut records = crate::logger::DEBUG_LOGGER.log.lock().unwrap();
+
+                if ui.button(im_str!("Clear"), ImVec2::zero()) {
+                    records.clear();
+                }
+
+                for record in &*records {
+                    ui.text(im_str!(
+                        "{}:{:03}",
+                        record.timestamp.as_secs(),
+                        record.timestamp.subsec_millis(),
+                    ));
+                    ui.same_line(0.);
+                    ui.text_wrapped(ImString::new(record.message.clone()).as_ref());
+                    ui.separator();
+                }
+            });
     }
 }

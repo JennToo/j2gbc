@@ -5,6 +5,7 @@ extern crate glutin;
 extern crate imgui;
 extern crate imgui_gfx_renderer;
 extern crate imgui_glutin_support;
+extern crate lazy_static;
 extern crate log;
 
 extern crate j2gbc;
@@ -16,6 +17,7 @@ use j2gbc::system::System;
 use log::info;
 
 mod event;
+mod logger;
 mod render;
 mod timer;
 
@@ -45,6 +47,7 @@ fn load_system(cart_path: &str) -> System {
 }
 
 pub fn main() {
+    logger::install_logger();
     let mut args = std::env::args();
     let cart_path = args.nth(1).unwrap();
     let mut system = load_system(&cart_path);

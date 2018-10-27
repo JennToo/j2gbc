@@ -450,6 +450,7 @@ dependencies = [
  "imgui-gfx-renderer 0.0.21 (registry+https://github.com/rust-lang/crates.io-index)",
  "imgui-glutin-support 0.0.21 (registry+https://github.com/rust-lang/crates.io-index)",
  "j2gbc 0.1.0",
+ "lazy_static 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.5 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
