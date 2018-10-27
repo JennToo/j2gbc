@@ -101,7 +101,7 @@ impl UiRender {
             renderer,
             frame_size,
             ctx: imgui,
-            debugger_ui: DebuggerUi::default(),
+            debugger_ui: DebuggerUi::new(),
         }
     }
 
@@ -117,6 +117,17 @@ impl UiRender {
     ) {
         let time = delta_time.as_secs() as f32 + delta_time.subsec_nanos() as f32 / 1_000_000_000.;
         let mut ui = self.ctx.frame(self.frame_size, time);
+
+        let mut make_debugger_visible = false;
+        ui.main_menu_bar(|| {
+            ui.menu(im_str!("View")).build(|| {
+                make_debugger_visible = ui.menu_item(im_str!("Debugger")).build();
+            });
+        });
+        if make_debugger_visible {
+            self.debugger_ui.visible = true;
+        }
+
         self.debugger_ui.draw(&mut ui, system);
         self.renderer.render(ui, factory, encoder).unwrap();
     }
@@ -129,6 +140,7 @@ impl UiRender {
 #[derive(Default)]
 struct DebuggerUi {
     cache: Option<DebuggerCache>,
+    visible: bool,
 }
 
 struct DebuggerCache {
@@ -137,9 +149,21 @@ struct DebuggerCache {
 }
 
 impl DebuggerUi {
+    pub fn new() -> DebuggerUi {
+        DebuggerUi {
+            cache: None,
+            visible: true,
+        }
+    }
     fn draw<'ui>(&mut self, ui: &mut Ui<'ui>, system: &mut System) {
+        if !self.visible {
+            return;
+        }
+        let mut visible = self.visible;
         ui.window(im_str!("Debugger"))
-            .size((0., 0.), ImGuiCond::Always)
+            .always_auto_resize(true)
+            .opened(&mut visible)
+            .collapsible(false)
             .build(|| {
                 if !system.cpu.debug_halted {
                     if ui.button(im_str!("Pause"), ImVec2::new(100., 25.)) {
@@ -170,6 +194,7 @@ impl DebuggerUi {
                     ui.text(&cache.disassembly);
                 }
             });
+        self.visible = visible;
     }
 
     fn generate_cache(system: &mut System) -> DebuggerCache {
