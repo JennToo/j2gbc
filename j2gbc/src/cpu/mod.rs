@@ -1,5 +1,5 @@
 use std::cmp::min;
-use std::collections::{HashSet, VecDeque};
+use std::collections::HashSet;
 use std::num::Wrapping;
 use std::ops::{Index, IndexMut};
 use std::time::Duration;
@@ -10,7 +10,7 @@ use super::alu::*;
 use super::audio::AudioSink;
 use super::cart::Cart;
 use super::inst::{Arith, Bits, Control, Instruction, Load, Logic};
-use super::mem::{Address, ExtendedAddress, MemDevice};
+use super::mem::{Address, MemDevice};
 use super::mmu::Mmu;
 
 pub const CLOCK_RATE: u64 = 4_194_304;
@@ -34,7 +34,6 @@ pub struct Cpu {
     halted: bool,
 
     pub debug_halted: bool,
-    pub last_instructions: VecDeque<(ExtendedAddress, Instruction)>,
     pub breakpoints: HashSet<Address>,
     pub interrupt_breakpoints: HashSet<Interrupt>,
 }
@@ -53,7 +52,6 @@ impl Cpu {
             halted: false,
 
             debug_halted: false,
-            last_instructions: VecDeque::new(),
             breakpoints: initial_breakpoints,
             interrupt_breakpoints: HashSet::new(),
         };
@@ -597,12 +595,7 @@ impl Cpu {
             return Err(());
         }
 
-        let (instruction, len) = self.fetch_instruction()?;
-        if self.last_instructions.len() > 50 {
-            self.last_instructions.pop_front();
-        }
-        self.last_instructions
-            .push_back((self.mmu.cart.map_address_into_rom(self.pc), instruction));
+        let (instruction, len) = self.fetch_instruction(self.pc)?;
 
         self.pc += Address(u16::from(len));
         self.execute(instruction)?;
@@ -683,11 +676,11 @@ impl Cpu {
         Ok(())
     }
 
-    pub fn fetch_instruction(&self) -> Result<(Instruction, u8), ()> {
+    pub fn fetch_instruction(&self, address: Address) -> Result<(Instruction, u8), ()> {
         let bytes = [
-            self.mmu.read(self.pc)?,
-            self.mmu.read(self.pc + Address(1))?,
-            self.mmu.read(self.pc + Address(2))?,
+            self.mmu.read(address)?,
+            self.mmu.read(address + Address(1))?,
+            self.mmu.read(address + Address(2))?,
         ];
         Instruction::decode(bytes)
     }

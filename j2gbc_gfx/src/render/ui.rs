@@ -5,8 +5,11 @@ use imgui::*;
 use imgui_gfx_renderer::{Renderer, Shaders};
 use imgui_glutin_support;
 use j2gbc::cpu::Register8;
+use j2gbc::mem::Address;
 
 use super::*;
+
+const INSTRUCTION_PRINT_COUNT: usize = 40;
 
 pub struct UiRender {
     renderer: Renderer<ResourcesT>,
@@ -225,18 +228,22 @@ impl DebuggerUi {
 
         let mut disassembly = String::default();
 
-        for &(a, i) in system
-            .cpu
-            .last_instructions
-            .iter()
-            .skip(system.cpu.last_instructions.len() - 10)
-        {
-            disassembly += format!("{}: {}\n", a, i).as_str();
-        }
-
-        match system.cpu.fetch_instruction() {
-            Result::Ok((i, _)) => disassembly += format!(" => {}: {}", system.cpu.pc, i).as_str(),
-            Result::Err(()) => disassembly += format!("    ERROR").as_str(),
+        let mut address = system.cpu.pc;
+        for _ in 0..INSTRUCTION_PRINT_COUNT {
+            match system.cpu.fetch_instruction(address) {
+                Result::Ok((ins, len)) => {
+                    if address == system.cpu.pc {
+                        disassembly += format!(" => {}: {}\n", address, ins).as_str();
+                    } else {
+                        disassembly += format!("    {}: {}\n", address, ins).as_str();
+                    }
+                    address += Address(u16::from(len));
+                }
+                Result::Err(()) => {
+                    disassembly += format!("{}: Invalid\n", address).as_str();
+                    address += Address(1);
+                }
+            }
         }
 
         DebuggerCache {
