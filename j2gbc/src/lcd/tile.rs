@@ -1,4 +1,5 @@
 const TILE_SIZE: usize = 8;
+#[cfg(test)]
 const TILE_2BPP_LEN: usize = 16;
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Default)]
@@ -9,6 +10,7 @@ pub struct MonoTile {
 pub type MonoTileRow = [u8; TILE_SIZE];
 
 impl MonoTile {
+    #[cfg(test)]
     pub fn from_2bpp(data: &[u8]) -> MonoTile {
         assert_eq!(data.len(), TILE_2BPP_LEN);
         let mut t = MonoTile::default();
