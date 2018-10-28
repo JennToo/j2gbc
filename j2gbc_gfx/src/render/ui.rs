@@ -17,6 +17,7 @@ pub struct UiRender {
     ctx: ImGui,
     debugger_ui: DebuggerUi,
     logger_ui: LoggerUi,
+    disassembly_ui: DisassemblyUi,
     visibility_set: VisibilitySet,
 }
 
@@ -108,6 +109,7 @@ impl UiRender {
             ctx: imgui,
             debugger_ui: DebuggerUi::default(),
             logger_ui: LoggerUi::default(),
+            disassembly_ui: DisassemblyUi::default(),
             visibility_set: VisibilitySet::default(),
         }
     }
@@ -136,12 +138,18 @@ impl UiRender {
                 if ret {
                     visibility_set.logger_ui = true;
                 }
+                let ret = ui.menu_item(im_str!("Disassembly")).build();
+                if ret {
+                    visibility_set.disassembly_ui = true;
+                }
             });
         });
 
         self.debugger_ui
             .draw(&mut ui, &mut visibility_set.debugger_ui, system);
         self.logger_ui.draw(&mut ui, &mut visibility_set.logger_ui);
+        self.disassembly_ui
+            .draw(&mut ui, &mut visibility_set.disassembly_ui, system);
         self.renderer.render(ui, factory, encoder).unwrap();
     }
 
@@ -150,10 +158,20 @@ impl UiRender {
     }
 }
 
-#[derive(Default)]
 struct VisibilitySet {
     debugger_ui: bool,
     logger_ui: bool,
+    disassembly_ui: bool,
+}
+
+impl Default for VisibilitySet {
+    fn default() -> VisibilitySet {
+        VisibilitySet {
+            debugger_ui: true,
+            logger_ui: true,
+            disassembly_ui: true,
+        }
+    }
 }
 
 #[derive(Default)]
@@ -163,7 +181,6 @@ struct DebuggerUi {
 
 struct DebuggerCache {
     registers: ImString,
-    disassembly: ImString,
 }
 
 impl DebuggerUi {
@@ -201,8 +218,6 @@ impl DebuggerUi {
                     let cache = self.cache.as_ref().unwrap();
 
                     ui.text(&cache.registers);
-                    ui.separator();
-                    ui.text(&cache.disassembly);
                 }
             });
     }
@@ -226,30 +241,7 @@ impl DebuggerUi {
             system.cpu[Register8::L]
         ).clone();
 
-        let mut disassembly = String::default();
-
-        let mut address = system.cpu.pc;
-        for _ in 0..INSTRUCTION_PRINT_COUNT {
-            match system.cpu.fetch_instruction(address) {
-                Result::Ok((ins, len)) => {
-                    if address == system.cpu.pc {
-                        disassembly += format!(" => {}: {}\n", address, ins).as_str();
-                    } else {
-                        disassembly += format!("    {}: {}\n", address, ins).as_str();
-                    }
-                    address += Address(u16::from(len));
-                }
-                Result::Err(()) => {
-                    disassembly += format!("{}: Invalid\n", address).as_str();
-                    address += Address(1);
-                }
-            }
-        }
-
-        DebuggerCache {
-            registers,
-            disassembly: ImString::new(disassembly),
-        }
+        DebuggerCache { registers }
     }
 }
 
@@ -282,5 +274,65 @@ impl LoggerUi {
                     ui.separator();
                 }
             });
+    }
+}
+
+#[derive(Default)]
+struct DisassemblyUi {
+    cache: Option<DisassemblyCache>,
+}
+
+struct DisassemblyCache {
+    start_address: Address,
+    disassembly: ImString,
+}
+
+impl DisassemblyUi {
+    fn draw<'a, 'ui>(&mut self, ui: &mut Ui<'ui>, visibility: &'a mut bool, system: &System) {
+        if !*visibility {
+            return;
+        }
+        ui.window(im_str!("Disassembly"))
+            .size((600., 300.), ImGuiCond::FirstUseEver)
+            .opened(visibility)
+            .build(|| {
+                if !system.cpu.debug_halted {
+                    ui.text(im_str!("Pause execution to view disassembly"));
+                    return;
+                }
+                if self.cache.is_none()
+                    || self.cache.as_ref().unwrap().start_address != system.cpu.pc
+                {
+                    self.generate_cache(system);
+                }
+                let cache = self.cache.as_ref().unwrap();
+                ui.text(&cache.disassembly);
+            });
+    }
+
+    fn generate_cache(&mut self, system: &System) {
+        let mut disassembly = String::default();
+
+        let mut address = system.cpu.pc;
+        for _ in 0..INSTRUCTION_PRINT_COUNT {
+            match system.cpu.fetch_instruction(address) {
+                Result::Ok((ins, len)) => {
+                    if address == system.cpu.pc {
+                        disassembly += format!(" => {}: {}\n", address, ins).as_str();
+                    } else {
+                        disassembly += format!("    {}: {}\n", address, ins).as_str();
+                    }
+                    address += Address(u16::from(len));
+                }
+                Result::Err(()) => {
+                    disassembly += format!("{}: Invalid\n", address).as_str();
+                    address += Address(1);
+                }
+            }
+        }
+        self.cache = Some(DisassemblyCache {
+            start_address: system.cpu.pc,
+            disassembly: ImString::new(disassembly),
+        });
     }
 }
