@@ -98,7 +98,7 @@ fn feed_cpal_events(
                 .unwrap()
                 .pop_front_slice(temp_buffer.as_mut_slice());
 
-            if r != ElasticPopResult::Exact {
+            if r != ElasticPopResult::Exact && r != ElasticPopResult::Empty {
                 info!(target: "events", "Pop front result {:?}", r);
             }
 
