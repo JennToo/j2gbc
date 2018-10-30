@@ -117,4 +117,8 @@ impl LcdRender {
 
         encoder.draw(&self.slice, &self.pso, &self.data);
     }
+
+    pub fn update_render_target(&mut self, out: ColorHandle) {
+        self.data.out = out;
+    }
 }

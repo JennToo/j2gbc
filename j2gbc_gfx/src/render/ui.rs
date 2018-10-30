@@ -156,6 +156,20 @@ impl UiRender {
     pub fn handle_event(&mut self, event: &Event) {
         imgui_glutin_support::handle_event(&mut self.ctx, &event);
     }
+
+    pub fn update_render_target(&mut self, out: ColorHandle) {
+        self.renderer.update_render_target(out);
+    }
+
+    pub fn resize(&mut self, size: glutin::dpi::LogicalSize) {
+        let physical_size = size.to_physical(1.);
+        let logical_size = physical_size.to_logical(1.);
+
+        self.frame_size = FrameSize {
+            logical_size: logical_size.into(),
+            hidpi_factor: 1.,
+        };
+    }
 }
 
 struct VisibilitySet {

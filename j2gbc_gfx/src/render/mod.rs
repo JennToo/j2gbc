@@ -66,8 +66,12 @@ impl Renderer {
     }
 
     pub fn resize(&mut self, size: glutin::dpi::LogicalSize) {
+        log::info!("Resizing window to {:?}", size);
         self.window
             .resize(size.to_physical(self.window.get_hidpi_factor()));
         gfx_window_glutin::update_views(&self.window, &mut self.main_color, &mut self.depth);
+        self.lcd.update_render_target(self.main_color.clone());
+        self.ui.update_render_target(self.main_color.clone());
+        self.ui.resize(size);
     }
 }
