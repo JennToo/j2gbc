@@ -56,7 +56,7 @@ pub fn main() {
     let events_loop = glutin::EventsLoop::new();
     let window_config = glutin::WindowBuilder::new()
         .with_title(format!("j2gbc -- {}", cart_path))
-        .with_dimensions((1024, 768).into());
+        .with_maximized(true);
     let context = glutin::ContextBuilder::new()
         .with_gl(glutin::GlRequest::Specific(glutin::Api::OpenGl, (3, 2)))
         .with_vsync(true);
