@@ -2,13 +2,8 @@ language: rust
 sudo: false
 rust:
   - stable
-  - beta
-  - nightly
-matrix:
-  allow_failures:
-    - rust: nightly
-  fast_finish: true
 addons:
   apt:
     packages:
       - libasound2-dev
+cache: cargo
