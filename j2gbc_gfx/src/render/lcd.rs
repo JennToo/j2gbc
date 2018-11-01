@@ -27,35 +27,8 @@ gfx_defines!{
     }
 }
 
-const QUAD: [Vertex; 6] = [
-    Vertex {
-        pos: [-1., -1.],
-        uv: [0., 1.],
-    },
-    Vertex {
-        pos: [1., -1.],
-        uv: [1., 1.],
-    },
-    Vertex {
-        pos: [1., 1.],
-        uv: [1., 0.],
-    },
-    Vertex {
-        pos: [1., 1.],
-        uv: [1., 0.],
-    },
-    Vertex {
-        pos: [-1., 1.],
-        uv: [0., 0.],
-    },
-    Vertex {
-        pos: [-1., -1.],
-        uv: [0., 1.],
-    },
-];
-
 impl LcdRender {
-    pub fn new(factory: &mut FactoryT, main_color: &ColorHandle) -> LcdRender {
+    pub fn new(window: &Window, factory: &mut FactoryT, main_color: &ColorHandle) -> LcdRender {
         let lcd_tex = factory
             .create_texture::<SurfaceFormat>(
                 gfx::texture::Kind::D2(
@@ -91,7 +64,7 @@ impl LcdRender {
         let pso = factory
             .create_pipeline_simple(&vs_code, &fs_code, pipe::new())
             .unwrap();
-        let (vertex_buffer, slice) = factory.create_vertex_buffer_with_slice(&QUAD, ());
+        let (vertex_buffer, slice) = upload_quad_for(factory, window.get_inner_size().unwrap());
         let data = pipe::Data {
             vbuf: vertex_buffer,
             out: main_color.clone(),
@@ -120,5 +93,63 @@ impl LcdRender {
 
     pub fn update_render_target(&mut self, out: ColorHandle) {
         self.data.out = out;
+    }
+
+    pub fn resize(&mut self, size: glutin::dpi::LogicalSize, factory: &mut FactoryT) {
+        let (vertex_buffer, slice) = upload_quad_for(factory, size);
+        self.slice = slice;
+        self.data.vbuf = vertex_buffer;
+    }
+}
+
+fn upload_quad_for(
+    factory: &mut FactoryT,
+    size: glutin::dpi::LogicalSize,
+) -> (
+    gfx::handle::Buffer<ResourcesT, Vertex>,
+    gfx::Slice<ResourcesT>,
+) {
+    let window_size = (size.width as u32, size.height as u32);
+    let (px, py) = proportional_subset((SCREEN_SIZE.0 as u32, SCREEN_SIZE.1 as u32), window_size);
+
+    factory.create_vertex_buffer_with_slice(&make_centered_prop_quad(px, py), ())
+}
+
+fn make_centered_prop_quad(x_factor: f32, y_factor: f32) -> [Vertex; 6] {
+    [
+        Vertex {
+            pos: [-1. * x_factor, -1. * y_factor],
+            uv: [0., 1.],
+        },
+        Vertex {
+            pos: [1. * x_factor, -1. * y_factor],
+            uv: [1., 1.],
+        },
+        Vertex {
+            pos: [1. * x_factor, 1. * y_factor],
+            uv: [1., 0.],
+        },
+        Vertex {
+            pos: [1. * x_factor, 1. * y_factor],
+            uv: [1., 0.],
+        },
+        Vertex {
+            pos: [-1. * x_factor, 1. * y_factor],
+            uv: [0., 0.],
+        },
+        Vertex {
+            pos: [-1. * x_factor, -1. * y_factor],
+            uv: [0., 1.],
+        },
+    ]
+}
+
+fn proportional_subset(proportions: (u32, u32), max_size: (u32, u32)) -> (f32, f32) {
+    let y_prop_corrected = max_size.0 * proportions.1 / proportions.0;
+    let x_prop_corrected = max_size.1 * proportions.0 / proportions.1;
+    if x_prop_corrected < y_prop_corrected {
+        (x_prop_corrected as f32 / max_size.0 as f32, 1.)
+    } else {
+        (1., y_prop_corrected as f32 / max_size.1 as f32)
     }
 }

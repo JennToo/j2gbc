@@ -18,7 +18,7 @@ pub type ColorFormat = gfx::format::Rgba8;
 pub type DepthFormat = gfx::format::DepthStencil;
 pub type SurfaceFormat = gfx::format::R8_G8_B8_A8;
 
-const CLEAR_COLOR: [f32; 4] = [0.1, 0.2, 0.3, 1.0];
+const CLEAR_COLOR: [f32; 4] = [0., 0., 0., 1.0];
 
 pub struct Renderer {
     encoder: EncoderT,
@@ -38,7 +38,7 @@ impl Renderer {
             gfx_window_glutin::init_existing::<ColorFormat, DepthFormat>(&window);
         let encoder = gfx::Encoder::from(factory.create_command_buffer());
 
-        let lcd = lcd::LcdRender::new(&mut factory, &mut main_color);
+        let lcd = lcd::LcdRender::new(&window, &mut factory, &mut main_color);
         let ui = ui::UiRender::new(&device, &window, &mut factory, &mut main_color);
 
         Renderer {
@@ -71,6 +71,7 @@ impl Renderer {
             .resize(size.to_physical(self.window.get_hidpi_factor()));
         gfx_window_glutin::update_views(&self.window, &mut self.main_color, &mut self.depth);
         self.lcd.update_render_target(self.main_color.clone());
+        self.lcd.resize(size, &mut self.factory);
         self.ui.update_render_target(self.main_color.clone());
         self.ui.resize(size);
     }
