@@ -51,6 +51,7 @@ impl Timer {
         }
     }
 
+    // TODO: Take double-speed mode into account
     pub fn pump_cycle(&mut self, cycle: u64) -> Option<Interrupt> {
         if self.next_div_cycle <= cycle {
             self.next_div_cycle = cycle + DIV_INCREMENT_CYCLE_COUNT;

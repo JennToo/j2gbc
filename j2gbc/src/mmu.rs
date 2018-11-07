@@ -12,6 +12,10 @@ use timer::Timer;
 pub struct Mmu {
     internal_ram: Ram,
     tiny_ram: Ram,
+
+    pub double_speed_mode: bool,
+    pub prepared_speed_switch: bool,
+
     pub cart: Cart,
     pub interrupt_enable: u8,
     pub interrupt_flag: u8,
@@ -28,6 +32,8 @@ impl Mmu {
         Mmu {
             internal_ram: Ram::new(RNG_INT_RAM.len()),
             tiny_ram: Ram::new(RNG_INT_TINY_RAM.len()),
+            double_speed_mode: false,
+            prepared_speed_switch: false,
             interrupt_enable: 0,
             interrupt_flag: 0,
             cart,
@@ -59,6 +65,14 @@ impl Mmu {
             Err(())
         } else if a.in_(RNG_INT_RAM) {
             self.internal_ram.read(a - RNG_INT_RAM.0)
+        } else if a == REG_KEY1 {
+            let mode = if self.double_speed_mode {
+                0b1000_0000
+            } else {
+                0
+            };
+            let prepared_mode = if self.prepared_speed_switch { 1 } else { 0 };
+            Ok(mode | prepared_mode)
         } else if a.in_(RNG_ROM_BANK0)
             || a.in_(RNG_ROM_BANK1)
             || a.in_(RNG_EXT_RAM)
@@ -97,6 +111,9 @@ impl Mmu {
             Err(())
         } else if a == REG_DMA {
             self.dma(Address((u16::from(v)) << 8))
+        } else if a == REG_KEY1 {
+            self.prepared_speed_switch = (0b1 & v) == 1;
+            Ok(())
         } else if a.in_(RNG_INT_RAM) {
             self.internal_ram.write(a - RNG_INT_RAM.0, v)
         } else if a.in_(RNG_ROM_BANK0)

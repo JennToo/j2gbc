@@ -81,6 +81,14 @@ impl Cpu {
             Instruction::Di => {
                 self.interrupt_master_enable = false;
             }
+            Instruction::Stop => {
+                if self.mmu.prepared_speed_switch {
+                    self.mmu.double_speed_mode = !self.mmu.double_speed_mode;
+                } else {
+                    error!("Stop executed without speed switch mode prepared");
+                    return Err(());
+                }
+            }
             Instruction::Halt => {
                 self.halted = true;
             }
@@ -119,7 +127,12 @@ impl Cpu {
                 self.execute_logic(l)?;
             }
         }
-        self.cycle += u64::from(i.cycles());
+        let cycle_cost = if self.mmu.double_speed_mode {
+            i.cycles() / 2
+        } else {
+            i.cycles()
+        };
+        self.cycle += u64::from(cycle_cost);
         Ok(())
     }
 
