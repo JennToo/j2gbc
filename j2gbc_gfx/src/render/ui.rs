@@ -18,6 +18,7 @@ pub struct UiRender {
     debugger_ui: DebuggerUi,
     logger_ui: LoggerUi,
     disassembly_ui: DisassemblyUi,
+    breakpoints_ui: BreakpointsUi,
     visibility_set: VisibilitySet,
 }
 
@@ -110,6 +111,7 @@ impl UiRender {
             debugger_ui: DebuggerUi::default(),
             logger_ui: LoggerUi::default(),
             disassembly_ui: DisassemblyUi::default(),
+            breakpoints_ui: BreakpointsUi::default(),
             visibility_set: VisibilitySet::default(),
         }
     }
@@ -142,6 +144,10 @@ impl UiRender {
                 if ret {
                     visibility_set.disassembly_ui = true;
                 }
+                let ret = ui.menu_item(im_str!("Breakpoints")).build();
+                if ret {
+                    visibility_set.breakpoints_ui = true;
+                }
             });
         });
 
@@ -150,6 +156,8 @@ impl UiRender {
         self.logger_ui.draw(&mut ui, &mut visibility_set.logger_ui);
         self.disassembly_ui
             .draw(&mut ui, &mut visibility_set.disassembly_ui, system);
+        self.breakpoints_ui
+            .draw(&mut ui, &mut visibility_set.breakpoints_ui, system);
         self.renderer.render(ui, factory, encoder).unwrap();
     }
 
@@ -176,6 +184,7 @@ struct VisibilitySet {
     debugger_ui: bool,
     logger_ui: bool,
     disassembly_ui: bool,
+    breakpoints_ui: bool,
 }
 
 impl Default for VisibilitySet {
@@ -184,6 +193,7 @@ impl Default for VisibilitySet {
             debugger_ui: true,
             logger_ui: true,
             disassembly_ui: true,
+            breakpoints_ui: true,
         }
     }
 }
@@ -348,5 +358,57 @@ impl DisassemblyUi {
             start_address: system.cpu.pc,
             disassembly: ImString::new(disassembly),
         });
+    }
+}
+
+struct BreakpointsUi {
+    address_buffer: ImString,
+}
+
+impl BreakpointsUi {
+    fn default() -> BreakpointsUi {
+        BreakpointsUi {
+            address_buffer: ImString::with_capacity(32),
+        }
+    }
+}
+
+impl BreakpointsUi {
+    fn draw<'a, 'ui>(&mut self, ui: &mut Ui<'ui>, visibility: &'a mut bool, system: &mut System) {
+        if !*visibility {
+            return;
+        }
+
+        ui.window(im_str!("Breakpoints"))
+            .always_auto_resize(true)
+            .opened(visibility)
+            .collapsible(false)
+            .build(|| {
+                if ui
+                    .input_text(im_str!(""), &mut self.address_buffer)
+                    .chars_hexadecimal(true)
+                    .enter_returns_true(true)
+                    .build()
+                {
+                    let address =
+                        Address(u16::from_str_radix(self.address_buffer.to_str(), 16).unwrap());
+                    system.cpu.breakpoints.insert(address);
+                    self.address_buffer = ImString::with_capacity(32);
+                }
+
+                ui.separator();
+
+                let mut to_remove = vec![];
+                for bp in system.cpu.breakpoints.iter() {
+                    if ui.button(im_str!("X"), ImVec2::zero()) {
+                        to_remove.push(*bp);
+                    }
+                    ui.same_line(0.);
+                    ui.text(im_str!("{}", bp));
+                }
+                for r in &to_remove {
+                    system.cpu.breakpoints.remove(r);
+                }
+            });
     }
 }
