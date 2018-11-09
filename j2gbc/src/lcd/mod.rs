@@ -293,7 +293,7 @@ impl Lcd {
     }
 
     fn render_tile_row(&self, screen_y: u8, scx: u8, scy: u8, code_dat_start: Address) -> FrameRow {
-        let mut row = [fb::COLOR_WHITE; fb::SCREEN_SIZE.0];
+        let mut row = [fb::DMG_COLOR_WHITE; fb::SCREEN_SIZE.0];
         let translated_y = Wrapping(screen_y) + Wrapping(scy); // Implicit % 256
         for screen_x in 0..fb::SCREEN_SIZE.0 {
             let translated_x = Wrapping(screen_x as u8) + Wrapping(scx); // Implicit % 256
@@ -311,7 +311,7 @@ impl Lcd {
 
             let color_index = char_row[(translated_x % Wrapping(8)).0 as usize];
             let corrected_index = palette_convert(color_index, self.bgp) as usize;
-            row[screen_x as usize] = fb::COLORS[corrected_index];
+            row[screen_x as usize] = fb::DMG_COLORS[corrected_index];
         }
 
         row
@@ -391,7 +391,7 @@ impl Lcd {
                     fb.set(
                         (base_x + x) as usize,
                         (base_y + y) as usize,
-                        fb::COLORS[corrected_index],
+                        fb::DMG_COLORS[corrected_index],
                     );
                 }
             }
@@ -422,7 +422,7 @@ impl Lcd {
                         let color_index = row[x as usize];
                         let corrected_index = palette_convert(color_index, self.bgp) as usize;
                         fb[(char_y * PIXEL_PER_CHAR + y) as usize]
-                            [(char_x * PIXEL_PER_CHAR + x) as usize] = fb::COLORS[corrected_index];
+                            [(char_x * PIXEL_PER_CHAR + x) as usize] = fb::DMG_COLORS[corrected_index];
                     }
                 }
             }
@@ -487,13 +487,13 @@ impl Lcd {
                         self.obp0
                     };
                     let corrected_index = palette_convert(color_index, pal) as usize;
-                    let color = fb::COLORS[corrected_index];
+                    let color = fb::DMG_COLORS[corrected_index];
 
                     if !obj.priority()
                         || self
                             .get_back_framebuffer()
                             .get(full_x as usize, full_y as usize)
-                            == fb::COLOR_WHITE
+                            == fb::DMG_COLOR_WHITE
                     {
                         self.get_back_framebuffer()
                             .set(full_x as usize, full_y as usize, color);
