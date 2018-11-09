@@ -23,6 +23,7 @@ pub struct Mmu {
     pub audio: Audio,
     pub timer: Timer,
     pub input: Input,
+    pub pedantic: bool,
 
     pub watchpoints: HashSet<Address>,
 }
@@ -41,6 +42,7 @@ impl Mmu {
             audio: Audio::new(audio_sink),
             timer: Timer::new(),
             input: Input::new(),
+            pedantic: true,
 
             watchpoints: HashSet::new(),
         }
@@ -157,13 +159,18 @@ impl Mmu {
 
 impl MemDevice for Mmu {
     fn read(&self, a: Address) -> Result<u8, ()> {
-        // self._read(a).or(Ok(0))
-        self._read(a)
+        if self.pedantic {
+            self._read(a)
+        } else {
+            self._read(a).or(Ok(0))
+        }
     }
 
     fn write(&mut self, a: Address, v: u8) -> Result<(), ()> {
-        // self._write(a, v);
-        // Ok(())
-        self._write(a, v)
+        if self.pedantic {
+            self._write(a, v)
+        } else {
+            self._write(a, v).or(Ok(()))
+        }
     }
 }
