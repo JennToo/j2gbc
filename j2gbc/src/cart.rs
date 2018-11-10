@@ -1,7 +1,9 @@
 use std::io;
 use std::io::Read;
 
+use super::mbc::mbc0::Mbc0;
 use super::mbc::mbc1::Mbc1;
+use super::mbc::mbc5::Mbc5;
 use super::mbc::Mbc;
 use super::mem::{
     Address, ExtendedAddress, MemDevice, RNG_INTR_TABLE, RNG_ROM_BANK0, RNG_ROM_BANK1,
@@ -22,10 +24,17 @@ impl Cart {
     pub fn load<R: Read>(mut r: R) -> io::Result<Cart> {
         let mut data = Vec::new();
         r.read_to_end(&mut data)?;
-        Ok(Cart {
-            data: data.clone(),
-            mbc: Box::new(Mbc1::new(data)),
-        })
+
+        let mbc: Box<Mbc> = match data[OFF_CART_TYPE] {
+            0x00 => Box::new(Mbc0::new(data.clone())),
+            0x01 | 0x02 | 0x03 => Box::new(Mbc1::new(data.clone())),
+            0x19 | 0x1A | 0x1B | 0x1C | 0x1D | 0x1E => Box::new(Mbc5::new(data.clone())),
+            _ => {
+                unimplemented!("Unsupported MBC {}", data[OFF_CART_TYPE]);
+            }
+        };
+
+        Ok(Cart { data: data, mbc })
     }
 
     pub fn name(&self) -> String {

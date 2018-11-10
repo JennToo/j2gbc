@@ -1,4 +1,6 @@
+pub mod mbc0;
 pub mod mbc1;
+pub mod mbc5;
 
 use super::mem::{Address, ExtendedAddress, MemDevice};
 
