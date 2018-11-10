@@ -222,7 +222,9 @@ fn test_load_indirect_decrement() {
 // --------------- Test helpers ------------------
 
 fn make_test_cpu() -> Cpu {
-    let mock_cart = Cart::load(Cursor::new(Vec::new())).expect("Failed to create mock cart");
+    let mut v = Vec::new();
+    v.resize(1024, 0);
+    let mock_cart = Cart::load(Cursor::new(v)).expect("Failed to create mock cart");
     let mut cpu = Cpu::new(mock_cart, Box::new(NullSink));
     cpu.pc = INTIAL_PC;
     for (r, v) in reg_defaults().iter() {
