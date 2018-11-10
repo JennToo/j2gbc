@@ -3,7 +3,12 @@ pub const DMG_COLOR_WHITE: Pixel = [234, 255, 186, 255];
 pub const DMG_COLOR_LIGHT_GRAY: Pixel = [150, 187, 146, 255];
 pub const DMG_COLOR_DARK_GRAY: Pixel = [68, 106, 81, 255];
 pub const DMG_COLOR_BLACK: Pixel = [0, 14, 2, 255];
-pub const DMG_COLORS: [Pixel; 4] = [DMG_COLOR_WHITE, DMG_COLOR_LIGHT_GRAY, DMG_COLOR_DARK_GRAY, DMG_COLOR_BLACK];
+pub const DMG_COLORS: [Pixel; 4] = [
+    DMG_COLOR_WHITE,
+    DMG_COLOR_LIGHT_GRAY,
+    DMG_COLOR_DARK_GRAY,
+    DMG_COLOR_BLACK,
+];
 
 pub type Pixel = [u8; 4];
 

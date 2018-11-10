@@ -422,7 +422,8 @@ impl Lcd {
                         let color_index = row[x as usize];
                         let corrected_index = palette_convert(color_index, self.bgp) as usize;
                         fb[(char_y * PIXEL_PER_CHAR + y) as usize]
-                            [(char_x * PIXEL_PER_CHAR + x) as usize] = fb::DMG_COLORS[corrected_index];
+                            [(char_x * PIXEL_PER_CHAR + x) as usize] =
+                            fb::DMG_COLORS[corrected_index];
                     }
                 }
             }
