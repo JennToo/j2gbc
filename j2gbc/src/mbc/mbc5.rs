@@ -21,7 +21,7 @@ impl Mbc5 {
         Mbc5 {
             ram_protected: true,
             rom,
-            rom_bank_select: 0,
+            rom_bank_select: 1,
             ram_bank_select: 0,
             ram: Ram::new(RNG_EXT_RAM.len() * 16),
         }
@@ -34,24 +34,30 @@ impl MemDevice for Mbc5 {
             let index = self.map_address_into_rom(a).0 as usize;
             Ok(self.rom[index])
         } else if a.in_(RNG_EXT_RAM) {
-            self.ram.read(Address(
-                ((a - RNG_EXT_RAM.0).0 as usize + RNG_EXT_RAM.len() * self.ram_bank_select) as u16,
-            ))
+            self.ram.read(ram_bank_adjust(a, self.ram_bank_select))
         } else {
             unreachable!();
         }
     }
 
     fn write(&mut self, a: Address, v: u8) -> Result<(), ()> {
-        if a.in_(RNG_RAMG) {
+        if a.in_(RNG_EXT_RAM) {
+            self.ram.write(ram_bank_adjust(a, self.ram_bank_select), v)
+        } else if a.in_(RNG_RAMG) {
             self.ram_protected = v != 0x0A;
             Ok(())
         } else if a.in_(RNG_UPPER_BANK_SELECT) {
             self.rom_bank_select =
                 ((v as usize) << 8 & 0b11) | (self.rom_bank_select & !(0b11_0000_0000));
+            if self.rom_bank_select == 0 {
+                self.rom_bank_select = 1;
+            }
             Ok(())
         } else if a.in_(RNG_LOWER_BANK_SELECT) {
             self.rom_bank_select = (v as usize) | (self.rom_bank_select & !(0b1111_1111));
+            if self.rom_bank_select == 0 {
+                self.rom_bank_select = 1;
+            }
             Ok(())
         } else if a.in_(RNG_RAMB) {
             self.ram_bank_select = (v & 0b1111) as usize;
@@ -75,4 +81,8 @@ impl Mbc for Mbc5 {
     fn set_sram(&mut self, buf: &[u8]) {
         self.ram.data[..buf.len()].clone_from_slice(buf);
     }
+}
+
+fn ram_bank_adjust(a: Address, bank: usize) -> Address {
+    Address(((a - RNG_EXT_RAM.0).0 as usize + RNG_EXT_RAM.len() * bank) as u16)
 }
