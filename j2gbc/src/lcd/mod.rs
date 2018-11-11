@@ -24,6 +24,7 @@ const REG_OBP0: Address = Address(0xFF48);
 const REG_OBP1: Address = Address(0xFF49);
 const REG_WY: Address = Address(0xFF4A);
 const REG_WX: Address = Address(0xFF4B);
+const REG_VBK: Address = Address(0xFF4F);
 
 const LINE_CYCLE_TIME: u64 = CLOCK_RATE * 108_700 / 1_000_000_000; // Src: Official GB manual
 const HBLANK_DURATION: u64 = CLOCK_RATE * 48_600 / 1_000_000_000; // Src: GBCPUMan.pdf
@@ -55,7 +56,7 @@ const BGD_CHAR_DAT_FLAG: u8 = 0b0001_0000;
 const BGD_CODE_DAT_FLAG: u8 = 0b0000_1000;
 const WINDOW_CODE_DAT_FLAG: u8 = 0b0100_0000;
 
-const TILE_COUNT: usize = 384;
+const TILE_COUNT: usize = 384 * 2;
 const OBJ_COUNT: usize = 40;
 
 type FrameRow = [fb::Pixel; fb::SCREEN_SIZE.0];
@@ -74,6 +75,7 @@ pub struct Lcd {
     sy: u8,
     lyc: u8,
     ly: u8,
+    cdata_bank_select: usize,
     cdata: Ram,
     bgdd1: Ram,
     bgdd2: Ram,
@@ -105,7 +107,8 @@ impl Lcd {
             sx: 0,
             sy: 0,
             lyc: 0,
-            cdata: Ram::new(RNG_CHAR_DAT.len()),
+            cdata_bank_select: 0,
+            cdata: Ram::new(RNG_CHAR_DAT.len() * 2),
             bgdd1: Ram::new(RNG_LCD_BGDD1.len()),
             bgdd2: Ram::new(RNG_LCD_BGDD2.len()),
             oam: Ram::new(RNG_LCD_OAM.len()),
@@ -541,7 +544,9 @@ impl MemDevice for Lcd {
         } else if a.in_(RNG_LCD_BGDD2) {
             self.bgdd2.read(a - RNG_LCD_BGDD2.0)
         } else if a.in_(RNG_CHAR_DAT) {
-            self.cdata.read(a - RNG_CHAR_DAT.0)
+            self.cdata.read(
+                a - RNG_CHAR_DAT.0 + Address((self.cdata_bank_select * RNG_CHAR_DAT.len()) as u16),
+            )
         } else if a.in_(RNG_LCD_OAM) {
             self.oam.read(a - RNG_LCD_OAM.0)
         } else {
@@ -556,6 +561,7 @@ impl MemDevice for Lcd {
                 REG_WY => Ok(self.wy),
                 REG_SCX => Ok(self.sx),
                 REG_SCY => Ok(self.sy),
+                REG_VBK => Ok(self.cdata_bank_select as u8),
                 REG_BGP => {
                     error!("Error: BGP is a write-only register");
                     Err(())
@@ -574,8 +580,9 @@ impl MemDevice for Lcd {
         } else if a.in_(RNG_LCD_BGDD2) {
             self.bgdd2.write(a - RNG_LCD_BGDD2.0, v)
         } else if a.in_(RNG_CHAR_DAT) {
-            self.cdata.write(a - RNG_CHAR_DAT.0, v)?;
-            self.update_tile_at(Address(a.0 - a.0 % 2));
+            let adjusted = a + Address((self.cdata_bank_select * RNG_CHAR_DAT.len()) as u16);
+            self.cdata.write(adjusted - RNG_CHAR_DAT.0, v)?;
+            self.update_tile_at(Address(adjusted.0 - adjusted.0 % 2));
             Ok(())
         } else if a.in_(RNG_LCD_OAM) {
             self.oam.write(a - RNG_LCD_OAM.0, v)?;
@@ -625,6 +632,10 @@ impl MemDevice for Lcd {
                 }
                 REG_SCY => {
                     self.sy = v;
+                    Ok(())
+                }
+                REG_VBK => {
+                    self.cdata_bank_select = usize::from(v & 0b1);
                     Ok(())
                 }
                 _ => {
