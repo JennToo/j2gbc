@@ -1,3 +1,4 @@
+extern crate clap;
 extern crate gfx;
 extern crate gfx_device_gl;
 extern crate gfx_window_glutin;
@@ -22,7 +23,9 @@ mod logger;
 mod render;
 mod timer;
 
-fn load_system(cart_path: &str) -> System {
+fn load_system(args: &clap::ArgMatches<'static>) -> System {
+    let cart_path = args.value_of("rom").unwrap();
+
     let cart_file = File::open(cart_path.clone()).unwrap();
     let mut c = j2gbc::cart::Cart::load(cart_file).unwrap();
     let save_path = format!("{}.sav", cart_path);
@@ -43,19 +46,41 @@ fn load_system(cart_path: &str) -> System {
 
     let sink = audio::CpalSink::new().unwrap();
 
-    let cpu = j2gbc::cpu::Cpu::new(c, Box::new(sink));
+    let mut cpu = j2gbc::cpu::Cpu::new(c, Box::new(sink));
+    cpu.mmu.pedantic = !args.is_present("no-pedantic-mmu");
     System::new(cpu)
+}
+
+fn parse_args() -> clap::ArgMatches<'static> {
+    clap::App::new("j2gbc -- DMG and CGB emulator")
+        .author("Jennifer Wilcox <jennifer@nitori.org>")
+        .arg(
+            clap::Arg::with_name("mode")
+                .short("m")
+                .long("mode")
+                .takes_value(true)
+                .help("Operate as a DMG or CGB [default: cgb]")
+                .possible_values(&["dmg", "cgb"]),
+        )
+        .arg(clap::Arg::with_name("no-pedantic-mmu")
+            .long("no-pedantic-mmu")
+            .help("Disable pedantic MMU. Otherwise by default the MMU will trap if an invalid memory access occurs.")
+        )
+        .arg(
+            clap::Arg::with_name("rom")
+                .help("ROM file to load")
+                .required(true),
+        ).get_matches()
 }
 
 pub fn main() {
     logger::install_logger();
-    let mut args = std::env::args();
-    let cart_path = args.nth(1).unwrap();
-    let mut system = load_system(&cart_path);
+    let args = parse_args();
+    let mut system = load_system(&args);
 
     let events_loop = glutin::EventsLoop::new();
     let window_config = glutin::WindowBuilder::new()
-        .with_title(format!("j2gbc -- {}", cart_path))
+        .with_title(format!("j2gbc -- {}", args.value_of("rom").unwrap()))
         .with_maximized(true);
     let context = glutin::ContextBuilder::new()
         .with_gl(glutin::GlRequest::Specific(glutin::Api::OpenGl, (3, 2)))
