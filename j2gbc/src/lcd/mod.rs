@@ -25,6 +25,10 @@ const REG_OBP1: Address = Address(0xFF49);
 const REG_WY: Address = Address(0xFF4A);
 const REG_WX: Address = Address(0xFF4B);
 const REG_VBK: Address = Address(0xFF4F);
+const REG_BCPS: Address = Address(0xFF68);
+const REG_BCPD: Address = Address(0xFF69);
+const REG_OCPS: Address = Address(0xFF6A);
+const REG_OCPD: Address = Address(0xFF6B);
 
 const LINE_CYCLE_TIME: u64 = CLOCK_RATE * 108_700 / 1_000_000_000; // Src: Official GB manual
 const HBLANK_DURATION: u64 = CLOCK_RATE * 48_600 / 1_000_000_000; // Src: GBCPUMan.pdf
@@ -59,6 +63,8 @@ const WINDOW_CODE_DAT_FLAG: u8 = 0b0100_0000;
 const TILE_COUNT: usize = 384 * 2;
 const OBJ_COUNT: usize = 40;
 
+const PAL_DATA_IDX: u8 = 0b11_1111;
+
 type FrameRow = [fb::Pixel; fb::SCREEN_SIZE.0];
 pub type BgBuffer = [BgRow; 256];
 type BgRow = [fb::Pixel; 256];
@@ -75,11 +81,16 @@ pub struct Lcd {
     sy: u8,
     lyc: u8,
     ly: u8,
+    bcps: u8,
+    ocps: u8,
     cdata_bank_select: usize,
     cdata: Ram,
     bgdd1: Ram,
     bgdd2: Ram,
     oam: Ram,
+
+    bcp: [u8; 0x40],
+    ocp: [u8; 0x40],
 
     fbs: [fb::Framebuffer; 2],
     fbi: usize,
@@ -107,6 +118,8 @@ impl Lcd {
             sx: 0,
             sy: 0,
             lyc: 0,
+            bcps: 0,
+            ocps: 0,
             cdata_bank_select: 0,
             cdata: Ram::new(RNG_CHAR_DAT.len() * 2),
             bgdd1: Ram::new(RNG_LCD_BGDD1.len()),
@@ -114,6 +127,9 @@ impl Lcd {
             oam: Ram::new(RNG_LCD_OAM.len()),
             fbs: [fb::Framebuffer::default(); 2],
             fbi: 0,
+
+            bcp: [0; 0x40],
+            ocp: [0; 0x40],
 
             hblank_timer: Timer::new(
                 LINE_CYCLE_TIME,
@@ -562,6 +578,10 @@ impl MemDevice for Lcd {
                 REG_SCX => Ok(self.sx),
                 REG_SCY => Ok(self.sy),
                 REG_VBK => Ok(self.cdata_bank_select as u8),
+                REG_BCPS => Ok(self.bcps),
+                REG_BCPD => Ok(self.bcp[(self.bcps & PAL_DATA_IDX) as usize]),
+                REG_OCPS => Ok(self.ocps),
+                REG_OCPD => Ok(self.ocp[(self.ocps & PAL_DATA_IDX) as usize]),
                 REG_BGP => {
                     error!("Error: BGP is a write-only register");
                     Err(())
@@ -636,6 +656,38 @@ impl MemDevice for Lcd {
                 }
                 REG_VBK => {
                     self.cdata_bank_select = usize::from(v & 0b1);
+                    Ok(())
+                }
+                REG_BCPS => {
+                    self.bcps = v & 0b1011_1111;
+                    Ok(())
+                }
+                REG_BCPD => {
+                    let mut idx = (self.bcps & PAL_DATA_IDX) as usize;
+                    self.bcp[idx] = v;
+                    if self.bcps & 0b1000_0000 != 0 {
+                        idx += 1;
+                        if idx >= 0x40 {
+                            idx = 0;
+                        }
+                        self.bcps = (self.bcps & !PAL_DATA_IDX) | (idx as u8);
+                    }
+                    Ok(())
+                }
+                REG_OCPS => {
+                    self.ocps = v & 0b1011_1111;
+                    Ok(())
+                }
+                REG_OCPD => {
+                    let mut idx = (self.ocps & PAL_DATA_IDX) as usize;
+                    self.ocp[idx] = v;
+                    if self.ocps & 0b1000_0000 != 0 {
+                        idx += 1;
+                        if idx >= 0x40 {
+                            idx = 0;
+                        }
+                        self.ocps = (self.ocps & !PAL_DATA_IDX) | (idx as u8);
+                    }
                     Ok(())
                 }
                 _ => {
