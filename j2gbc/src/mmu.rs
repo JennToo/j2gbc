@@ -13,6 +13,8 @@ pub struct Mmu {
     internal_ram: Ram,
     tiny_ram: Ram,
 
+    ram_bank_select: usize,
+
     pub double_speed_mode: bool,
     pub prepared_speed_switch: bool,
 
@@ -31,7 +33,7 @@ pub struct Mmu {
 impl Mmu {
     pub fn new(cart: Cart, audio_sink: Box<AudioSink>) -> Mmu {
         Mmu {
-            internal_ram: Ram::new(RNG_INT_RAM.len()),
+            internal_ram: Ram::new(RNG_INT_RAM_0.len() * 8),
             tiny_ram: Ram::new(RNG_INT_TINY_RAM.len()),
             double_speed_mode: false,
             prepared_speed_switch: false,
@@ -43,6 +45,7 @@ impl Mmu {
             timer: Timer::new(),
             input: Input::new(),
             pedantic: true,
+            ram_bank_select: 1,
 
             watchpoints: HashSet::new(),
         }
@@ -65,8 +68,13 @@ impl Mmu {
         if self.watchpoints.contains(&a) {
             info!("Read watchpoint for {:?}", a);
             Err(())
-        } else if a.in_(RNG_INT_RAM) {
-            self.internal_ram.read(a - RNG_INT_RAM.0)
+        } else if a == REG_SVBK {
+            Ok(self.ram_bank_select as u8)
+        } else if a.in_(RNG_INT_RAM_0) {
+            self.internal_ram.read(a - RNG_INT_RAM_0.0)
+        } else if a.in_(RNG_INT_RAM_1) {
+            self.internal_ram
+                .read(ram_bank_adjust(a, self.ram_bank_select))
         } else if a == REG_KEY1 {
             let mode = if self.double_speed_mode {
                 0b1000_0000
@@ -116,8 +124,14 @@ impl Mmu {
         } else if a == REG_KEY1 {
             self.prepared_speed_switch = (0b1 & v) == 1;
             Ok(())
-        } else if a.in_(RNG_INT_RAM) {
-            self.internal_ram.write(a - RNG_INT_RAM.0, v)
+        } else if a == REG_SVBK {
+            self.ram_bank_select = usize::from(v & 0b111);
+            Ok(())
+        } else if a.in_(RNG_INT_RAM_0) {
+            self.internal_ram.write(a - RNG_INT_RAM_0.0, v)
+        } else if a.in_(RNG_INT_RAM_1) {
+            self.internal_ram
+                .write(ram_bank_adjust(a, self.ram_bank_select), v)
         } else if a.in_(RNG_ROM_BANK0)
             || a.in_(RNG_ROM_BANK1)
             || a.in_(RNG_EXT_RAM)
@@ -173,4 +187,10 @@ impl MemDevice for Mmu {
             self._write(a, v).or(Ok(()))
         }
     }
+}
+
+fn ram_bank_adjust(a: Address, bank: usize) -> Address {
+    let bank_offset =
+        RNG_INT_RAM_1.len() * if bank > 0 { bank - 1 } else { 0 } + RNG_INT_RAM_0.len();
+    (a - RNG_INT_RAM_1.0) + Address(bank_offset as u16)
 }
