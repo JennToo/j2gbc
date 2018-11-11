@@ -39,7 +39,7 @@ pub struct Cpu {
 }
 
 impl Cpu {
-    pub fn new(c: Cart, audio_sink: Box<AudioSink>) -> Cpu {
+    pub fn new(c: Cart, audio_sink: Box<AudioSink>, cgb_mode: bool) -> Cpu {
         let initial_breakpoints = HashSet::new();
 
         let mut cpu = Cpu {
@@ -56,7 +56,7 @@ impl Cpu {
             interrupt_breakpoints: HashSet::new(),
         };
 
-        cpu[Register8::A] = 0x01;
+        cpu[Register8::A] = if cgb_mode { 0x11 } else { 0x01 };
         cpu[Register8::F] = 0xB0;
         cpu[Register8::B] = 0x00;
         cpu[Register8::C] = 0x13;

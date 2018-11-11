@@ -46,7 +46,13 @@ fn load_system(args: &clap::ArgMatches<'static>) -> System {
 
     let sink = audio::CpalSink::new().unwrap();
 
-    let mut cpu = j2gbc::cpu::Cpu::new(c, Box::new(sink));
+    let cgb_mode = if let Some(m) = args.value_of("mode") {
+        m == "cgb"
+    } else {
+        true
+    };
+
+    let mut cpu = j2gbc::cpu::Cpu::new(c, Box::new(sink), cgb_mode);
     cpu.mmu.pedantic = !args.is_present("no-pedantic-mmu");
     System::new(cpu)
 }

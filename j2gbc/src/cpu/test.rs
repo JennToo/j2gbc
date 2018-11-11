@@ -225,7 +225,7 @@ fn make_test_cpu() -> Cpu {
     let mut v = Vec::new();
     v.resize(1024, 0);
     let mock_cart = Cart::load(Cursor::new(v)).expect("Failed to create mock cart");
-    let mut cpu = Cpu::new(mock_cart, Box::new(NullSink));
+    let mut cpu = Cpu::new(mock_cart, Box::new(NullSink), false);
     cpu.pc = INTIAL_PC;
     for (r, v) in reg_defaults().iter() {
         cpu[*r] = *v;
@@ -391,7 +391,7 @@ fn test_blarg_11_op_a_hl() {
 fn run_blarg_test(path: &str, sec_to_run: u64, expected: &[u8], expected_addr: Address) {
     let cart_file = File::open(path).unwrap();
     let cart = Cart::load(cart_file).unwrap();
-    let cpu = Cpu::new(cart, Box::new(NullSink));
+    let cpu = Cpu::new(cart, Box::new(NullSink), false);
     let mut system = System::new(cpu);
 
     system.run_for_duration(&Duration::from_secs(sec_to_run));
