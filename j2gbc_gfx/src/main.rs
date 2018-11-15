@@ -21,9 +21,10 @@ mod audio;
 mod event;
 mod logger;
 mod render;
+mod save;
 mod timer;
 
-fn load_system(args: &clap::ArgMatches<'static>) -> System {
+fn load_system(args: &clap::ArgMatches<'static>) -> (System, save::Saver) {
     let cart_path = args.value_of("rom").unwrap();
 
     let cart_file = File::open(cart_path.clone()).unwrap();
@@ -36,6 +37,7 @@ fn load_system(args: &clap::ArgMatches<'static>) -> System {
         }
         c.set_sram(buf.as_slice());
     }
+    let saver = save::Saver::new(save_path.as_str());
 
     info!("Loaded cart {}:", cart_path);
     info!("Name: {}", c.name());
@@ -54,7 +56,7 @@ fn load_system(args: &clap::ArgMatches<'static>) -> System {
 
     let mut cpu = j2gbc::cpu::Cpu::new(c, Box::new(sink), cgb_mode);
     cpu.mmu.pedantic = !args.is_present("no-pedantic-mmu");
-    System::new(cpu)
+    (System::new(cpu), saver)
 }
 
 fn parse_args() -> clap::ArgMatches<'static> {
@@ -82,7 +84,7 @@ fn parse_args() -> clap::ArgMatches<'static> {
 pub fn main() {
     logger::install_logger();
     let args = parse_args();
-    let mut system = load_system(&args);
+    let (mut system, mut saver) = load_system(&args);
 
     let events_loop = glutin::EventsLoop::new();
     let window_config = glutin::WindowBuilder::new()
@@ -99,6 +101,7 @@ pub fn main() {
     loop {
         events.handle_events(&mut system, &mut renderer);
         system.run_for_duration(&events.elapsed);
+        saver.maybe_save(&system);
         renderer.draw(&mut system, events.elapsed);
     }
 }
