@@ -2,6 +2,7 @@ const OBJ_PAL_FLAG: u8 = 0b0001_0000;
 const OBJ_XFLIP_FLAG: u8 = 0b0010_0000;
 const OBJ_YFLIP_FLAG: u8 = 0b0100_0000;
 const OBJ_PRI_FLAG: u8 = 0b1000_0000;
+const OBJ_BANK_FLAG: u8 = 0b0000_1000;
 const OBJ_PAL_SELECT: u8 = 0b0000_0111;
 
 #[derive(Copy, Clone, Default, Eq, PartialEq, Debug)]
@@ -31,5 +32,9 @@ impl Obj {
 
     pub fn cgb_palette(self) -> u8 {
         self.flags & OBJ_PAL_SELECT
+    }
+
+    pub fn bank(self) -> u8 {
+        (self.flags & OBJ_BANK_FLAG) >> 3
     }
 }

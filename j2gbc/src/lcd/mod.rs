@@ -347,7 +347,7 @@ impl Lcd {
                 )
             };
             let signed = self.get_bg_char_addr_start();
-            let char_row = self.read_char_row_at(char_, (translated_y % Wrapping(8)).0, signed);
+            let char_row = self.read_char_row_at(char_, (translated_y % Wrapping(8)).0, signed, (flags & 0b0000_1000) >> 3 );
 
             let color_index = char_row[(translated_x % Wrapping(8)).0 as usize];
             let color = self.bg_palettes[(flags & 0b111) as usize][color_index as usize];
@@ -358,12 +358,12 @@ impl Lcd {
         row
     }
 
-    fn read_char_row_at(&self, char_: u8, row: u8, signed: bool) -> tile::MonoTileRow {
+    fn read_char_row_at(&self, char_: u8, row: u8, signed: bool, bank: u8) -> tile::MonoTileRow {
         let index = if signed {
             (256 + isize::from(char_ as i8)) as usize
         } else {
             char_ as usize
-        };
+        } + (bank as usize) * (256 + 128);
 
         if row >= 8 {
             self.tiles[index + 1].read_row(row as usize - 8)
@@ -425,7 +425,7 @@ impl Lcd {
             let base_y = (char_ / CHARS_PER_ROW) * 8;
 
             for y in 0..PIXEL_PER_CHAR {
-                let row = self.read_char_row_at(char_, y, high);
+                let row = self.read_char_row_at(char_, y, high, 0);
                 for x in 0..PIXEL_PER_CHAR {
                     let color_index = row[x as usize];
                     let corrected_index = palette_convert(color_index, self.bgp) as usize;
@@ -458,7 +458,7 @@ impl Lcd {
                 let char_ = self.read(code_start + char_offset).unwrap();
 
                 for y in 0..PIXEL_PER_CHAR {
-                    let row = self.read_char_row_at(char_, y, signed);
+                    let row = self.read_char_row_at(char_, y, signed, 0);
                     for x in 0..PIXEL_PER_CHAR {
                         let color_index = row[x as usize];
                         let corrected_index = palette_convert(color_index, self.bgp) as usize;
@@ -509,7 +509,7 @@ impl Lcd {
                 }
 
                 let index_y = if obj.yflip() { hi_y - 1 - y } else { y };
-                let row = self.read_char_row_at(char_, index_y, false);
+                let row = self.read_char_row_at(char_, index_y, false, obj.bank());
                 for x in 0..8 {
                     let full_x = x as isize + obj.x as isize - 8;
 
