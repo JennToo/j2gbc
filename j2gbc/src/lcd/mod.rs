@@ -85,7 +85,7 @@ pub struct Lcd {
     ly: u8,
     bcps: u8,
     ocps: u8,
-    cdata_bank_select: usize,
+    bank_select: usize,
     cdata: Ram,
     bgdd1: Ram,
     bgdd2: Ram,
@@ -125,10 +125,10 @@ impl Lcd {
             lyc: 0,
             bcps: 0,
             ocps: 0,
-            cdata_bank_select: 0,
+            bank_select: 0,
             cdata: Ram::new(RNG_CHAR_DAT.len() * 2),
-            bgdd1: Ram::new(RNG_LCD_BGDD1.len()),
-            bgdd2: Ram::new(RNG_LCD_BGDD2.len()),
+            bgdd1: Ram::new(RNG_LCD_BGDD1.len() * 2),
+            bgdd2: Ram::new(RNG_LCD_BGDD2.len() * 2),
             oam: Ram::new(RNG_LCD_OAM.len()),
             fbs: [fb::Framebuffer::default(); 2],
             fbi: 0,
@@ -588,13 +588,16 @@ fn test_palette_convert() {
 impl MemDevice for Lcd {
     fn read(&self, a: Address) -> Result<u8, ()> {
         if a.in_(RNG_LCD_BGDD1) {
-            self.bgdd1.read(a - RNG_LCD_BGDD1.0)
-        } else if a.in_(RNG_LCD_BGDD2) {
-            self.bgdd2.read(a - RNG_LCD_BGDD2.0)
-        } else if a.in_(RNG_CHAR_DAT) {
-            self.cdata.read(
-                a - RNG_CHAR_DAT.0 + Address((self.cdata_bank_select * RNG_CHAR_DAT.len()) as u16),
+            self.bgdd1.read(
+                a - RNG_LCD_BGDD1.0 + Address((self.bank_select * RNG_LCD_BGDD1.len()) as u16),
             )
+        } else if a.in_(RNG_LCD_BGDD2) {
+            self.bgdd2.read(
+                a - RNG_LCD_BGDD2.0 + Address((self.bank_select * RNG_LCD_BGDD2.len()) as u16),
+            )
+        } else if a.in_(RNG_CHAR_DAT) {
+            self.cdata
+                .read(a - RNG_CHAR_DAT.0 + Address((self.bank_select * RNG_CHAR_DAT.len()) as u16))
         } else if a.in_(RNG_LCD_OAM) {
             self.oam.read(a - RNG_LCD_OAM.0)
         } else {
@@ -609,7 +612,7 @@ impl MemDevice for Lcd {
                 REG_WY => Ok(self.wy),
                 REG_SCX => Ok(self.sx),
                 REG_SCY => Ok(self.sy),
-                REG_VBK => Ok(self.cdata_bank_select as u8),
+                REG_VBK => Ok(self.bank_select as u8),
                 REG_BCPS => Ok(self.bcps),
                 REG_BCPD => Ok(self.bcp[(self.bcps & PAL_DATA_IDX) as usize]),
                 REG_OCPS => Ok(self.ocps),
@@ -628,11 +631,13 @@ impl MemDevice for Lcd {
 
     fn write(&mut self, a: Address, v: u8) -> Result<(), ()> {
         if a.in_(RNG_LCD_BGDD1) {
-            self.bgdd1.write(a - RNG_LCD_BGDD1.0, v)
+            let adjusted = a + Address((self.bank_select * RNG_LCD_BGDD1.len()) as u16);
+            self.bgdd1.write(adjusted - RNG_LCD_BGDD1.0, v)
         } else if a.in_(RNG_LCD_BGDD2) {
-            self.bgdd2.write(a - RNG_LCD_BGDD2.0, v)
+            let adjusted = a + Address((self.bank_select * RNG_LCD_BGDD2.len()) as u16);
+            self.bgdd1.write(adjusted - RNG_LCD_BGDD2.0, v)
         } else if a.in_(RNG_CHAR_DAT) {
-            let adjusted = a + Address((self.cdata_bank_select * RNG_CHAR_DAT.len()) as u16);
+            let adjusted = a + Address((self.bank_select * RNG_CHAR_DAT.len()) as u16);
             self.cdata.write(adjusted - RNG_CHAR_DAT.0, v)?;
             self.update_tile_at(Address(adjusted.0 - adjusted.0 % 2));
             Ok(())
@@ -687,7 +692,7 @@ impl MemDevice for Lcd {
                     Ok(())
                 }
                 REG_VBK => {
-                    self.cdata_bank_select = usize::from(v & 0b1);
+                    self.bank_select = usize::from(v & 0b1);
                     Ok(())
                 }
                 REG_BCPS => {
