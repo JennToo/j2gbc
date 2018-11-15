@@ -95,6 +95,7 @@ pub struct Lcd {
     ocp: [u8; 0x40],
 
     obj_palettes: [CgbPalette; 8],
+    bg_palettes: [CgbPalette; 8],
 
     fbs: [fb::Framebuffer; 2],
     fbi: usize,
@@ -136,6 +137,7 @@ impl Lcd {
             ocp: [0; 0x40],
 
             obj_palettes: [[fb::DMG_COLOR_WHITE; 4]; 8],
+            bg_palettes: [[fb::DMG_COLOR_WHITE; 4]; 8],
 
             hblank_timer: Timer::new(
                 LINE_CYCLE_TIME,
@@ -547,27 +549,27 @@ impl Lcd {
         let obj_index = byte_offset.0 / (RNG_LCD_OAM.len() / OBJ_COUNT) as u16;
         self.objs[obj_index as usize] = self.read_obj(obj_index as u8);
     }
+}
 
-    fn update_obj_palettes(&mut self) {
-        let mut i = 0;
-        for pal in 0..8 {
-            for color_index in 0..4 {
-                let l = self.ocp[i];
-                let h = self.ocp[i + 1];
+fn load_color_from_data(data: &[u8], pal_out: &mut [CgbPalette]) {
+    let mut i = 0;
+    for pal in 0..8 {
+        for color_index in 0..4 {
+            let l = data[i];
+            let h = data[i + 1];
 
-                let r = (l & 0b0001_1111) as u16;
-                let g = ((l >> 5) | ((h & 0b11) << 3)) as u16;
-                let b = ((h >> 2) & 0b0001_1111) as u16;
-                let a = 255;
+            let r = (l & 0b0001_1111) as u16;
+            let g = ((l >> 5) | ((h & 0b11) << 3)) as u16;
+            let b = ((h >> 2) & 0b0001_1111) as u16;
+            let a = 255;
 
-                let ar = (r * 255 / 0x1F) as u8;
-                let ag = (g * 255 / 0x1F) as u8;
-                let ab = (b * 255 / 0x1F) as u8;
+            let ar = (r * 255 / 0x1F) as u8;
+            let ag = (g * 255 / 0x1F) as u8;
+            let ab = (b * 255 / 0x1F) as u8;
 
-                self.obj_palettes[pal as usize][color_index as usize] = [ar, ag, ab, a];
+            pal_out[pal as usize][color_index as usize] = [ar, ag, ab, a];
 
-                i += 2;
-            }
+            i += 2;
         }
     }
 }
@@ -702,6 +704,7 @@ impl MemDevice for Lcd {
                         }
                         self.bcps = (self.bcps & !PAL_DATA_IDX) | (idx as u8);
                     }
+                    load_color_from_data(&self.bcp, &mut self.bg_palettes);
                     Ok(())
                 }
                 REG_OCPS => {
@@ -718,7 +721,7 @@ impl MemDevice for Lcd {
                         }
                         self.ocps = (self.ocps & !PAL_DATA_IDX) | (idx as u8);
                     }
-                    self.update_obj_palettes();
+                    load_color_from_data(&self.ocp, &mut self.obj_palettes);
                     Ok(())
                 }
                 _ => {
