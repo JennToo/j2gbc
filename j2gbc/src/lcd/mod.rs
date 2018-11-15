@@ -347,7 +347,12 @@ impl Lcd {
                 )
             };
             let signed = self.get_bg_char_addr_start();
-            let char_row = self.read_char_row_at(char_, (translated_y % Wrapping(8)).0, signed, (flags & 0b0000_1000) >> 3 );
+            let char_row = self.read_char_row_at(
+                char_,
+                (translated_y % Wrapping(8)).0,
+                signed,
+                (flags & 0b0000_1000) >> 3,
+            );
 
             let color_index = char_row[(translated_x % Wrapping(8)).0 as usize];
             let color = self.bg_palettes[(flags & 0b111) as usize][color_index as usize];
