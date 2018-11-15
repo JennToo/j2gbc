@@ -1,0 +1,5 @@
+[WARIOLAND3]
+ranges = [
+    ["FEA0", "FF00"],
+    ["FF15", "FF16"],
+]

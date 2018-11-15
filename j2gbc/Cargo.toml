@@ -1,10 +1,9 @@
 [package]
 name = "j2gbc"
 version = "0.1.0"
-authors = ["Jennifer Wilcox <jennifer@nitori.nl>"]
+authors = ["Jennifer Wilcox <jennifer@nitori.org>"]
 
 [dependencies]
 log = "*"
-
-[dependencies.j2ds]
-version = "*"
+j2ds = "*"
+toml = "*"

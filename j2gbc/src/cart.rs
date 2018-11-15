@@ -8,6 +8,7 @@ use super::mbc::Mbc;
 use super::mem::{
     Address, ExtendedAddress, MemDevice, RNG_INTR_TABLE, RNG_ROM_BANK0, RNG_ROM_BANK1,
 };
+use mmu_exceptions::MmuExceptions;
 
 pub struct Cart {
     pub data: Vec<u8>,
@@ -80,6 +81,10 @@ impl Cart {
 
     pub fn set_sram(&mut self, buf: &[u8]) {
         self.mbc.set_sram(buf);
+    }
+
+    pub fn get_mmu_exceptions(&self) -> MmuExceptions {
+        MmuExceptions::from_title(self.name().as_str())
     }
 }
 

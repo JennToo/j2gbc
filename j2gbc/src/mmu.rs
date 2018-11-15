@@ -7,6 +7,7 @@ use cart::Cart;
 use input::Input;
 use lcd::Lcd;
 use mem::*;
+use mmu_exceptions::MmuExceptions;
 use timer::Timer;
 
 pub struct Mmu {
@@ -28,6 +29,8 @@ pub struct Mmu {
     pub pedantic: bool,
 
     pub watchpoints: HashSet<Address>,
+
+    exceptions: MmuExceptions,
 }
 
 impl Mmu {
@@ -39,6 +42,7 @@ impl Mmu {
             prepared_speed_switch: false,
             interrupt_enable: 0,
             interrupt_flag: 0,
+            exceptions: cart.get_mmu_exceptions(),
             cart,
             lcd: Box::new(Lcd::new()),
             audio: Audio::new(audio_sink),
@@ -176,7 +180,7 @@ impl Mmu {
 
 impl MemDevice for Mmu {
     fn read(&self, a: Address) -> Result<u8, ()> {
-        if self.pedantic {
+        if self.pedantic && !self.exceptions.allow(a) {
             self._read(a)
         } else {
             self._read(a).or(Ok(0))
@@ -184,7 +188,7 @@ impl MemDevice for Mmu {
     }
 
     fn write(&mut self, a: Address, v: u8) -> Result<(), ()> {
-        if self.pedantic {
+        if self.pedantic && !self.exceptions.allow(a) {
             self._write(a, v)
         } else {
             self._write(a, v).or(Ok(()))
