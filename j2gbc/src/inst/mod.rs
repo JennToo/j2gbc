@@ -347,7 +347,7 @@ impl Instruction {
             0xAF => Ok((Instruction::Logic(Logic::XorR(Register8::A)), 1)),
 
             0xC9 => Ok((Instruction::Control(Control::Ret), 1)),
-            0xD9 => Ok((Instruction::Control(Control::Ret), 1)),
+            0xD9 => Ok((Instruction::Control(Control::Reti), 1)),
 
             0xC0 => Ok((Instruction::Control(Control::RetNZ), 1)),
             0xD0 => Ok((Instruction::Control(Control::RetNC), 1)),
