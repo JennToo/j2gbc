@@ -22,6 +22,7 @@ pub const REG_INTR_ENABLE: Address = Address(0xFFFF);
 pub const REG_P1: Address = Address(0xFF00);
 pub const REG_DMA: Address = Address(0xFF46);
 pub const REG_KEY1: Address = Address(0xFF4D);
+pub const REG_RP: Address = Address(0xFF56);
 pub const REG_SVBK: Address = Address(0xFF70);
 pub const REG_SB: Address = Address(0xFF01);
 pub const REG_SC: Address = Address(0xFF02);

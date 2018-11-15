@@ -119,6 +119,9 @@ impl Mmu {
         if self.watchpoints.contains(&a) {
             info!("Write watchpoint for {:?}", a);
             Err(())
+        } else if a == REG_RP {
+            // IR not supported right now
+            Ok(())
         } else if a == REG_DMA {
             self.dma(Address((u16::from(v)) << 8))
         } else if a == REG_KEY1 {
