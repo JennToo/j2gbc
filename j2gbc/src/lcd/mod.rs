@@ -331,14 +331,28 @@ impl Lcd {
             let char_offset = Wrapping(u16::from(translated_x.0))
                 / Wrapping(u16::from(PIXEL_PER_CHAR))
                 + char_y_offset;
-            let char_addr = code_dat_start + Address(char_offset.0);
-            let char_ = self.read(char_addr).unwrap();
+            let (char_, flags) = if code_dat_start == RNG_LCD_BGDD1.0 {
+                (
+                    self.bgdd1.read(Address(char_offset.0)).unwrap(),
+                    self.bgdd1
+                        .read(Address(char_offset.0 + (RNG_LCD_BGDD1.len() as u16)))
+                        .unwrap(),
+                )
+            } else {
+                (
+                    self.bgdd2.read(Address(char_offset.0)).unwrap(),
+                    self.bgdd2
+                        .read(Address(char_offset.0 + (RNG_LCD_BGDD2.len() as u16)))
+                        .unwrap(),
+                )
+            };
             let signed = self.get_bg_char_addr_start();
             let char_row = self.read_char_row_at(char_, (translated_y % Wrapping(8)).0, signed);
 
             let color_index = char_row[(translated_x % Wrapping(8)).0 as usize];
-            let corrected_index = palette_convert(color_index, self.bgp) as usize;
-            row[screen_x as usize] = fb::DMG_COLORS[corrected_index];
+            let color = self.bg_palettes[(flags & 0b111) as usize][color_index as usize];
+
+            row[screen_x as usize] = color;
         }
 
         row
@@ -509,13 +523,6 @@ impl Lcd {
                         // 0 is always transparent
                         continue;
                     }
-                    let pal = if obj.high_palette() {
-                        self.obp1
-                    } else {
-                        self.obp0
-                    };
-                    //let corrected_index = palette_convert(color_index, pal) as usize;
-                    //let color = fb::DMG_COLORS[corrected_index];
                     let color = self.obj_palettes[obj.cgb_palette() as usize][color_index as usize];
 
                     if !obj.priority()
