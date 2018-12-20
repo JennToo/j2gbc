@@ -34,3 +34,53 @@ impl Framebuffer {
         &self.0
     }
 }
+
+#[derive(Copy, Clone)]
+pub struct TentativePixel {
+    color: Pixel,
+    has_priority: bool,
+    data_was_zero: bool,
+}
+
+impl TentativePixel {
+    pub fn new(color: Pixel, has_priority: bool, data_was_zero: bool) -> TentativePixel {
+        TentativePixel {
+            color,
+            has_priority,
+            data_was_zero,
+        }
+    }
+}
+
+// Based on a table from the Game Boy Programming Manual
+pub fn resolve_pixel_cgb(oam: Option<TentativePixel>, bg: TentativePixel) -> Pixel {
+    if let Some(oam) = oam {
+        if bg.has_priority || !oam.has_priority {
+            if bg.data_was_zero {
+                oam.color
+            } else {
+                bg.color
+            }
+        } else {
+            if oam.data_was_zero {
+                bg.color
+            } else {
+                oam.color
+            }
+        }
+    } else {
+        bg.color
+    }
+}
+
+pub fn resolve_pixel_dmg(oam: Option<TentativePixel>, bg: TentativePixel) -> Pixel {
+    if let Some(oam) = oam {
+        if oam.data_was_zero || !oam.has_priority {
+            bg.color
+        } else {
+            oam.color
+        }
+    } else {
+        bg.color
+    }
+}

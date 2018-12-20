@@ -246,9 +246,7 @@ impl Lcd {
     fn do_hblank_start(&mut self, cycle: u64) {
         if self.ly < fb::SCREEN_SIZE.1 as u8 {
             if self.should_render_this_frame(cycle) {
-                self.render_background_row();
-                self.render_window_row();
-                self.render_oam_row();
+                self.render_screen_row();
             }
             self.stat = (self.stat & 0b1111_1100) | MODE_00_MASK;
         }
@@ -285,22 +283,40 @@ impl Lcd {
         }
     }
 
-    fn render_background_row(&mut self) {
-        if !self.is_bg_enabled() {
-            return;
-        }
-        let row = self.render_tile_row(self.ly, self.sx, self.sy, self.get_bg_code_dat_start());
-        for screen_x in 0..fb::SCREEN_SIZE.0 {
-            let screen_y = self.ly;
-            self.get_back_framebuffer().set(
-                screen_x as usize,
-                screen_y as usize,
-                row[screen_x as usize],
-            );
+    fn render_screen_row(&mut self) {
+        let mut bg_screen_row =
+            [fb::TentativePixel::new(fb::DMG_COLOR_WHITE, false, true); fb::SCREEN_SIZE.0];
+        let mut oam_screen_row = [None; fb::SCREEN_SIZE.0];
+        self.render_background_row(&mut bg_screen_row);
+        self.render_window_row(&mut bg_screen_row);
+        self.render_oam_row(&mut oam_screen_row);
+
+        let y = self.ly as usize;
+        for x in 0..(fb::SCREEN_SIZE.0 as usize) {
+            let color = if self.cgb_mode {
+                fb::resolve_pixel_cgb(oam_screen_row[x], bg_screen_row[x])
+            } else {
+                fb::resolve_pixel_dmg(oam_screen_row[x], bg_screen_row[x])
+            };
+
+            self.get_back_framebuffer().set(x, y, color);
         }
     }
 
-    fn render_window_row(&mut self) {
+    fn render_background_row(&self, screen_row: &mut [fb::TentativePixel]) {
+        if !self.is_bg_enabled() {
+            return;
+        }
+        self.render_tile_row(
+            self.ly,
+            self.sx,
+            self.sy,
+            self.get_bg_code_dat_start(),
+            screen_row,
+        );
+    }
+
+    fn render_window_row(&self, screen_row: &mut [fb::TentativePixel]) {
         if !self.is_window_enabled() {
             return;
         }
@@ -311,20 +327,23 @@ impl Lcd {
         }
 
         let translated_y = self.ly - self.wy;
-        let row = self.render_tile_row(translated_y, 0, 0, self.get_window_code_dat_start());
-
-        let screen_y = self.ly;
-        for screen_x in adjusted_wx..(fb::SCREEN_SIZE.0 as u8) {
-            self.get_back_framebuffer().set(
-                screen_x as usize,
-                screen_y as usize,
-                row[screen_x as usize],
-            );
-        }
+        self.render_tile_row(
+            translated_y,
+            0,
+            0,
+            self.get_window_code_dat_start(),
+            screen_row,
+        );
     }
 
-    fn render_tile_row(&self, screen_y: u8, scx: u8, scy: u8, code_dat_start: Address) -> FrameRow {
-        let mut row = [fb::DMG_COLOR_WHITE; fb::SCREEN_SIZE.0];
+    fn render_tile_row(
+        &self,
+        screen_y: u8,
+        scx: u8,
+        scy: u8,
+        code_dat_start: Address,
+        screen_row: &mut [fb::TentativePixel],
+    ) {
         let translated_y = Wrapping(screen_y) + Wrapping(scy); // Implicit % 256
         for screen_x in 0..fb::SCREEN_SIZE.0 {
             let translated_x = Wrapping(screen_x as u8) + Wrapping(scx); // Implicit % 256
@@ -369,24 +388,26 @@ impl Lcd {
                 },
             );
 
-            let color = if self.cgb_mode {
+            let (color, data) = if self.cgb_mode {
                 let maybe_flipped_x = if flags & 0b0010_0000 != 0 {
                     Wrapping(7) - (translated_x % Wrapping(8))
                 } else {
                     translated_x % Wrapping(8)
                 };
                 let color_index = char_row[maybe_flipped_x.0 as usize];
-                self.bg_palettes[(flags & 0b111) as usize][color_index as usize]
+                (
+                    self.bg_palettes[(flags & 0b111) as usize][color_index as usize],
+                    color_index,
+                )
             } else {
                 let color_index = char_row[(translated_x % Wrapping(8)).0 as usize];
                 let corrected_index = palette_convert(color_index, self.bgp) as usize;
-                fb::DMG_COLORS[corrected_index]
+                (fb::DMG_COLORS[corrected_index], color_index)
             };
 
-            row[screen_x as usize] = color;
+            screen_row[screen_x as usize] =
+                fb::TentativePixel::new(color, flags & 0b1000_0000 != 0, data == 0);
         }
-
-        row
     }
 
     fn read_char_row_at(&self, char_: u8, row: u8, signed: bool, bank: u8) -> tile::MonoTileRow {
@@ -515,7 +536,7 @@ impl Lcd {
         }
     }
 
-    fn render_oam_row(&mut self) {
+    fn render_oam_row(&self, screen_row: &mut [Option<fb::TentativePixel>]) {
         if !self.is_oam_enabled() {
             return;
         }
@@ -571,15 +592,11 @@ impl Lcd {
                         fb::DMG_COLORS[corrected_index]
                     };
 
-                    if !obj.priority()
-                        || self
-                            .get_back_framebuffer()
-                            .get(full_x as usize, full_y as usize)
-                            == fb::DMG_COLOR_WHITE
-                    {
-                        self.get_back_framebuffer()
-                            .set(full_x as usize, full_y as usize, color);
-                    }
+                    screen_row[full_x as usize] = Some(fb::TentativePixel::new(
+                        color,
+                        !obj.priority(),
+                        color_index == 0,
+                    ));
                 }
 
                 y += 1;
