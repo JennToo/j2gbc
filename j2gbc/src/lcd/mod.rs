@@ -350,10 +350,17 @@ impl Lcd {
                         .unwrap(),
                 )
             };
+
+            let maybe_flipped_y = if self.cgb_mode && flags & 0b0100_0000 != 0 {
+                Wrapping(7) - (translated_y % Wrapping(8))
+            } else {
+                translated_y % Wrapping(8)
+            };
+
             let signed = self.get_bg_char_addr_start();
             let char_row = self.read_char_row_at(
                 char_,
-                (translated_y % Wrapping(8)).0,
+                maybe_flipped_y.0,
                 signed,
                 if self.cgb_mode {
                     (flags & 0b0000_1000) >> 3
