@@ -120,7 +120,7 @@ impl SquareChannel {
     }
 
     pub fn update_length(&mut self, len: u8) {
-        self.len = len;
+        self.len = 64 - len;
     }
 
     pub fn use_length_counter(&mut self, use_len: bool) {

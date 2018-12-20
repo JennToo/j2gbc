@@ -34,7 +34,7 @@ impl WaveChannel {
     }
 
     pub fn set_len(&mut self, len: u8) {
-        self.len = len;
+        self.len = 64 - len;
     }
 
     pub fn decrement_length(&mut self) {
