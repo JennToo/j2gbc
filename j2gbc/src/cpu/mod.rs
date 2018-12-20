@@ -43,14 +43,20 @@ pub struct Cpu {
 }
 
 impl Cpu {
-    pub fn new(c: Cart, audio_sink: Box<AudioSink>, cgb_mode: bool) -> Cpu {
+    pub fn new(c: Cart, audio_sink: Box<AudioSink>, mut cgb_mode: bool) -> Cpu {
         let initial_breakpoints = HashSet::new();
+
+        if cgb_mode {
+            cgb_mode = c.supports_cgb_mode();
+        }
+
+        debug!("CGB mode: {}", cgb_mode);
 
         let mut cpu = Cpu {
             registers: [0, 0, 0, 0, 0, 0, 0, 0],
             sp: Address(0xFFFE),
             pc: Address(0x100),
-            mmu: Mmu::new(c, audio_sink),
+            mmu: Mmu::new(c, audio_sink, cgb_mode),
             cycle: 0,
             interrupt_master_enable: false,
             halted: false,

@@ -17,6 +17,7 @@ pub struct Cart {
 
 const OFF_CART_NAME_START: usize = 0x134;
 const OFF_CART_NAME_END: usize = 0x142;
+const OFF_CART_CGB_SUPPORTED: usize = 0x143;
 const OFF_CART_TYPE: usize = 0x147;
 const OFF_CART_SIZE: usize = 0x148;
 const OFF_RAM_SIZE: usize = 0x149;
@@ -85,6 +86,11 @@ impl Cart {
 
     pub fn get_mmu_exceptions(&self) -> MmuExceptions {
         MmuExceptions::from_title(self.name().as_str())
+    }
+
+    pub fn supports_cgb_mode(&self) -> bool {
+        let v = self.data[OFF_CART_CGB_SUPPORTED];
+        v == 0x80 || v == 0xC0
     }
 }
 

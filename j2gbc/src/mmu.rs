@@ -41,7 +41,7 @@ pub struct Mmu {
 }
 
 impl Mmu {
-    pub fn new(cart: Cart, audio_sink: Box<AudioSink>) -> Mmu {
+    pub fn new(cart: Cart, audio_sink: Box<AudioSink>, cgb_mode: bool) -> Mmu {
         Mmu {
             internal_ram: Ram::new(RNG_INT_RAM_0.len() * 8),
             tiny_ram: Ram::new(RNG_INT_TINY_RAM.len()),
@@ -51,7 +51,7 @@ impl Mmu {
             interrupt_flag: 0,
             exceptions: cart.get_mmu_exceptions(),
             cart,
-            lcd: Box::new(Lcd::new()),
+            lcd: Box::new(Lcd::new(cgb_mode)),
             audio: Audio::new(audio_sink),
             timer: Timer::new(),
             input: Input::new(),

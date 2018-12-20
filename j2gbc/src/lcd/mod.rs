@@ -108,10 +108,12 @@ pub struct Lcd {
 
     tiles: [tile::MonoTile; TILE_COUNT],
     objs: [obj::Obj; OBJ_COUNT],
+
+    cgb_mode: bool,
 }
 
 impl Lcd {
-    pub fn new() -> Lcd {
+    pub fn new(cgb_mode: bool) -> Lcd {
         Lcd {
             lcdc: 0x83,
             stat: 0,
@@ -159,6 +161,8 @@ impl Lcd {
 
             tiles: [tile::MonoTile::default(); TILE_COUNT],
             objs: [obj::Obj::default(); OBJ_COUNT],
+
+            cgb_mode,
         }
     }
 
@@ -351,11 +355,20 @@ impl Lcd {
                 char_,
                 (translated_y % Wrapping(8)).0,
                 signed,
-                (flags & 0b0000_1000) >> 3,
+                if self.cgb_mode {
+                    (flags & 0b0000_1000) >> 3
+                } else {
+                    0
+                },
             );
 
             let color_index = char_row[(translated_x % Wrapping(8)).0 as usize];
-            let color = self.bg_palettes[(flags & 0b111) as usize][color_index as usize];
+            let color = if self.cgb_mode {
+                self.bg_palettes[(flags & 0b111) as usize][color_index as usize]
+            } else {
+                let corrected_index = palette_convert(color_index, self.bgp) as usize;
+                fb::DMG_COLORS[corrected_index]
+            };
 
             row[screen_x as usize] = color;
         }
@@ -514,7 +527,12 @@ impl Lcd {
                 }
 
                 let index_y = if obj.yflip() { hi_y - 1 - y } else { y };
-                let row = self.read_char_row_at(char_, index_y, false, obj.bank());
+                let row = self.read_char_row_at(
+                    char_,
+                    index_y,
+                    false,
+                    if self.cgb_mode { obj.bank() } else { 0 },
+                );
                 for x in 0..8 {
                     let full_x = x as isize + obj.x as isize - 8;
 
@@ -528,7 +546,17 @@ impl Lcd {
                         // 0 is always transparent
                         continue;
                     }
-                    let color = self.obj_palettes[obj.cgb_palette() as usize][color_index as usize];
+                    let color = if self.cgb_mode {
+                        self.obj_palettes[obj.cgb_palette() as usize][color_index as usize]
+                    } else {
+                        let pal = if obj.high_palette() {
+                            self.obp1
+                        } else {
+                            self.obp0
+                        };
+                        let corrected_index = palette_convert(color_index, pal) as usize;
+                        fb::DMG_COLORS[corrected_index]
+                    };
 
                     if !obj.priority()
                         || self
@@ -647,7 +675,7 @@ impl MemDevice for Lcd {
             self.bgdd1.write(adjusted - RNG_LCD_BGDD1.0, v)
         } else if a.in_(RNG_LCD_BGDD2) {
             let adjusted = a + Address((self.bank_select * RNG_LCD_BGDD2.len()) as u16);
-            self.bgdd1.write(adjusted - RNG_LCD_BGDD2.0, v)
+            self.bgdd2.write(adjusted - RNG_LCD_BGDD2.0, v)
         } else if a.in_(RNG_CHAR_DAT) {
             let adjusted = a + Address((self.bank_select * RNG_CHAR_DAT.len()) as u16);
             self.cdata.write(adjusted - RNG_CHAR_DAT.0, v)?;
@@ -747,11 +775,5 @@ impl MemDevice for Lcd {
                 }
             }
         }
-    }
-}
-
-impl Default for Lcd {
-    fn default() -> Lcd {
-        Lcd::new()
     }
 }
