@@ -33,7 +33,11 @@ fn load_system(args: &clap::ArgMatches<'static>) -> (System, save::Saver) {
     info!("ROM Size: {} bytes", c.rom_size());
     info!("RAM Size: {} bytes", c.ram_size());
 
-    let sink = audio::CpalSink::new().unwrap();
+    let sink: Box<j2gbc::audio::AudioSink> = if !args.is_present("no-audio") {
+        Box::new(audio::CpalSink::new().unwrap())
+    } else {
+        Box::new(j2gbc::audio::NullSink)
+    };
 
     let cgb_mode = if let Some(m) = args.value_of("mode") {
         m == "cgb"
@@ -41,7 +45,7 @@ fn load_system(args: &clap::ArgMatches<'static>) -> (System, save::Saver) {
         true
     };
 
-    let mut cpu = j2gbc::cpu::Cpu::new(c, Box::new(sink), cgb_mode);
+    let mut cpu = j2gbc::cpu::Cpu::new(c, sink, cgb_mode);
     cpu.mmu.pedantic = !args.is_present("no-pedantic-mmu");
     (System::new(cpu), saver)
 }
@@ -60,6 +64,10 @@ fn parse_args() -> clap::ArgMatches<'static> {
         .arg(clap::Arg::with_name("no-pedantic-mmu")
             .long("no-pedantic-mmu")
             .help("Disable pedantic MMU. Otherwise by default the MMU will trap if an invalid memory access occurs.")
+        )
+        .arg(clap::Arg::with_name("no-audio")
+             .long("no-audio")
+             .help("Disable audio")
         )
         .arg(
             clap::Arg::with_name("rom")
