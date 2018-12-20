@@ -1,9 +1,5 @@
 #![allow(unknown_lints)]
 
-extern crate j2ds;
-extern crate log;
-extern crate toml;
-
 pub mod alu;
 pub mod audio;
 pub mod cart;

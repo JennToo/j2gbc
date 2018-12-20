@@ -14,7 +14,7 @@ pub struct LcdRender {
     slice: gfx::Slice<ResourcesT>,
 }
 
-gfx_defines!{
+gfx_defines! {
     vertex Vertex {
         pos: [f32; 2] = "a_Pos",
         uv: [f32; 2] = "a_Uv",
@@ -40,7 +40,8 @@ impl LcdRender {
                 gfx::memory::Bind::SHADER_RESOURCE,
                 gfx::memory::Usage::Dynamic,
                 Some(gfx::format::ChannelType::Unorm),
-            ).unwrap();
+            )
+            .unwrap();
         let lcd_view = factory
             .view_texture_as_shader_resource::<(SurfaceFormat, gfx::format::Unorm)>(
                 &lcd_tex,
@@ -51,7 +52,8 @@ impl LcdRender {
                     gfx::format::ChannelSource::Z,
                     gfx::format::ChannelSource::W,
                 ),
-            ).unwrap();
+            )
+            .unwrap();
         let lcd_sampler = factory.create_sampler(gfx::texture::SamplerInfo::new(
             gfx::texture::FilterMethod::Scale,
             gfx::texture::WrapMode::Clamp,
@@ -86,7 +88,8 @@ impl LcdRender {
                 None,
                 self.lcd_tex.get_info().to_image_info(0),
                 system.get_framebuffer().raw(),
-            ).unwrap();
+            )
+            .unwrap();
 
         encoder.draw(&self.slice, &self.pso, &self.data);
     }

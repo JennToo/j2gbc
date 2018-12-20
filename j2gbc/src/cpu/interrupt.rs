@@ -1,4 +1,4 @@
-use mem::Address;
+use crate::mem::Address;
 
 // TODO: Eventually move the interrupt handler to in here
 

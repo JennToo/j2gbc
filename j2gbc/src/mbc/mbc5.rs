@@ -1,7 +1,9 @@
 use log::error;
 
 use super::Mbc;
-use mem::{Address, AddressRange, ExtendedAddress, MemDevice, Ram, RNG_EXT_RAM, RNG_ROM_BANK1};
+use crate::mem::{
+    Address, AddressRange, ExtendedAddress, MemDevice, Ram, RNG_EXT_RAM, RNG_ROM_BANK1,
+};
 
 const RNG_RAMG: AddressRange = AddressRange(Address(0x0000), Address(0x2000));
 const RNG_LOWER_BANK_SELECT: AddressRange = AddressRange(Address(0x2000), Address(0x3000));

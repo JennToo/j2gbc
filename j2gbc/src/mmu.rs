@@ -2,14 +2,14 @@ use std::collections::HashSet;
 
 use log::{error, info};
 
-use alu::hi_lo;
-use audio::{Audio, AudioSink};
-use cart::Cart;
-use input::Input;
-use lcd::Lcd;
-use mem::*;
-use mmu_exceptions::MmuExceptions;
-use timer::Timer;
+use crate::alu::hi_lo;
+use crate::audio::{Audio, AudioSink};
+use crate::cart::Cart;
+use crate::input::Input;
+use crate::lcd::Lcd;
+use crate::mem::*;
+use crate::mmu_exceptions::MmuExceptions;
+use crate::timer::Timer;
 
 pub struct Mmu {
     internal_ram: Ram,

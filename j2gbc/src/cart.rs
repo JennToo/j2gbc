@@ -1,14 +1,14 @@
 use std::io;
 use std::io::Read;
 
-use super::mbc::mbc0::Mbc0;
-use super::mbc::mbc1::Mbc1;
-use super::mbc::mbc5::Mbc5;
-use super::mbc::Mbc;
-use super::mem::{
+use crate::mbc::mbc0::Mbc0;
+use crate::mbc::mbc1::Mbc1;
+use crate::mbc::mbc5::Mbc5;
+use crate::mbc::Mbc;
+use crate::mem::{
     Address, ExtendedAddress, MemDevice, RNG_INTR_TABLE, RNG_ROM_BANK0, RNG_ROM_BANK1,
 };
-use mmu_exceptions::MmuExceptions;
+use crate::mmu_exceptions::MmuExceptions;
 
 pub struct Cart {
     pub data: Vec<u8>,

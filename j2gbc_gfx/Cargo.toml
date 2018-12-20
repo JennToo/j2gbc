@@ -2,6 +2,7 @@
 name = "j2gbc_gfx"
 version = "0.1.0"
 authors = ["Jennifer Wilcox <jennifer@nitori.org>"]
+edition = "2018"
 
 [dependencies]
 gfx = "*"

@@ -1,11 +1,9 @@
 use j2ds::{next_timer_event, Timer, TimerEvent};
 
-use super::mixer::Mixer;
-use super::noise::NoiseChannel;
-use super::square::SquareChannel;
-use super::wave::WaveChannel;
-use super::AudioSink;
-use cpu::CLOCK_RATE;
+use super::{
+    mixer::Mixer, noise::NoiseChannel, square::SquareChannel, wave::WaveChannel, AudioSink,
+};
+use crate::cpu::CLOCK_RATE;
 
 pub struct Synth {
     sink: Box<AudioSink>,

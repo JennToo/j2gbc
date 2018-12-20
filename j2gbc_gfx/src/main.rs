@@ -1,16 +1,3 @@
-extern crate clap;
-extern crate gfx;
-extern crate gfx_device_gl;
-extern crate gfx_window_glutin;
-extern crate glutin;
-extern crate imgui;
-extern crate imgui_gfx_renderer;
-extern crate imgui_glutin_support;
-extern crate j2ds;
-extern crate j2gbc;
-extern crate lazy_static;
-extern crate log;
-
 use std::fs::File;
 use std::io::Read;
 

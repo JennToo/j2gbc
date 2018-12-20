@@ -263,7 +263,8 @@ impl DebuggerUi {
             system.cpu.interrupt_master_enable,
             system.cpu[Register8::H],
             system.cpu[Register8::L]
-        ).clone();
+        )
+        .clone();
 
         DebuggerCache { registers }
     }

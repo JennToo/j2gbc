@@ -1,17 +1,21 @@
-use std::cmp::min;
-use std::collections::HashSet;
-use std::num::Wrapping;
-use std::ops::{Index, IndexMut};
-use std::time::Duration;
+use std::{
+    cmp::min,
+    collections::HashSet,
+    num::Wrapping,
+    ops::{Index, IndexMut},
+    time::Duration,
+};
 
 use log::{debug, error};
 
-use super::alu::*;
-use super::audio::AudioSink;
-use super::cart::Cart;
-use super::inst::{Arith, Bits, Control, Instruction, Load, Logic};
-use super::mem::{Address, MemDevice};
-use super::mmu::Mmu;
+use crate::{
+    alu::*,
+    audio::AudioSink,
+    cart::Cart,
+    inst::{Arith, Bits, Control, Instruction, Load, Logic},
+    mem::{Address, MemDevice},
+    mmu::Mmu,
+};
 
 pub const CLOCK_RATE: u64 = 4_194_304;
 pub const LONGEST_INSTRUCTION_CYCLE: u64 = 20; // LD (a16),SP

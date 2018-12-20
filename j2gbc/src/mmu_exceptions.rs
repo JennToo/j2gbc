@@ -1,5 +1,6 @@
-use mem::{Address, AddressRange};
 use toml::Value;
+
+use crate::mem::{Address, AddressRange};
 
 #[derive(Default)]
 pub struct MmuExceptions {

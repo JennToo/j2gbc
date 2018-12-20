@@ -4,11 +4,11 @@ use std::io::Cursor;
 use std::time::Duration;
 
 use super::{Arith, Cpu, Instruction, Load, Operand, Register16, Register8};
-use alu::Flags;
-use audio::NullSink;
-use cart::Cart;
-use mem::{Address, MemDevice};
-use system::System;
+use crate::alu::Flags;
+use crate::audio::NullSink;
+use crate::cart::Cart;
+use crate::mem::{Address, MemDevice};
+use crate::system::System;
 
 const INTIAL_PC: Address = Address(0x0150);
 const INITAL_SP: Address = Address(0xFFFE);

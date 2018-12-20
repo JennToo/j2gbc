@@ -1,7 +1,7 @@
 use log::error;
 
 use super::Mbc;
-use mem::{Address, ExtendedAddress, MemDevice, Ram, RNG_EXT_RAM, RNG_ROM_BANK1};
+use crate::mem::{Address, ExtendedAddress, MemDevice, Ram, RNG_EXT_RAM, RNG_ROM_BANK1};
 
 pub struct Mbc0 {
     rom: Vec<u8>,

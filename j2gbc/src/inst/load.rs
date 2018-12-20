@@ -1,8 +1,8 @@
 use std::fmt;
 use std::fmt::Display;
 
-use cpu::{Operand, Register16};
-use mem::Address;
+use crate::cpu::{Operand, Register16};
+use crate::mem::Address;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Load {

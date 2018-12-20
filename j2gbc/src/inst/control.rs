@@ -1,7 +1,7 @@
 use std::fmt;
 use std::fmt::Display;
 
-use mem::Address;
+use crate::mem::Address;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Control {
