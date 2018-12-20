@@ -362,10 +362,16 @@ impl Lcd {
                 },
             );
 
-            let color_index = char_row[(translated_x % Wrapping(8)).0 as usize];
             let color = if self.cgb_mode {
+                let maybe_flipped_x = if flags & 0b0010_0000 != 0 {
+                    Wrapping(7) - (translated_x % Wrapping(8))
+                } else {
+                    translated_x % Wrapping(8)
+                };
+                let color_index = char_row[maybe_flipped_x.0 as usize];
                 self.bg_palettes[(flags & 0b111) as usize][color_index as usize]
             } else {
+                let color_index = char_row[(translated_x % Wrapping(8)).0 as usize];
                 let corrected_index = palette_convert(color_index, self.bgp) as usize;
                 fb::DMG_COLORS[corrected_index]
             };
