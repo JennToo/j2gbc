@@ -172,7 +172,7 @@ impl MemDevice for Audio {
                     self.synth.chan1.set_freqeuncy_sweepers(
                         v >> 4 & 0b111,
                         v & 0b111,
-                        v & 0b1000 != 0,
+                        v & 0b1000 == 0,
                     );
                     Ok(())
                 }
