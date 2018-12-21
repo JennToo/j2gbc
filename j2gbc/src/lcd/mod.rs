@@ -542,7 +542,7 @@ impl Lcd {
         }
 
         for i in 0..OBJ_COUNT {
-            let obj = self.objs[i];
+            let obj = self.objs[OBJ_COUNT - i - 1];
 
             let (char_, hi_y) = if self.lcdc & OAM_TALL_FLAG != 0 {
                 (obj.char_ & 0b1111_1110, 16)
