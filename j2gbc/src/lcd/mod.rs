@@ -560,13 +560,9 @@ impl Lcd {
                 (obj.char_, 8)
             };
 
-            // This isn't a for y in 0..hi_y because it's super slow
-            // in debug builds for some reason
-            let mut y = 0;
-            while y < hi_y {
+            for y in 0..hi_y {
                 let full_y = y as isize + obj.y as isize - 16;
                 if full_y > fb::SCREEN_SIZE.1 as isize || full_y < 0 || full_y != self.ly as isize {
-                    y += 1;
                     continue;
                 }
 
@@ -606,8 +602,6 @@ impl Lcd {
                         color_index == 0,
                     ));
                 }
-
-                y += 1;
             }
         }
     }
