@@ -41,7 +41,6 @@ const BYTES_PER_CHAR: u16 = 16;
 const BYTES_PER_ROW: u16 = 2;
 const BG_CHARS_PER_ROW: u8 = 32;
 const PIXEL_PER_CHAR: u8 = 8;
-const CHARS_PER_BANK: u8 = 255;
 
 const LYC_MATCH_INT_FLAG: u8 = 0b0100_0000;
 const MODE_10_INT_FLAG: u8 = 0b0010_0000;
@@ -67,9 +66,6 @@ const TILE_COUNT: usize = 384 * 2;
 const OBJ_COUNT: usize = 40;
 
 const PAL_DATA_IDX: u8 = 0b11_1111;
-
-pub type BgBuffer = [BgRow; 256];
-type BgRow = [fb::Pixel; 256];
 
 type CgbPalette = [fb::Pixel; 4];
 
@@ -475,63 +471,6 @@ impl Lcd {
         } else {
             Address(0x9C00)
         }
-    }
-
-    pub fn render_char_dat(&self, high: bool) -> Box<fb::Framebuffer> {
-        let mut fb = Box::new(fb::Framebuffer::default());
-
-        const CHARS_PER_ROW: u8 = (fb::SCREEN_SIZE.0 as u8 / PIXEL_PER_CHAR);
-        for char_ in 0..CHARS_PER_BANK {
-            let base_x = (char_ % CHARS_PER_ROW) * 8;
-            let base_y = (char_ / CHARS_PER_ROW) * 8;
-
-            for y in 0..PIXEL_PER_CHAR {
-                let row = self.read_char_row_at(char_, y, high, 0);
-                for x in 0..PIXEL_PER_CHAR {
-                    let color_index = row[x as usize];
-                    let corrected_index = palette_convert(color_index, self.bgp) as usize;
-                    fb.set(
-                        (base_x + x) as usize,
-                        (base_y + y) as usize,
-                        fb::DMG_COLORS[corrected_index],
-                    );
-                }
-            }
-        }
-
-        fb
-    }
-
-    pub fn render_background(&self, first: bool) -> Box<BgBuffer> {
-        let mut fb = Box::new([[[255, 255, 0, 255]; 256]; 256]);
-
-        let code_start = if first {
-            Address(0x9800)
-        } else {
-            Address(0x9C00)
-        };
-        let signed = self.get_bg_char_addr_start();
-
-        for char_y in 0..BG_CHARS_PER_ROW {
-            for char_x in 0..BG_CHARS_PER_ROW {
-                let char_offset =
-                    Address(u16::from(char_x) + u16::from(char_y) * u16::from(BG_CHARS_PER_ROW));
-                let char_ = self.read(code_start + char_offset).unwrap();
-
-                for y in 0..PIXEL_PER_CHAR {
-                    let row = self.read_char_row_at(char_, y, signed, 0);
-                    for x in 0..PIXEL_PER_CHAR {
-                        let color_index = row[x as usize];
-                        let corrected_index = palette_convert(color_index, self.bgp) as usize;
-                        fb[(char_y * PIXEL_PER_CHAR + y) as usize]
-                            [(char_x * PIXEL_PER_CHAR + x) as usize] =
-                            fb::DMG_COLORS[corrected_index];
-                    }
-                }
-            }
-        }
-
-        fb
     }
 
     fn read_obj(&self, index: u8) -> obj::Obj {
