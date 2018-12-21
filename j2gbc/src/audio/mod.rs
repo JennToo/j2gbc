@@ -304,6 +304,10 @@ impl MemDevice for Audio {
                 }
                 REG_NR50 => {
                     self.nr50 = v;
+                    self.synth.mixer.set_master_volumes(
+                        ((v >> 4) & 0b111) as f32 / 7.,
+                        (v & 0b111) as f32 / 7.,
+                    );
                     Ok(())
                 }
                 REG_NR51 => {
