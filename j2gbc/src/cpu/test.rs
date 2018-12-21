@@ -390,14 +390,12 @@ fn test_blarg_11_op_a_hl() {
 
 fn run_blarg_test(path: &str, sec_to_run: u64, expected: &[u8], expected_addr: Address) {
     let cart_file = File::open(path).unwrap();
-    let cart = Cart::load(cart_file).unwrap();
-    let cpu = Cpu::new(cart, Box::new(NullSink), false);
-    let mut system = System::new(cpu);
+    let mut system = System::new(cart_file, Box::new(NullSink), false).unwrap();
 
     system.run_for_duration(&Duration::from_secs(sec_to_run));
 
     for (i, e) in expected.iter().enumerate() {
         let addr = expected_addr + Address(i as u16);
-        assert_eq!(system.cpu.mmu.read(addr).unwrap(), *e);
+        assert_eq!(system.debugger().read_mem(addr).unwrap(), *e);
     }
 }

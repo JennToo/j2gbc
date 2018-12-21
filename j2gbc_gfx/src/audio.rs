@@ -5,7 +5,7 @@ use std::thread;
 use j2ds::{ElasticPopResult, ElasticRingBuffer};
 use log::info;
 
-use j2gbc::audio::AudioSink;
+use j2gbc::AudioSink;
 
 pub struct CpalSink {
     queue: Arc<Mutex<ElasticRingBuffer<(f32, f32)>>>,

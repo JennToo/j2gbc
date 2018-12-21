@@ -1,15 +1,23 @@
 #![allow(unknown_lints)]
 
-pub mod alu;
-pub mod audio;
-pub mod cart;
-pub mod cpu;
-pub mod input;
-pub mod inst;
-pub mod lcd;
-pub mod mbc;
-pub mod mem;
-pub mod mmu;
+mod alu;
+mod audio;
+mod cart;
+mod cpu;
+pub mod debug;
+mod input;
+mod inst;
+mod lcd;
+mod mbc;
+mod mem;
+mod mmu;
 mod mmu_exceptions;
-pub mod system;
-pub mod timer;
+mod system;
+mod timer;
+
+pub use crate::{
+    audio::{AudioSink, NullSink},
+    input::Button,
+    lcd::fb::{Framebuffer, SCREEN_SIZE},
+    system::System,
+};

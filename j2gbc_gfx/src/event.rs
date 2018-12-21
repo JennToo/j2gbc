@@ -2,7 +2,7 @@ use std;
 use std::time::Duration;
 
 use glutin::{ElementState, Event, EventsLoop, KeyboardInput, VirtualKeyCode, WindowEvent};
-use j2gbc::{input::Button, system::System};
+use j2gbc::{Button, System};
 use log::info;
 
 use crate::{render::Renderer, timer::DeltaTimer};
@@ -58,11 +58,10 @@ fn handle_input(input: &KeyboardInput, system: &mut System) {
     if let Some(b) = keycode_to_button(input.virtual_keycode.unwrap()) {
         match input.state {
             ElementState::Pressed => {
-                system.cpu.mmu.input.activate_button(b);
-                system.cpu.request_p1_int();
+                system.activate_button(b);
             }
             ElementState::Released => {
-                system.cpu.mmu.input.deactivate_button(b);
+                system.deactivate_button(b);
             }
         }
     }

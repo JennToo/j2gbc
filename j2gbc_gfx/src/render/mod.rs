@@ -1,7 +1,7 @@
 use gfx;
 use gfx::Device;
 use glutin::GlContext;
-use j2gbc::system::System;
+use j2gbc::System;
 use std::time::Duration;
 
 mod lcd;

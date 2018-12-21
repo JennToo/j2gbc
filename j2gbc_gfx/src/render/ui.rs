@@ -4,8 +4,7 @@ use glutin::Event;
 use imgui::*;
 use imgui_gfx_renderer::{Renderer, Shaders};
 use imgui_glutin_support;
-use j2gbc::cpu::Register8;
-use j2gbc::mem::Address;
+use j2gbc::debug::{Address, Register8};
 
 use super::*;
 
@@ -217,19 +216,19 @@ impl DebuggerUi {
             .opened(visibility)
             .collapsible(false)
             .build(|| {
-                if !system.cpu.debug_halted {
+                if !system.debugger().is_halted_on_debugger() {
                     if ui.button(im_str!("Pause"), ImVec2::new(100., 25.)) {
-                        system.cpu.debug_halted = true;
+                        system.debugger().pause();
                         self.cache = None;
                     }
                 } else {
                     if ui.button(im_str!("Resume"), ImVec2::zero()) {
-                        system.cpu.debug_halted = false;
+                        system.debugger().resume();
                         self.cache = None;
                     }
                     ui.same_line(0.);
                     if ui.button(im_str!("Step"), ImVec2::zero()) {
-                        let _ = system.cpu.run_cycle();
+                        system.debugger().step();
                         self.cache = None;
                     }
 
@@ -247,22 +246,23 @@ impl DebuggerUi {
     }
 
     fn generate_cache(system: &mut System) -> DebuggerCache {
+        let debug = system.debugger();
         let registers = im_str!(
             " A: 0x{:02x}   F: 0x{:02x}    SP: {}
  B: 0x{:02x}   C: 0x{:02x}    PC: {}
  D: 0x{:02x}   E: 0x{:02x}   IME: {}
  H: 0x{:02x}   L: 0x{:02x}",
-            system.cpu[Register8::A],
-            system.cpu[Register8::F],
-            system.cpu.sp,
-            system.cpu[Register8::B],
-            system.cpu[Register8::C],
-            system.cpu.pc,
-            system.cpu[Register8::D],
-            system.cpu[Register8::E],
-            system.cpu.interrupt_master_enable,
-            system.cpu[Register8::H],
-            system.cpu[Register8::L]
+            debug.read_reg(Register8::A),
+            debug.read_reg(Register8::F),
+            debug.read_sp(),
+            debug.read_reg(Register8::B),
+            debug.read_reg(Register8::C),
+            debug.read_pc(),
+            debug.read_reg(Register8::D),
+            debug.read_reg(Register8::E),
+            debug.read_ime(),
+            debug.read_reg(Register8::H),
+            debug.read_reg(Register8::L),
         )
         .clone();
 
@@ -313,7 +313,7 @@ struct DisassemblyCache {
 }
 
 impl DisassemblyUi {
-    fn draw<'a, 'ui>(&mut self, ui: &mut Ui<'ui>, visibility: &'a mut bool, system: &System) {
+    fn draw<'a, 'ui>(&mut self, ui: &mut Ui<'ui>, visibility: &'a mut bool, system: &mut System) {
         if !*visibility {
             return;
         }
@@ -321,12 +321,12 @@ impl DisassemblyUi {
             .size((600., 300.), ImGuiCond::FirstUseEver)
             .opened(visibility)
             .build(|| {
-                if !system.cpu.debug_halted {
+                if !system.debugger().is_halted_on_debugger() {
                     ui.text(im_str!("Pause execution to view disassembly"));
                     return;
                 }
                 if self.cache.is_none()
-                    || self.cache.as_ref().unwrap().start_address != system.cpu.pc
+                    || self.cache.as_ref().unwrap().start_address != system.debugger().read_pc()
                 {
                     self.generate_cache(system);
                 }
@@ -335,14 +335,15 @@ impl DisassemblyUi {
             });
     }
 
-    fn generate_cache(&mut self, system: &System) {
+    fn generate_cache(&mut self, system: &mut System) {
+        let debug = system.debugger();
         let mut disassembly = String::default();
 
-        let mut address = system.cpu.pc;
+        let mut address = debug.read_pc();
         for _ in 0..INSTRUCTION_PRINT_COUNT {
-            match system.cpu.fetch_instruction(address) {
+            match debug.fetch_instruction(address) {
                 Result::Ok((ins, len)) => {
-                    if address == system.cpu.pc {
+                    if address == debug.read_pc() {
                         disassembly += format!(" => {}: {}\n", address, ins).as_str();
                     } else {
                         disassembly += format!("    {}: {}\n", address, ins).as_str();
@@ -356,7 +357,7 @@ impl DisassemblyUi {
             }
         }
         self.cache = Some(DisassemblyCache {
-            start_address: system.cpu.pc,
+            start_address: debug.read_pc(),
             disassembly: ImString::new(disassembly),
         });
     }
@@ -380,6 +381,8 @@ impl BreakpointsUi {
             return;
         }
 
+        let mut debug = system.debugger();
+
         ui.window(im_str!("Breakpoints"))
             .always_auto_resize(true)
             .opened(visibility)
@@ -393,14 +396,14 @@ impl BreakpointsUi {
                 {
                     let address =
                         Address(u16::from_str_radix(self.address_buffer.to_str(), 16).unwrap());
-                    system.cpu.breakpoints.insert(address);
+                    debug.add_breakpoint(address);
                     self.address_buffer = ImString::with_capacity(32);
                 }
 
                 ui.separator();
 
                 let mut to_remove = vec![];
-                for bp in system.cpu.breakpoints.iter() {
+                for bp in debug.get_breakpoints() {
                     if ui.button(im_str!("X"), ImVec2::zero()) {
                         to_remove.push(*bp);
                     }
@@ -408,7 +411,7 @@ impl BreakpointsUi {
                     ui.text(im_str!("{}", bp));
                 }
                 for r in &to_remove {
-                    system.cpu.breakpoints.remove(r);
+                    debug.remove_breakpoint(*r);
                 }
             });
     }

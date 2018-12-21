@@ -3,7 +3,7 @@ use std::io::Write;
 use std::path::PathBuf;
 use std::time::Instant;
 
-use j2gbc::system::System;
+use j2gbc::System;
 
 pub struct Saver {
     path: PathBuf,
@@ -22,7 +22,7 @@ impl Saver {
         if self.timer.elapsed().as_secs() > 0 {
             self.timer = Instant::now();
             let mut f = File::create(&self.path).unwrap();
-            f.write(system.cpu.mmu.cart.get_sram()).unwrap();
+            f.write(system.read_cart_sram()).unwrap();
         }
     }
 }

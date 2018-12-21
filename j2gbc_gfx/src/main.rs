@@ -1,8 +1,7 @@
 use std::fs::File;
 use std::io::Read;
 
-use j2gbc::system::System;
-use log::info;
+use j2gbc::{AudioSink, NullSink, System};
 
 mod audio;
 mod event;
@@ -15,28 +14,11 @@ fn load_system(args: &clap::ArgMatches<'static>) -> (System, save::Saver) {
     let cart_path = args.value_of("rom").unwrap();
 
     let cart_file = File::open(cart_path.clone()).unwrap();
-    let mut c = j2gbc::cart::Cart::load(cart_file).unwrap();
-    let save_path = format!("{}.sav", cart_path);
-    if let Ok(mut f) = File::open(&save_path) {
-        let mut buf = Vec::new();
-        if f.read_to_end(&mut buf).is_ok() {
-            println!("Loaded save file {}", save_path);
-        }
-        c.set_sram(buf.as_slice());
-    }
-    let saver = save::Saver::new(save_path.as_str());
 
-    info!("Loaded cart {}:", cart_path);
-    info!("Name: {}", c.name());
-    info!("File Size: {} bytes", c.data.len());
-    info!("Cart type: {}", c.type_());
-    info!("ROM Size: {} bytes", c.rom_size());
-    info!("RAM Size: {} bytes", c.ram_size());
-
-    let sink: Box<j2gbc::audio::AudioSink> = if !args.is_present("no-audio") {
+    let sink: Box<AudioSink> = if !args.is_present("no-audio") {
         Box::new(audio::CpalSink::new().unwrap())
     } else {
-        Box::new(j2gbc::audio::NullSink)
+        Box::new(NullSink)
     };
 
     let cgb_mode = if let Some(m) = args.value_of("mode") {
@@ -45,9 +27,20 @@ fn load_system(args: &clap::ArgMatches<'static>) -> (System, save::Saver) {
         true
     };
 
-    let mut cpu = j2gbc::cpu::Cpu::new(c, sink, cgb_mode);
-    cpu.mmu.pedantic = !args.is_present("no-pedantic-mmu");
-    (System::new(cpu), saver)
+    let mut system = System::new(cart_file, sink, cgb_mode).unwrap();
+    system.set_mmu_pedantic(!args.is_present("no-pedantic-mmu"));
+
+    let save_path = format!("{}.sav", cart_path);
+    if let Ok(mut f) = File::open(&save_path) {
+        let mut buf = Vec::new();
+        if f.read_to_end(&mut buf).is_ok() {
+            println!("Loaded save file {}", save_path);
+        }
+        system.load_cart_sram(buf.as_slice());
+    }
+    let saver = save::Saver::new(save_path.as_str());
+
+    (system, saver)
 }
 
 fn parse_args() -> clap::ArgMatches<'static> {
