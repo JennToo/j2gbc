@@ -1,3 +1,5 @@
+use crate::system::SystemMode;
+
 pub const SCREEN_SIZE: (usize, usize) = (160, 144);
 pub const DMG_COLOR_WHITE: Pixel = [234, 255, 186, 255];
 pub const DMG_COLOR_LIGHT_GRAY: Pixel = [150, 187, 146, 255];
@@ -49,6 +51,13 @@ impl TentativePixel {
             has_priority,
             data_was_zero,
         }
+    }
+}
+
+pub fn resolve_pixel(mode: SystemMode, oam: Option<TentativePixel>, bg: TentativePixel) -> Pixel {
+    match mode {
+        SystemMode::DMG => resolve_pixel_dmg(oam, bg),
+        SystemMode::CGB => resolve_pixel_cgb(oam, bg),
     }
 }
 

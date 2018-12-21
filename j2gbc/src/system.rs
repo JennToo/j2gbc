@@ -20,3 +20,9 @@ impl System {
         self.cpu.mmu.lcd.get_framebuffer()
     }
 }
+
+#[derive(Copy, Clone)]
+pub enum SystemMode {
+    DMG,
+    CGB,
+}

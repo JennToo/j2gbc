@@ -1,3 +1,5 @@
+use crate::system::SystemMode;
+
 const OBJ_PAL_FLAG: u8 = 0b0001_0000;
 const OBJ_XFLIP_FLAG: u8 = 0b0010_0000;
 const OBJ_YFLIP_FLAG: u8 = 0b0100_0000;
@@ -10,10 +12,22 @@ pub struct Obj {
     pub x: u8,
     pub y: u8,
     pub char_: u8,
-    pub flags: u8,
+    flags: u8,
 }
 
 impl Obj {
+    pub fn new(x: u8, y: u8, char_: u8, flags: u8, mode: SystemMode) -> Obj {
+        Obj {
+            x,
+            y,
+            char_,
+            flags: match mode {
+                SystemMode::CGB => flags & !OBJ_PAL_FLAG,
+                SystemMode::DMG => flags & !OBJ_BANK_FLAG & !OBJ_PAL_SELECT,
+            },
+        }
+    }
+
     pub fn high_palette(self) -> bool {
         self.flags & OBJ_PAL_FLAG != 0
     }

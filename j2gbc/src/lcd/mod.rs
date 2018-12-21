@@ -4,11 +4,13 @@ use std::num::Wrapping;
 use j2ds::{next_timer_event, Timer, TimerEvent};
 use log::error;
 
-use super::cpu::{Interrupt, CLOCK_RATE};
-use super::mem::{
-    Address, MemDevice, Ram, RNG_CHAR_DAT, RNG_LCD_BGDD1, RNG_LCD_BGDD2, RNG_LCD_OAM,
+use crate::{
+    cpu::{Interrupt, CLOCK_RATE},
+    mem::{Address, MemDevice, Ram, RNG_CHAR_DAT, RNG_LCD_BGDD1, RNG_LCD_BGDD2, RNG_LCD_OAM},
+    system::SystemMode,
 };
 
+mod bg;
 pub mod fb;
 mod obj;
 mod tile;
@@ -109,7 +111,7 @@ pub struct Lcd {
     tiles: [tile::MonoTile; TILE_COUNT],
     objs: [obj::Obj; OBJ_COUNT],
 
-    cgb_mode: bool,
+    system_mode: SystemMode,
 }
 
 impl Lcd {
@@ -162,7 +164,11 @@ impl Lcd {
             tiles: [tile::MonoTile::default(); TILE_COUNT],
             objs: [obj::Obj::default(); OBJ_COUNT],
 
-            cgb_mode,
+            system_mode: if cgb_mode {
+                SystemMode::CGB
+            } else {
+                SystemMode::DMG
+            },
         }
     }
 
@@ -301,11 +307,7 @@ impl Lcd {
 
         let y = self.ly as usize;
         for x in 0..(fb::SCREEN_SIZE.0 as usize) {
-            let color = if self.cgb_mode {
-                fb::resolve_pixel_cgb(oam_screen_row[x], bg_screen_row[x])
-            } else {
-                fb::resolve_pixel_dmg(oam_screen_row[x], bg_screen_row[x])
-            };
+            let color = fb::resolve_pixel(self.system_mode, oam_screen_row[x], bg_screen_row[x]);
 
             self.get_back_framebuffer().set(x, y, color);
         }
@@ -377,44 +379,39 @@ impl Lcd {
                         .unwrap(),
                 )
             };
+            let flags = bg::BgFlags::new(flags, self.system_mode);
 
-            let maybe_flipped_y = if self.cgb_mode && flags & 0b0100_0000 != 0 {
+            let maybe_flipped_y = if flags.yflip() {
                 Wrapping(7) - (translated_y % Wrapping(8))
             } else {
                 translated_y % Wrapping(8)
             };
 
             let signed = self.get_bg_char_addr_start();
-            let char_row = self.read_char_row_at(
-                char_,
-                maybe_flipped_y.0,
-                signed,
-                if self.cgb_mode {
-                    (flags & 0b0000_1000) >> 3
-                } else {
-                    0
-                },
-            );
+            let char_row = self.read_char_row_at(char_, maybe_flipped_y.0, signed, flags.bank());
 
-            let (color, data) = if self.cgb_mode {
-                let maybe_flipped_x = if flags & 0b0010_0000 != 0 {
-                    Wrapping(7) - (translated_x % Wrapping(8))
-                } else {
-                    translated_x % Wrapping(8)
-                };
-                let color_index = char_row[maybe_flipped_x.0 as usize];
-                (
-                    self.bg_palettes[(flags & 0b111) as usize][color_index as usize],
-                    color_index,
-                )
-            } else {
-                let color_index = char_row[(translated_x % Wrapping(8)).0 as usize];
-                let corrected_index = palette_convert(color_index, self.bgp) as usize;
-                (fb::DMG_COLORS[corrected_index], color_index)
+            let (color, data) = match self.system_mode {
+                SystemMode::CGB => {
+                    let maybe_flipped_x = if flags.xflip() {
+                        Wrapping(7) - (translated_x % Wrapping(8))
+                    } else {
+                        translated_x % Wrapping(8)
+                    };
+                    let color_index = char_row[maybe_flipped_x.0 as usize];
+                    (
+                        self.bg_palettes[flags.cgb_pallete() as usize][color_index as usize],
+                        color_index,
+                    )
+                }
+                SystemMode::DMG => {
+                    let color_index = char_row[(translated_x % Wrapping(8)).0 as usize];
+                    let corrected_index = palette_convert(color_index, self.bgp) as usize;
+                    (fb::DMG_COLORS[corrected_index], color_index)
+                }
             };
 
             screen_row[screen_x as usize] =
-                fb::TentativePixel::new(color, flags & 0b1000_0000 != 0, data == 0);
+                fb::TentativePixel::new(color, flags.priority(), data == 0);
         }
     }
 
@@ -540,12 +537,13 @@ impl Lcd {
     fn read_obj(&self, index: u8) -> obj::Obj {
         let a = RNG_LCD_OAM.0 + Address(u16::from(index) * 4);
 
-        obj::Obj {
-            y: self.read(a).unwrap(),
-            x: self.read(a + Address(1)).unwrap(),
-            char_: self.read(a + Address(2)).unwrap(),
-            flags: self.read(a + Address(3)).unwrap(),
-        }
+        obj::Obj::new(
+            self.read(a + Address(1)).unwrap(),
+            self.read(a).unwrap(),
+            self.read(a + Address(2)).unwrap(),
+            self.read(a + Address(3)).unwrap(),
+            self.system_mode,
+        )
     }
 
     fn render_oam_row(&self, screen_row: &mut [Option<fb::TentativePixel>]) {
@@ -573,12 +571,7 @@ impl Lcd {
                 }
 
                 let index_y = if obj.yflip() { hi_y - 1 - y } else { y };
-                let row = self.read_char_row_at(
-                    char_,
-                    index_y,
-                    false,
-                    if self.cgb_mode { obj.bank() } else { 0 },
-                );
+                let row = self.read_char_row_at(char_, index_y, false, obj.bank());
                 for x in 0..8 {
                     let full_x = x as isize + obj.x as isize - 8;
 
@@ -592,16 +585,19 @@ impl Lcd {
                         // 0 is always transparent
                         continue;
                     }
-                    let color = if self.cgb_mode {
-                        self.obj_palettes[obj.cgb_palette() as usize][color_index as usize]
-                    } else {
-                        let pal = if obj.high_palette() {
-                            self.obp1
-                        } else {
-                            self.obp0
-                        };
-                        let corrected_index = palette_convert(color_index, pal) as usize;
-                        fb::DMG_COLORS[corrected_index]
+                    let color = match self.system_mode {
+                        SystemMode::CGB => {
+                            self.obj_palettes[obj.cgb_palette() as usize][color_index as usize]
+                        }
+                        SystemMode::DMG => {
+                            let pal = if obj.high_palette() {
+                                self.obp1
+                            } else {
+                                self.obp0
+                            };
+                            let corrected_index = palette_convert(color_index, pal) as usize;
+                            fb::DMG_COLORS[corrected_index]
+                        }
                     };
 
                     screen_row[full_x as usize] = Some(fb::TentativePixel::new(
