@@ -55,6 +55,7 @@ const LYC_MATCH_FLAG: u8 = 0b0000_0100;
 const BG_ENABLED_FLAG: u8 = 0b0000_0001;
 const WINDOW_ENABLED_FLAG: u8 = 0b0010_0000;
 const OAM_ENABLED_FLAG: u8 = 0b0000_0010;
+const LCD_ENABLED_FLAG: u8 = 0b1000_0000;
 const OAM_TALL_FLAG: u8 = 0b0000_0100;
 const BGD_CHAR_DAT_FLAG: u8 = 0b0001_0000;
 const BGD_CODE_DAT_FLAG: u8 = 0b0000_1000;
@@ -65,7 +66,6 @@ const OBJ_COUNT: usize = 40;
 
 const PAL_DATA_IDX: u8 = 0b11_1111;
 
-type FrameRow = [fb::Pixel; fb::SCREEN_SIZE.0];
 pub type BgBuffer = [BgRow; 256];
 type BgRow = [fb::Pixel; 256];
 
@@ -284,6 +284,14 @@ impl Lcd {
     }
 
     fn render_screen_row(&mut self) {
+        if !self.is_lcd_enabled() {
+            let y = self.ly as usize;
+            for x in 0..(fb::SCREEN_SIZE.0 as usize) {
+                self.get_back_framebuffer().set(x, y, fb::DMG_COLOR_WHITE);
+            }
+            return;
+        }
+
         let mut bg_screen_row =
             [fb::TentativePixel::new(fb::DMG_COLOR_WHITE, false, true); fb::SCREEN_SIZE.0];
         let mut oam_screen_row = [None; fb::SCREEN_SIZE.0];
@@ -434,6 +442,10 @@ impl Lcd {
 
     fn is_oam_enabled(&self) -> bool {
         self.lcdc & OAM_ENABLED_FLAG != 0
+    }
+
+    fn is_lcd_enabled(&self) -> bool {
+        self.lcdc & LCD_ENABLED_FLAG != 0
     }
 
     fn is_lyc_int_enabled(&self) -> bool {
