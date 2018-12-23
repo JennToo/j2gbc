@@ -18,6 +18,8 @@ pub struct Timer {
     tma: u8,
     tac: u8,
 
+    double_speed: bool,
+
     next_div_cycle: u64,
     next_tima_cycle: u64,
 }
@@ -30,9 +32,16 @@ impl Timer {
             tma: 0,
             tac: 0,
 
+            double_speed: false,
+
             next_div_cycle: 0,
             next_tima_cycle: 0,
         }
+    }
+
+    pub fn toggle_double_speed(&mut self) {
+        self.double_speed = !self.double_speed;
+        println!("Thanks Obama {}", self.double_speed);
     }
 
     fn tima_enabled(&self) -> bool {
@@ -51,15 +60,16 @@ impl Timer {
         }
     }
 
-    // TODO: Take double-speed mode into account
     pub fn pump_cycle(&mut self, cycle: u64) -> Option<Interrupt> {
         if self.next_div_cycle <= cycle {
-            self.next_div_cycle = cycle + DIV_INCREMENT_CYCLE_COUNT;
+            self.next_div_cycle =
+                cycle + maybe_half_cycle(DIV_INCREMENT_CYCLE_COUNT, self.double_speed);
             self.div = (Wrapping(self.div) + Wrapping(1)).0;
         }
 
         if self.tima_enabled() && self.next_tima_cycle <= cycle {
-            self.next_tima_cycle = cycle + self.tima_duration();
+            self.next_tima_cycle =
+                cycle + maybe_half_cycle(self.tima_duration(), self.double_speed);
 
             if self.tima == 0xFF {
                 self.tima = self.tma;
@@ -71,6 +81,14 @@ impl Timer {
         } else {
             None
         }
+    }
+}
+
+fn maybe_half_cycle(cycle_count: u64, double_speed: bool) -> u64 {
+    if double_speed {
+        cycle_count >> 2
+    } else {
+        cycle_count
     }
 }
 

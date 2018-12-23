@@ -232,6 +232,11 @@ impl Mmu {
             }
         }
     }
+
+    pub fn toggle_double_speed(&mut self) {
+        self.double_speed_mode = !self.double_speed_mode;
+        self.timer.toggle_double_speed();
+    }
 }
 
 impl MemDevice for Mmu {

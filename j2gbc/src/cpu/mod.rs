@@ -93,7 +93,7 @@ impl Cpu {
             }
             Instruction::Stop => {
                 if self.mmu.prepared_speed_switch {
-                    self.mmu.double_speed_mode = !self.mmu.double_speed_mode;
+                    self.mmu.toggle_double_speed();
                 } else {
                     error!("Stop executed without speed switch mode prepared");
                     return Err(());
