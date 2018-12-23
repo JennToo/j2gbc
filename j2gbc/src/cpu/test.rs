@@ -1,14 +1,11 @@
 use std::collections::{HashMap, HashSet};
-use std::fs::File;
 use std::io::Cursor;
-use std::time::Duration;
 
 use super::{Arith, Cpu, Instruction, Load, Operand, Register16, Register8};
 use crate::alu::Flags;
 use crate::audio::NullSink;
 use crate::cart::Cart;
 use crate::mem::{Address, MemDevice};
-use crate::system::System;
 
 const INTIAL_PC: Address = Address(0x0150);
 const INITAL_SP: Address = Address(0xFFFE);
@@ -273,129 +270,5 @@ fn assert_reg_vals(cpu: &Cpu, vals: &[(Register8, u8)]) {
     for r in regs.iter() {
         println!("Checking register (default) {}", r);
         assert_eq!(cpu[*r], *defaults.get(&r).unwrap());
-    }
-}
-
-// --------------- Blarg tests ---------------------
-
-#[test]
-fn test_blarg_01_special() {
-    run_blarg_test(
-        "test_resources/cpu_instrs/individual/01-special.gb",
-        3,
-        b"Passed",
-        Address(0x9860),
-    );
-}
-
-#[test]
-fn test_blarg_02_interrupts() {
-    run_blarg_test(
-        "test_resources/cpu_instrs/individual/02-interrupts.gb",
-        1,
-        b"Passed",
-        Address(0x9860),
-    );
-}
-
-#[test]
-fn test_blarg_03_op_sp_hl() {
-    run_blarg_test(
-        "test_resources/cpu_instrs/individual/03-op sp,hl.gb",
-        3,
-        b"Passed",
-        Address(0x9860),
-    );
-}
-
-#[test]
-fn test_blarg_04_op_r_imm() {
-    run_blarg_test(
-        "test_resources/cpu_instrs/individual/04-op r,imm.gb",
-        3,
-        b"Passed",
-        Address(0x9860),
-    );
-}
-
-#[test]
-fn test_blarg_05_op_rp() {
-    run_blarg_test(
-        "test_resources/cpu_instrs/individual/05-op rp.gb",
-        4,
-        b"Passed",
-        Address(0x9860),
-    );
-}
-
-#[test]
-fn test_blarg_06_ld_r_r() {
-    run_blarg_test(
-        "test_resources/cpu_instrs/individual/06-ld r,r.gb",
-        1,
-        b"Passed",
-        Address(0x9860),
-    );
-}
-
-#[test]
-fn test_blarg_07_jmp_etc() {
-    run_blarg_test(
-        "test_resources/cpu_instrs/individual/07-jr,jp,call,ret,rst.gb",
-        1,
-        b"Passed",
-        Address(0x9880),
-    );
-}
-
-#[test]
-fn test_blarg_08_misc() {
-    run_blarg_test(
-        "test_resources/cpu_instrs/individual/08-misc instrs.gb",
-        1,
-        b"Passed",
-        Address(0x9860),
-    );
-}
-
-#[test]
-fn test_blarg_09_op_r_r() {
-    run_blarg_test(
-        "test_resources/cpu_instrs/individual/09-op r,r.gb",
-        10,
-        b"Passed",
-        Address(0x9860),
-    );
-}
-
-#[test]
-fn test_blarg_10_bit_ops() {
-    run_blarg_test(
-        "test_resources/cpu_instrs/individual/10-bit ops.gb",
-        14,
-        b"Passed",
-        Address(0x9860),
-    );
-}
-
-#[test]
-fn test_blarg_11_op_a_hl() {
-    run_blarg_test(
-        "test_resources/cpu_instrs/individual/11-op a,(hl).gb",
-        18,
-        b"Passed",
-        Address(0x9860),
-    );
-}
-
-fn run_blarg_test(path: &str, sec_to_run: u64, expected: &[u8], expected_addr: Address) {
-    let cart_file = File::open(path).unwrap();
-    let mut system = System::new(cart_file, Box::new(NullSink), false).unwrap();
-
-    system.run_for_duration(&Duration::from_secs(sec_to_run));
-
-    for (i, e) in expected.iter().enumerate() {
-        let addr = expected_addr + Address(i as u16);
-        assert_eq!(system.debugger().read_mem(addr).unwrap(), *e);
     }
 }
