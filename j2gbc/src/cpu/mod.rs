@@ -25,8 +25,10 @@ mod register;
 #[cfg(test)]
 mod test;
 
-pub use self::interrupt::Interrupt;
-pub use self::register::{Operand, Register16, Register8};
+pub use self::{
+    interrupt::{Interrupt, InterruptSet},
+    register::{Operand, Register16, Register8},
+};
 
 pub struct Cpu {
     registers: [u8; 8],
@@ -655,18 +657,17 @@ impl Cpu {
     fn drive_peripherals(&mut self) -> Result<(), ()> {
         self.mmu.audio.synth.pump_cycle(self.cycle);
 
-        if let Some(i) = self.mmu.lcd.pump_cycle(self.cycle) {
-            self.request_interrupt(i);
-        }
-        if let Some(i) = self.mmu.timer.pump_cycle(self.cycle) {
-            self.request_interrupt(i);
-        }
+        let i1 = self.mmu.lcd.pump_cycle(self.cycle);
+        let i2 = self.mmu.timer.pump_cycle(self.cycle);
+
+        self.request_interrupts(i1.merge(i2));
+
         Ok(())
     }
 
-    fn request_interrupt(&mut self, int: Interrupt) {
-        self.mmu.interrupt_flag |= int.bits();
-        if int.bits() & self.mmu.interrupt_enable != 0 {
+    fn request_interrupts(&mut self, ints: InterruptSet) {
+        self.mmu.interrupt_flag |= ints.if_();
+        if ints.if_() & self.mmu.interrupt_enable != 0 {
             self.halted = false;
         }
     }

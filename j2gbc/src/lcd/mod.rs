@@ -5,7 +5,7 @@ use j2ds::{next_timer_event, Timer, TimerEvent};
 use log::error;
 
 use crate::{
-    cpu::{Interrupt, CLOCK_RATE},
+    cpu::{Interrupt, InterruptSet, CLOCK_RATE},
     mem::{Address, MemDevice, Ram, RNG_CHAR_DAT, RNG_LCD_BGDD1, RNG_LCD_BGDD2, RNG_LCD_OAM},
     system::SystemMode,
 };
@@ -201,11 +201,13 @@ impl Lcd {
         self.running_until_cycle = cycle;
     }
 
-    pub fn pump_cycle(&mut self, cycle: u64) -> Option<Interrupt> {
+    pub fn pump_cycle(&mut self, cycle: u64) -> InterruptSet {
+        let mut inters = InterruptSet::default();
+
         let scanline_inter = self.scanline_sweeper.pump_cycle(cycle);
         self.stat = (self.stat & !LYC_MATCH_FLAG) | self.scanline_sweeper.stat_flags();
-        if scanline_inter.is_some() {
-            return scanline_inter;
+        if let Some(intr) = scanline_inter {
+            inters.add_interrupt(intr);
         }
 
         match self.hblank_timer.update(cycle) {
@@ -213,7 +215,7 @@ impl Lcd {
                 if self.scanline_sweeper.on_visible_scanline() {
                     self.do_hblank_start(cycle);
                     if self.is_hblank_int_enabled() {
-                        return Some(Interrupt::LCDC);
+                        inters.add_interrupt(Interrupt::LCDC);
                     }
                 }
             }
@@ -228,7 +230,7 @@ impl Lcd {
                 self.stat = (self.stat & 0b1111_1100) | MODE_10_MASK;
 
                 if self.is_mode_10_int_enabled() {
-                    return Some(Interrupt::LCDC);
+                    inters.add_interrupt(Interrupt::LCDC);
                 }
             }
             Some(TimerEvent::FallingEdge) => {
@@ -240,7 +242,7 @@ impl Lcd {
         match self.vblank_timer.update(cycle) {
             Some(TimerEvent::RisingEdge) => {
                 self.do_vblank_start();
-                return Some(Interrupt::VBlank);
+                inters.add_interrupt(Interrupt::VBlank);
             }
             Some(TimerEvent::FallingEdge) => {
                 self.do_vblank_end();
@@ -248,7 +250,7 @@ impl Lcd {
             None => {}
         }
 
-        None
+        inters
     }
 
     fn do_hblank_start(&mut self, cycle: u64) {

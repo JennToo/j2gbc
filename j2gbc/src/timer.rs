@@ -1,7 +1,7 @@
 use std::cmp::min;
 use std::num::Wrapping;
 
-use super::cpu::{Interrupt, CLOCK_RATE};
+use super::cpu::{Interrupt, InterruptSet, CLOCK_RATE};
 use super::mem::*;
 
 const DIV_INCREMENT_CYCLE_COUNT: u64 = CLOCK_RATE / 16_779;
@@ -59,7 +59,7 @@ impl Timer {
         }
     }
 
-    pub fn pump_cycle(&mut self, cycle: u64) -> Option<Interrupt> {
+    pub fn pump_cycle(&mut self, cycle: u64) -> InterruptSet {
         if self.next_div_cycle <= cycle {
             self.next_div_cycle =
                 cycle + maybe_half_cycle(DIV_INCREMENT_CYCLE_COUNT, self.double_speed);
@@ -72,13 +72,13 @@ impl Timer {
 
             if self.tima == 0xFF {
                 self.tima = self.tma;
-                Some(Interrupt::Timer)
+                Interrupt::Timer.into()
             } else {
                 self.tima += 1;
-                None
+                InterruptSet::default()
             }
         } else {
-            None
+            InterruptSet::default()
         }
     }
 }

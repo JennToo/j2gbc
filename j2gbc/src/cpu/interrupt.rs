@@ -56,3 +56,30 @@ impl Interrupt {
         (None, if_)
     }
 }
+
+#[derive(Copy, Clone, Default)]
+pub struct InterruptSet {
+    if_: u8,
+}
+
+impl InterruptSet {
+    pub fn merge(self, other: InterruptSet) -> InterruptSet {
+        InterruptSet {
+            if_: other.if_ | self.if_,
+        }
+    }
+
+    pub fn add_interrupt(&mut self, inter: Interrupt) {
+        self.if_ |= inter.bits();
+    }
+
+    pub fn if_(self) -> u8 {
+        self.if_
+    }
+}
+
+impl From<Interrupt> for InterruptSet {
+    fn from(intr: Interrupt) -> InterruptSet {
+        InterruptSet { if_: intr.bits() }
+    }
+}
