@@ -8,21 +8,25 @@ pub const MASK_FLAG_C: u8 = 0b0001_0000;
 pub struct Flags(pub u8);
 
 impl Flags {
+    #[cfg(test)]
     pub fn carry(mut self) -> Flags {
         self.set_carry(true);
         self
     }
 
+    #[cfg(test)]
     pub fn halfcarry(mut self) -> Flags {
         self.set_halfcarry(true);
         self
     }
 
+    #[cfg(test)]
     pub fn subtract(mut self) -> Flags {
         self.set_subtract(true);
         self
     }
 
+    #[cfg(test)]
     pub fn zero(mut self) -> Flags {
         self.set_zero(true);
         self

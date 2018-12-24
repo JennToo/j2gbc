@@ -432,10 +432,6 @@ impl Lcd {
         self.lcdc & LCD_ENABLED_FLAG != 0
     }
 
-    fn is_lyc_int_enabled(&self) -> bool {
-        self.stat & LYC_MATCH_INT_FLAG != 0
-    }
-
     fn is_hblank_int_enabled(&self) -> bool {
         self.stat & MODE_00_INT_FLAG != 0
     }
