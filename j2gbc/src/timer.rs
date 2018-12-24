@@ -41,7 +41,6 @@ impl Timer {
 
     pub fn toggle_double_speed(&mut self) {
         self.double_speed = !self.double_speed;
-        println!("Thanks Obama {}", self.double_speed);
     }
 
     fn tima_enabled(&self) -> bool {

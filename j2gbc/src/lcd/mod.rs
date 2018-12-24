@@ -32,11 +32,12 @@ const REG_BCPD: Address = Address(0xFF69);
 const REG_OCPS: Address = Address(0xFF6A);
 const REG_OCPD: Address = Address(0xFF6B);
 
+const TOTAL_SCANLINES: u64 = 154;
 const LINE_CYCLE_TIME: u64 = CLOCK_RATE * 108_700 / 1_000_000_000; // Src: Official GB manual
 const HBLANK_DURATION: u64 = CLOCK_RATE * 48_600 / 1_000_000_000; // Src: GBCPUMan.pdf
 const MODE_10_DURATION: u64 = CLOCK_RATE * 19_000 / 1_000_000_000; // Src: GBCPUMan.pdf
 const VBLANK_DURATION: u64 = LINE_CYCLE_TIME * 10; // Src: Official GB manual
-const SCREEN_CYCLE_TIME: u64 = 154 * LINE_CYCLE_TIME;
+const SCREEN_CYCLE_TIME: u64 = TOTAL_SCANLINES * LINE_CYCLE_TIME;
 const BYTES_PER_CHAR: u16 = 16;
 const BYTES_PER_ROW: u16 = 2;
 const BG_CHARS_PER_ROW: u8 = 32;
@@ -79,8 +80,6 @@ pub struct Lcd {
     wy: u8,
     sx: u8,
     sy: u8,
-    lyc: u8,
-    ly: u8,
     bcps: u8,
     ocps: u8,
     bank_select: usize,
@@ -101,6 +100,7 @@ pub struct Lcd {
     hblank_timer: Timer,
     vblank_timer: Timer,
     mode10_timer: Timer,
+    scanline_sweeper: ScanlineSweeper,
 
     running_until_cycle: u64,
 
@@ -122,7 +122,6 @@ impl Lcd {
             wy: 0,
             sx: 0,
             sy: 0,
-            lyc: 0,
             bcps: 0,
             ocps: 0,
             bank_select: 0,
@@ -155,7 +154,8 @@ impl Lcd {
                 HBLANK_DURATION,
             ),
             running_until_cycle: 0,
-            ly: 0,
+
+            scanline_sweeper: ScanlineSweeper::new(),
 
             tiles: [tile::MonoTile::default(); TILE_COUNT],
             objs: [obj::Obj::default(); OBJ_COUNT],
@@ -189,7 +189,12 @@ impl Lcd {
     }
 
     pub fn get_next_event_cycle(&self) -> u64 {
-        next_timer_event(&[self.hblank_timer, self.vblank_timer, self.mode10_timer])
+        next_timer_event(&[
+            self.hblank_timer,
+            self.vblank_timer,
+            self.mode10_timer,
+            self.scanline_sweeper.timer(),
+        ])
     }
 
     pub fn set_running_until(&mut self, cycle: u64) {
@@ -197,18 +202,23 @@ impl Lcd {
     }
 
     pub fn pump_cycle(&mut self, cycle: u64) -> Option<Interrupt> {
+        let scanline_inter = self.scanline_sweeper.pump_cycle(cycle);
+        self.stat = (self.stat & !LYC_MATCH_FLAG) | self.scanline_sweeper.stat_flags();
+        if scanline_inter.is_some() {
+            return scanline_inter;
+        }
+
         match self.hblank_timer.update(cycle) {
             Some(TimerEvent::RisingEdge) => {
-                self.do_hblank_start(cycle);
-                if self.is_hblank_int_enabled() && self.ly < fb::SCREEN_SIZE.1 as u8 {
-                    return Some(Interrupt::LCDC);
+                if self.scanline_sweeper.on_visible_scanline() {
+                    self.do_hblank_start(cycle);
+                    if self.is_hblank_int_enabled() {
+                        return Some(Interrupt::LCDC);
+                    }
                 }
             }
             Some(TimerEvent::FallingEdge) => {
                 self.do_hblank_end();
-                if self.ly == self.lyc && self.is_lyc_int_enabled() {
-                    return Some(Interrupt::LCDC);
-                }
             }
             None => {}
         }
@@ -234,10 +244,6 @@ impl Lcd {
             }
             Some(TimerEvent::FallingEdge) => {
                 self.do_vblank_end();
-
-                if self.ly == self.lyc && self.is_lyc_int_enabled() {
-                    return Some(Interrupt::LCDC);
-                }
             }
             None => {}
         }
@@ -246,12 +252,10 @@ impl Lcd {
     }
 
     fn do_hblank_start(&mut self, cycle: u64) {
-        if self.ly < fb::SCREEN_SIZE.1 as u8 {
-            if self.should_render_this_frame(cycle) {
-                self.render_screen_row();
-            }
-            self.stat = (self.stat & 0b1111_1100) | MODE_00_MASK;
+        if self.should_render_this_frame(cycle) {
+            self.render_screen_row();
         }
+        self.stat = (self.stat & 0b1111_1100) | MODE_00_MASK;
     }
 
     fn should_render_this_frame(&self, cycle: u64) -> bool {
@@ -259,35 +263,20 @@ impl Lcd {
             || self.running_until_cycle - cycle <= 2 * SCREEN_CYCLE_TIME
     }
 
-    fn do_hblank_end(&mut self) {
-        self.ly += 1;
-        self.update_lyc();
-    }
+    fn do_hblank_end(&mut self) {}
 
     pub fn do_vblank_start(&mut self) {
         self.swap();
-        self.ly += 1;
-        self.update_lyc();
         self.stat = (self.stat & 0b1111_1100) | MODE_01_MASK;
     }
 
     pub fn do_vblank_end(&mut self) {
-        self.ly = 0;
-        self.update_lyc();
         self.stat = (self.stat & 0b1111_1100) | MODE_00_MASK;
     }
 
-    fn update_lyc(&mut self) {
-        if self.ly == self.lyc {
-            self.stat |= LYC_MATCH_FLAG;
-        } else {
-            self.stat &= !LYC_MATCH_FLAG;
-        }
-    }
-
     fn render_screen_row(&mut self) {
+        let y = self.scanline_sweeper.ly() as usize;
         if !self.is_lcd_enabled() {
-            let y = self.ly as usize;
             for x in 0..(fb::SCREEN_SIZE.0 as usize) {
                 self.get_back_framebuffer().set(x, y, fb::DMG_COLOR_WHITE);
             }
@@ -301,7 +290,6 @@ impl Lcd {
         self.render_window_row(&mut bg_screen_row);
         self.render_oam_row(&mut oam_screen_row);
 
-        let y = self.ly as usize;
         for x in 0..(fb::SCREEN_SIZE.0 as usize) {
             let color = fb::resolve_pixel(self.system_mode, oam_screen_row[x], bg_screen_row[x]);
 
@@ -314,7 +302,7 @@ impl Lcd {
             return;
         }
         self.render_tile_row(
-            self.ly,
+            self.scanline_sweeper.ly(),
             self.sx,
             self.sy,
             self.get_bg_code_dat_start(),
@@ -328,11 +316,12 @@ impl Lcd {
         }
 
         let adjusted_wx = max(self.wx, 7) - 7;
-        if self.wy > self.ly || adjusted_wx >= fb::SCREEN_SIZE.0 as u8 {
+        let ly = self.scanline_sweeper.ly();
+        if self.wy > ly || adjusted_wx >= fb::SCREEN_SIZE.0 as u8 {
             return;
         }
 
-        let translated_y = self.ly - self.wy;
+        let translated_y = ly - self.wy;
         self.render_tile_row(
             translated_y,
             0,
@@ -501,7 +490,10 @@ impl Lcd {
 
             for y in 0..hi_y {
                 let full_y = y as isize + obj.y as isize - 16;
-                if full_y > fb::SCREEN_SIZE.1 as isize || full_y < 0 || full_y != self.ly as isize {
+                if full_y > fb::SCREEN_SIZE.1 as isize
+                    || full_y < 0
+                    || full_y != self.scanline_sweeper.ly() as isize
+                {
                     continue;
                 }
 
@@ -613,8 +605,8 @@ impl MemDevice for Lcd {
             self.oam.read(a - RNG_LCD_OAM.0)
         } else {
             match a {
-                REG_LY => Ok(self.ly),
-                REG_LYC => Ok(self.lyc),
+                REG_LY => Ok(self.scanline_sweeper.ly()),
+                REG_LYC => Ok(self.scanline_sweeper.lyc()),
                 REG_STAT => Ok(self.stat),
                 REG_LCDC => Ok(self.lcdc),
                 REG_OBP0 => Ok(self.obp0),
@@ -663,7 +655,7 @@ impl MemDevice for Lcd {
                     Err(())
                 }
                 REG_LYC => {
-                    self.lyc = v;
+                    self.scanline_sweeper.set_lyc(v);
                     Ok(())
                 }
                 REG_LCDC => {
@@ -671,7 +663,8 @@ impl MemDevice for Lcd {
                     Ok(())
                 }
                 REG_STAT => {
-                    self.stat = v;
+                    self.stat = v & 0b1111_1100;
+                    self.scanline_sweeper.update_stat(v);
                     Ok(())
                 }
                 REG_BGP => {
@@ -746,5 +739,69 @@ impl MemDevice for Lcd {
                 }
             }
         }
+    }
+}
+
+struct ScanlineSweeper {
+    ly: u8,
+    lyc: u8,
+    interrupt_enabled: bool,
+    timer: Timer,
+}
+
+impl ScanlineSweeper {
+    pub fn new() -> ScanlineSweeper {
+        ScanlineSweeper {
+            ly: 0,
+            lyc: 0,
+            interrupt_enabled: false,
+            timer: Timer::new(LINE_CYCLE_TIME, 0, 1),
+        }
+    }
+
+    pub fn pump_cycle(&mut self, cycle: u64) -> Option<Interrupt> {
+        if self.timer.update(cycle) == Some(TimerEvent::RisingEdge) {
+            self.ly = (self.ly + 1) % TOTAL_SCANLINES as u8;
+
+            if self.ly == self.lyc && self.interrupt_enabled {
+                Some(Interrupt::LCDC)
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    }
+
+    pub fn ly(&self) -> u8 {
+        self.ly
+    }
+
+    pub fn lyc(&self) -> u8 {
+        self.lyc
+    }
+
+    pub fn set_lyc(&mut self, v: u8) {
+        self.lyc = v;
+    }
+
+    pub fn stat_flags(&self) -> u8 {
+        if self.ly == self.lyc {
+            LYC_MATCH_FLAG
+        } else {
+            0
+        }
+    }
+
+    pub fn update_stat(&mut self, flags: u8) {
+        self.interrupt_enabled = (flags & LYC_MATCH_INT_FLAG) != 0;
+    }
+
+    pub fn timer(&self) -> Timer {
+        self.timer
+    }
+
+    pub fn on_visible_scanline(&self) -> bool {
+        (self.ly as usize) < fb::SCREEN_SIZE.1
     }
 }
