@@ -129,7 +129,10 @@ impl Lcd {
             bgdd1: Ram::new(RNG_LCD_BGDD1.len() * 2),
             bgdd2: Ram::new(RNG_LCD_BGDD2.len() * 2),
             oam: Ram::new(RNG_LCD_OAM.len()),
-            fbs: [fb::Framebuffer::default(); 2],
+            fbs: [
+                fb::Framebuffer::new(fb::SCREEN_SIZE),
+                fb::Framebuffer::new(fb::SCREEN_SIZE),
+            ],
             fbi: 0,
 
             bcp: [0; 0x40],

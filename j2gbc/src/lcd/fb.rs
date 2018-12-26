@@ -14,16 +14,16 @@ pub const DMG_COLORS: [Pixel; 4] = [
 
 pub type Pixel = [u8; 4];
 
-#[derive(Copy, Clone)]
-pub struct Framebuffer([Pixel; SCREEN_SIZE.0 * SCREEN_SIZE.1]);
-
-impl Default for Framebuffer {
-    fn default() -> Framebuffer {
-        Framebuffer([DMG_COLOR_WHITE; SCREEN_SIZE.0 * SCREEN_SIZE.1])
-    }
-}
+#[derive(Clone)]
+pub struct Framebuffer(Vec<Pixel>);
 
 impl Framebuffer {
+    pub fn new((width, height): (usize, usize)) -> Framebuffer {
+        let mut v = Vec::with_capacity(width * height);
+        v.resize(width * height, DMG_COLOR_WHITE);
+        Framebuffer(v)
+    }
+
     pub fn set(&mut self, x: usize, y: usize, color: Pixel) {
         self.0[x + y * SCREEN_SIZE.0] = color;
     }
