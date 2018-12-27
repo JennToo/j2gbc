@@ -68,6 +68,8 @@ const OBJ_COUNT: usize = 40;
 
 const PAL_DATA_IDX: u8 = 0b11_1111;
 
+pub const BG_SIZE: (usize, usize) = (255, 255);
+
 type CgbPalette = [fb::Pixel; 4];
 
 pub struct Lcd {

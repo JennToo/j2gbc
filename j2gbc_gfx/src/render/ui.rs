@@ -1,10 +1,11 @@
 use std::time::Duration;
 
+use gfx::traits::Factory;
 use glutin::Event;
 use imgui::*;
 use imgui_gfx_renderer::{Renderer, Shaders};
 use imgui_glutin_support;
-use j2gbc::debug::{Address, Register8};
+use j2gbc::debug::{Address, Register8, BG_SIZE};
 
 use super::*;
 
@@ -19,6 +20,8 @@ pub struct UiRender {
     disassembly_ui: DisassemblyUi,
     breakpoints_ui: BreakpointsUi,
     visibility_set: VisibilitySet,
+
+    bg_im_tex: ImTexture,
 }
 
 impl UiRender {
@@ -89,7 +92,8 @@ impl UiRender {
 
         imgui.set_font_global_scale((1.0 / hidpi_factor) as f32);
 
-        let renderer = Renderer::init(&mut imgui, factory, shaders, main_color.clone()).unwrap();
+        let mut renderer =
+            Renderer::init(&mut imgui, factory, shaders, main_color.clone()).unwrap();
         let physical_size = window
             .get_inner_size()
             .unwrap()
@@ -103,9 +107,42 @@ impl UiRender {
 
         imgui_glutin_support::configure_keys(&mut imgui);
 
+        // TODO: We actually need 2 of these
+        let bg_tex = factory
+            .create_texture::<SurfaceFormat>(
+                gfx::texture::Kind::D2(
+                    BG_SIZE.0 as u16,
+                    BG_SIZE.1 as u16,
+                    gfx::texture::AaMode::Single,
+                ),
+                1,
+                gfx::memory::Bind::SHADER_RESOURCE,
+                gfx::memory::Usage::Dynamic,
+                Some(gfx::format::ChannelType::Unorm),
+            )
+            .unwrap();
+        let bg_sampler = factory.create_sampler(gfx::texture::SamplerInfo::new(
+            gfx::texture::FilterMethod::Scale,
+            gfx::texture::WrapMode::Clamp,
+        ));
+        let bg_view = factory
+            .view_texture_as_shader_resource::<(SurfaceFormat, gfx::format::Unorm)>(
+                &bg_tex,
+                (1, 1),
+                gfx::format::Swizzle(
+                    gfx::format::ChannelSource::X,
+                    gfx::format::ChannelSource::Y,
+                    gfx::format::ChannelSource::Z,
+                    gfx::format::ChannelSource::W,
+                ),
+            )
+            .unwrap();
+        let bg_im_tex = renderer.textures().insert((bg_view, bg_sampler));
+
         UiRender {
             renderer,
             frame_size,
+            bg_im_tex,
             ctx: imgui,
             debugger_ui: DebuggerUi::default(),
             logger_ui: LoggerUi::default(),
@@ -157,6 +194,24 @@ impl UiRender {
             .draw(&mut ui, &mut visibility_set.disassembly_ui, system);
         self.breakpoints_ui
             .draw(&mut ui, &mut visibility_set.breakpoints_ui, system);
+
+        // TODO: Refactor
+        if visibility_set.background_ui {
+            let bg_im_tex = self.bg_im_tex.clone();
+            ui.window(im_str!("BG"))
+                .always_auto_resize(true)
+                .opened(&mut visibility_set.background_ui)
+                .collapsible(false)
+                .build(|| {
+                    Image::new(
+                        &ui,
+                        bg_im_tex,
+                        ImVec2::new(BG_SIZE.0 as f32 * 2., BG_SIZE.1 as f32 * 2.),
+                    )
+                        .build();
+                });
+        }
+
         self.renderer.render(ui, factory, encoder).unwrap();
     }
 
@@ -184,6 +239,7 @@ struct VisibilitySet {
     logger_ui: bool,
     disassembly_ui: bool,
     breakpoints_ui: bool,
+    background_ui: bool,
 }
 
 impl Default for VisibilitySet {
@@ -193,6 +249,7 @@ impl Default for VisibilitySet {
             logger_ui: true,
             disassembly_ui: true,
             breakpoints_ui: true,
+            background_ui: true,
         }
     }
 }

@@ -1,5 +1,5 @@
 use crate::{cpu::Cpu, mem::MemDevice};
-pub use crate::{cpu::Register8, inst::Instruction, mem::Address};
+pub use crate::{cpu::Register8, inst::Instruction, lcd::BG_SIZE, mem::Address};
 
 pub struct Debugger<'a> {
     cpu: &'a mut Cpu,
