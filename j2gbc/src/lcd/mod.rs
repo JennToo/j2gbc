@@ -347,7 +347,7 @@ impl Lcd {
         screen_row: &mut [fb::TentativePixel],
     ) {
         let translated_y = Wrapping(screen_y) + Wrapping(scy); // Implicit % 256
-        for screen_x in 0..fb::SCREEN_SIZE.0 {
+        for screen_x in 0..screen_row.len() {
             let translated_x = Wrapping(screen_x as u8) + Wrapping(scx); // Implicit % 256
 
             let char_y_offset = Wrapping(u16::from(translated_y.0))
@@ -418,6 +418,17 @@ impl Lcd {
             self.tiles[index + 1].read_row(row as usize - 8)
         } else {
             self.tiles[index].read_row(row as usize)
+        }
+    }
+
+    pub fn render_bg_to_fb(&self, index: usize, output: &mut fb::Framebuffer) {
+        for y in 0..BG_SIZE.1 {
+            let mut bg_screen_row =
+                [fb::TentativePixel::new(fb::DMG_COLOR_WHITE, false, true); BG_SIZE.0];
+            self.render_tile_row(y as u8, 0, 0, Address(0x9800), &mut bg_screen_row);
+            for x in 0..BG_SIZE.0 {
+                output.set(x, y, bg_screen_row[x].color());
+            }
         }
     }
 

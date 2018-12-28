@@ -15,21 +15,21 @@ pub const DMG_COLORS: [Pixel; 4] = [
 pub type Pixel = [u8; 4];
 
 #[derive(Clone)]
-pub struct Framebuffer(Vec<Pixel>);
+pub struct Framebuffer(Vec<Pixel>, usize);
 
 impl Framebuffer {
     pub fn new((width, height): (usize, usize)) -> Framebuffer {
         let mut v = Vec::with_capacity(width * height);
         v.resize(width * height, DMG_COLOR_WHITE);
-        Framebuffer(v)
+        Framebuffer(v, width)
     }
 
     pub fn set(&mut self, x: usize, y: usize, color: Pixel) {
-        self.0[x + y * SCREEN_SIZE.0] = color;
+        self.0[x + y * self.1] = color;
     }
 
     pub fn get(&self, x: usize, y: usize) -> Pixel {
-        self.0[x + y * SCREEN_SIZE.0]
+        self.0[x + y * self.1]
     }
 
     pub fn raw(&self) -> &[Pixel] {
@@ -51,6 +51,10 @@ impl TentativePixel {
             has_priority,
             data_was_zero,
         }
+    }
+
+    pub fn color(&self) -> Pixel {
+        self.color
     }
 }
 

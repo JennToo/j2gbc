@@ -1,4 +1,4 @@
-use crate::{cpu::Cpu, mem::MemDevice};
+use crate::{cpu::Cpu, lcd::fb::Framebuffer, mem::MemDevice};
 pub use crate::{cpu::Register8, inst::Instruction, lcd::BG_SIZE, mem::Address};
 
 pub struct Debugger<'a> {
@@ -61,5 +61,9 @@ impl<'a> Debugger<'a> {
 
     pub fn get_breakpoints(&self) -> impl Iterator<Item = &Address> {
         self.cpu.breakpoints.iter()
+    }
+
+    pub fn render_bg_to_fb(&self, index: usize, output: &mut Framebuffer) {
+        self.cpu.mmu.lcd.render_bg_to_fb(index, output);
     }
 }

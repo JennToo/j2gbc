@@ -5,7 +5,10 @@ use glutin::Event;
 use imgui::*;
 use imgui_gfx_renderer::{Renderer, Shaders};
 use imgui_glutin_support;
-use j2gbc::debug::{Address, Register8, BG_SIZE};
+use j2gbc::{
+    debug::{Address, Register8, BG_SIZE},
+    Framebuffer,
+};
 
 use super::*;
 
@@ -21,6 +24,8 @@ pub struct UiRender {
     breakpoints_ui: BreakpointsUi,
     visibility_set: VisibilitySet,
 
+    bg_tex: gfx::handle::Texture<ResourcesT, SurfaceFormat>,
+    bg_fb: Framebuffer,
     bg_im_tex: ImTexture,
 }
 
@@ -138,11 +143,14 @@ impl UiRender {
             )
             .unwrap();
         let bg_im_tex = renderer.textures().insert((bg_view, bg_sampler));
+        let bg_fb = Framebuffer::new(BG_SIZE);
 
         UiRender {
             renderer,
             frame_size,
+            bg_tex,
             bg_im_tex,
+            bg_fb,
             ctx: imgui,
             debugger_ui: DebuggerUi::default(),
             logger_ui: LoggerUi::default(),
@@ -197,6 +205,15 @@ impl UiRender {
 
         // TODO: Refactor
         if visibility_set.background_ui {
+            system.debugger().render_bg_to_fb(0, &mut self.bg_fb);
+            encoder
+                .update_texture::<SurfaceFormat, (SurfaceFormat, gfx::format::Unorm)>(
+                    &self.bg_tex,
+                    None,
+                    self.bg_tex.get_info().to_image_info(0),
+                    self.bg_fb.raw(),
+                )
+                .unwrap();
             let bg_im_tex = self.bg_im_tex.clone();
             ui.window(im_str!("BG"))
                 .always_auto_resize(true)
@@ -208,7 +225,7 @@ impl UiRender {
                         bg_im_tex,
                         ImVec2::new(BG_SIZE.0 as f32 * 2., BG_SIZE.1 as f32 * 2.),
                     )
-                        .build();
+                    .build();
                 });
         }
 
