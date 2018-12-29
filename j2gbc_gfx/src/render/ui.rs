@@ -74,7 +74,6 @@ impl UiRender {
         // In the examples we only use integer DPI factors, because the UI can get very blurry
         // otherwise. This might or might not be what you want in a real application.
         let hidpi_factor = window.get_hidpi_factor().round();
-
         let font_size = (14.0 * hidpi_factor) as f32;
 
         imgui.fonts().add_default_font_with_config(
@@ -240,13 +239,13 @@ impl UiRender {
         self.renderer.update_render_target(out);
     }
 
-    pub fn resize(&mut self, size: glutin::dpi::LogicalSize) {
-        let physical_size = size.to_physical(1.);
-        let logical_size = physical_size.to_logical(1.);
+    pub fn resize(&mut self, size: glutin::dpi::LogicalSize, hidpi_factor: f64) {
+        let physical_size = size.to_physical(hidpi_factor);
+        let logical_size = physical_size.to_logical(hidpi_factor);
 
         self.frame_size = FrameSize {
             logical_size: logical_size.into(),
-            hidpi_factor: 1.,
+            hidpi_factor,
         };
     }
 }
