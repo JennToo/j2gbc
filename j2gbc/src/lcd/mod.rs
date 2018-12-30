@@ -32,6 +32,9 @@ const REG_BCPD: Address = Address(0xFF69);
 const REG_OCPS: Address = Address(0xFF6A);
 const REG_OCPD: Address = Address(0xFF6B);
 
+const BG_START_1: Address = Address(0x9800);
+const BG_START_2: Address = Address(0x9C00);
+
 const TOTAL_SCANLINES: u64 = 154;
 const LINE_CYCLE_TIME: u64 = CLOCK_RATE * 108_700 / 1_000_000_000; // Src: Official GB manual
 const HBLANK_DURATION: u64 = CLOCK_RATE * 48_600 / 1_000_000_000; // Src: GBCPUMan.pdf
@@ -422,23 +425,44 @@ impl Lcd {
     }
 
     pub fn render_bg_to_fb(&self, index: usize, output: &mut fb::Framebuffer) {
+        let tile_address = if index == 0 { BG_START_1 } else { BG_START_2 };
         for y in 0..BG_SIZE.1 {
             let mut bg_screen_row =
                 [fb::TentativePixel::new(fb::DMG_COLOR_WHITE, false, true); BG_SIZE.0];
-            self.render_tile_row(
-                y as u8,
-                0,
-                0,
-                if index == 0 {
-                    Address(0x9800)
-                } else {
-                    Address(0x9C00)
-                },
-                &mut bg_screen_row,
-            );
+            self.render_tile_row(y as u8, 0, 0, tile_address, &mut bg_screen_row);
             for x in 0..BG_SIZE.0 {
                 output.set(x, y, bg_screen_row[x].color());
             }
+        }
+
+        if tile_address == self.get_bg_code_dat_start() {
+            output.draw_wrapping_rect(
+                self.sx as usize,
+                self.sy as usize,
+                fb::SCREEN_SIZE.0,
+                fb::SCREEN_SIZE.1,
+                [0, 0, 0, 255],
+            );
+        }
+
+        if tile_address == self.get_window_code_dat_start() && self.is_window_enabled() {
+            let width = if self.wx >= 159 {
+                0
+            } else {
+                159 - self.wx as usize
+            };;
+            let height = if self.wy >= 143 {
+                0
+            } else {
+                143 - self.wy as usize
+            };
+            output.draw_wrapping_rect(
+                self.wx as usize,
+                self.wy as usize,
+                width,
+                height,
+                [255, 0, 255, 255],
+            );
         }
     }
 
@@ -472,17 +496,17 @@ impl Lcd {
 
     fn get_bg_code_dat_start(&self) -> Address {
         if self.lcdc & BGD_CODE_DAT_FLAG == 0 {
-            Address(0x9800)
+            BG_START_1
         } else {
-            Address(0x9C00)
+            BG_START_2
         }
     }
 
     fn get_window_code_dat_start(&self) -> Address {
         if self.lcdc & WINDOW_CODE_DAT_FLAG == 0 {
-            Address(0x9800)
+            BG_START_1
         } else {
-            Address(0x9C00)
+            BG_START_2
         }
     }
 

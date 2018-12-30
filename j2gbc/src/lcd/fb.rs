@@ -15,25 +15,60 @@ pub const DMG_COLORS: [Pixel; 4] = [
 pub type Pixel = [u8; 4];
 
 #[derive(Clone)]
-pub struct Framebuffer(Vec<Pixel>, usize);
+pub struct Framebuffer {
+    data: Vec<Pixel>,
+    size: (usize, usize),
+}
 
 impl Framebuffer {
     pub fn new((width, height): (usize, usize)) -> Framebuffer {
         let mut v = Vec::with_capacity(width * height);
         v.resize(width * height, DMG_COLOR_WHITE);
-        Framebuffer(v, width)
+        Framebuffer {
+            data: v,
+            size: (width, height),
+        }
     }
 
     pub fn set(&mut self, x: usize, y: usize, color: Pixel) {
-        self.0[x + y * self.1] = color;
+        self.data[x + y * self.size.0] = color;
     }
 
     pub fn get(&self, x: usize, y: usize) -> Pixel {
-        self.0[x + y * self.1]
+        self.data[x + y * self.size.0]
     }
 
     pub fn raw(&self) -> &[Pixel] {
-        &self.0
+        &self.data
+    }
+
+    pub fn draw_wrapping_vline(&mut self, x: usize, y: usize, len: usize, color: Pixel) {
+        for i in 0..len {
+            let y = i % self.size.1 + y;
+            self.set(x, y, color);
+        }
+    }
+
+    pub fn draw_wrapping_hline(&mut self, x: usize, y: usize, len: usize, color: Pixel) {
+        for i in 0..len {
+            let x = i % self.size.0 + x;
+            self.set(x, y, color);
+        }
+    }
+
+    pub fn draw_wrapping_rect(
+        &mut self,
+        x: usize,
+        y: usize,
+        width: usize,
+        height: usize,
+        color: Pixel,
+    ) {
+        self.draw_wrapping_vline(x, y, height, color);
+        self.draw_wrapping_hline(x, y, width, color);
+
+        self.draw_wrapping_vline((x + width) % self.size.0, y, height, color);
+        self.draw_wrapping_hline(x, (y + height) % self.size.1, width, color);
     }
 }
 
