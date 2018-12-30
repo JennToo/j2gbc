@@ -425,7 +425,17 @@ impl Lcd {
         for y in 0..BG_SIZE.1 {
             let mut bg_screen_row =
                 [fb::TentativePixel::new(fb::DMG_COLOR_WHITE, false, true); BG_SIZE.0];
-            self.render_tile_row(y as u8, 0, 0, Address(0x9800), &mut bg_screen_row);
+            self.render_tile_row(
+                y as u8,
+                0,
+                0,
+                if index == 0 {
+                    Address(0x9800)
+                } else {
+                    Address(0x9C00)
+                },
+                &mut bg_screen_row,
+            );
             for x in 0..BG_SIZE.0 {
                 output.set(x, y, bg_screen_row[x].color());
             }

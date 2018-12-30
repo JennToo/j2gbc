@@ -24,9 +24,7 @@ pub struct UiRender {
     breakpoints_ui: BreakpointsUi,
     visibility_set: VisibilitySet,
 
-    bg_tex: gfx::handle::Texture<ResourcesT, SurfaceFormat>,
-    bg_fb: Framebuffer,
-    bg_im_tex: ImTexture,
+    bg_texes: [UiTexture; 2],
 }
 
 impl UiRender {
@@ -111,45 +109,14 @@ impl UiRender {
 
         imgui_glutin_support::configure_keys(&mut imgui);
 
-        // TODO: We actually need 2 of these
-        let bg_tex = factory
-            .create_texture::<SurfaceFormat>(
-                gfx::texture::Kind::D2(
-                    BG_SIZE.0 as u16,
-                    BG_SIZE.1 as u16,
-                    gfx::texture::AaMode::Single,
-                ),
-                1,
-                gfx::memory::Bind::SHADER_RESOURCE,
-                gfx::memory::Usage::Dynamic,
-                Some(gfx::format::ChannelType::Unorm),
-            )
-            .unwrap();
-        let bg_sampler = factory.create_sampler(gfx::texture::SamplerInfo::new(
-            gfx::texture::FilterMethod::Scale,
-            gfx::texture::WrapMode::Clamp,
-        ));
-        let bg_view = factory
-            .view_texture_as_shader_resource::<(SurfaceFormat, gfx::format::Unorm)>(
-                &bg_tex,
-                (1, 1),
-                gfx::format::Swizzle(
-                    gfx::format::ChannelSource::X,
-                    gfx::format::ChannelSource::Y,
-                    gfx::format::ChannelSource::Z,
-                    gfx::format::ChannelSource::W,
-                ),
-            )
-            .unwrap();
-        let bg_im_tex = renderer.textures().insert((bg_view, bg_sampler));
-        let bg_fb = Framebuffer::new(BG_SIZE);
-
+        let bg_texes = [
+            UiTexture::new(factory, renderer.textures(), BG_SIZE),
+            UiTexture::new(factory, renderer.textures(), BG_SIZE),
+        ];
         UiRender {
             renderer,
             frame_size,
-            bg_tex,
-            bg_im_tex,
-            bg_fb,
+            bg_texes,
             ctx: imgui,
             debugger_ui: DebuggerUi::default(),
             logger_ui: LoggerUi::default(),
@@ -191,6 +158,10 @@ impl UiRender {
                 if ret {
                     visibility_set.breakpoints_ui = true;
                 }
+                let ret = ui.menu_item(im_str!("Backgrounds")).build();
+                if ret {
+                    visibility_set.background_ui = true;
+                }
             });
         });
 
@@ -204,16 +175,11 @@ impl UiRender {
 
         // TODO: Refactor
         if visibility_set.background_ui {
-            system.debugger().render_bg_to_fb(0, &mut self.bg_fb);
-            encoder
-                .update_texture::<SurfaceFormat, (SurfaceFormat, gfx::format::Unorm)>(
-                    &self.bg_tex,
-                    None,
-                    self.bg_tex.get_info().to_image_info(0),
-                    self.bg_fb.raw(),
-                )
-                .unwrap();
-            let bg_im_tex = self.bg_im_tex.clone();
+            for i in 0..2 {
+                self.bg_texes[i]
+                    .upload_data(|fb| system.debugger().render_bg_to_fb(i, fb), encoder);
+            }
+            let bg_im_texes = [self.bg_texes[0].im_tex(), self.bg_texes[1].im_tex()];
             ui.window(im_str!("BG"))
                 .always_auto_resize(true)
                 .opened(&mut visibility_set.background_ui)
@@ -221,7 +187,14 @@ impl UiRender {
                 .build(|| {
                     Image::new(
                         &ui,
-                        bg_im_tex,
+                        bg_im_texes[0],
+                        ImVec2::new(BG_SIZE.0 as f32 * 2., BG_SIZE.1 as f32 * 2.),
+                    )
+                    .build();
+                    ui.same_line(0.);
+                    Image::new(
+                        &ui,
+                        bg_im_texes[1],
                         ImVec2::new(BG_SIZE.0 as f32 * 2., BG_SIZE.1 as f32 * 2.),
                     )
                     .build();
@@ -487,5 +460,69 @@ impl BreakpointsUi {
                     debug.remove_breakpoint(*r);
                 }
             });
+    }
+}
+
+struct UiTexture {
+    tex: gfx::handle::Texture<ResourcesT, SurfaceFormat>,
+    fb: Framebuffer,
+    im_tex: ImTexture,
+}
+
+impl UiTexture {
+    fn new(
+        factory: &mut FactoryT,
+        im_texes: &mut Textures<imgui_gfx_renderer::Texture<ResourcesT>>,
+        size: (usize, usize),
+    ) -> UiTexture {
+        let tex = factory
+            .create_texture::<SurfaceFormat>(
+                gfx::texture::Kind::D2(size.0 as u16, size.1 as u16, gfx::texture::AaMode::Single),
+                1,
+                gfx::memory::Bind::SHADER_RESOURCE,
+                gfx::memory::Usage::Dynamic,
+                Some(gfx::format::ChannelType::Unorm),
+            )
+            .unwrap();
+        let sampler = factory.create_sampler(gfx::texture::SamplerInfo::new(
+            gfx::texture::FilterMethod::Scale,
+            gfx::texture::WrapMode::Clamp,
+        ));
+        let view = factory
+            .view_texture_as_shader_resource::<(SurfaceFormat, gfx::format::Unorm)>(
+                &tex,
+                (1, 1),
+                gfx::format::Swizzle(
+                    gfx::format::ChannelSource::X,
+                    gfx::format::ChannelSource::Y,
+                    gfx::format::ChannelSource::Z,
+                    gfx::format::ChannelSource::W,
+                ),
+            )
+            .unwrap();
+        let im_tex = im_texes.insert((view, sampler));
+        let fb = Framebuffer::new(size);
+
+        UiTexture { fb, tex, im_tex }
+    }
+
+    fn upload_data<F>(&mut self, f: F, encoder: &mut EncoderT)
+    where
+        F: FnOnce(&mut Framebuffer),
+    {
+        f(&mut self.fb);
+
+        encoder
+            .update_texture::<SurfaceFormat, (SurfaceFormat, gfx::format::Unorm)>(
+                &self.tex,
+                None,
+                self.tex.get_info().to_image_info(0),
+                self.fb.raw(),
+            )
+            .unwrap();
+    }
+
+    fn im_tex(&self) -> ImTexture {
+        self.im_tex.clone()
     }
 }
