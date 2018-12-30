@@ -315,6 +315,7 @@ impl Lcd {
             self.scanline_sweeper.ly(),
             self.sx,
             self.sy,
+            0,
             self.get_bg_code_dat_start(),
             screen_row,
         );
@@ -336,6 +337,7 @@ impl Lcd {
             translated_y,
             0,
             0,
+            if self.wx > 7 { self.wx - 7 } else { 0 },
             self.get_window_code_dat_start(),
             screen_row,
         );
@@ -346,12 +348,13 @@ impl Lcd {
         screen_y: u8,
         scx: u8,
         scy: u8,
+        start_x: u8,
         code_dat_start: Address,
         screen_row: &mut [fb::TentativePixel],
     ) {
         let translated_y = Wrapping(screen_y) + Wrapping(scy); // Implicit % 256
-        for screen_x in 0..screen_row.len() {
-            let translated_x = Wrapping(screen_x as u8) + Wrapping(scx); // Implicit % 256
+        for screen_x in (start_x as usize)..screen_row.len() {
+            let translated_x = Wrapping(screen_x as u8) - Wrapping(start_x) + Wrapping(scx); // Implicit % 256
 
             let char_y_offset = Wrapping(u16::from(translated_y.0))
                 / Wrapping(u16::from(PIXEL_PER_CHAR))
@@ -429,7 +432,7 @@ impl Lcd {
         for y in 0..BG_SIZE.1 {
             let mut bg_screen_row =
                 [fb::TentativePixel::new(fb::DMG_COLOR_WHITE, false, true); BG_SIZE.0];
-            self.render_tile_row(y as u8, 0, 0, tile_address, &mut bg_screen_row);
+            self.render_tile_row(y as u8, 0, 0, 0, tile_address, &mut bg_screen_row);
             for x in 0..BG_SIZE.0 {
                 output.set(x, y, bg_screen_row[x].color());
             }
@@ -450,19 +453,13 @@ impl Lcd {
                 0
             } else {
                 159 - self.wx as usize
-            };;
+            };
             let height = if self.wy >= 143 {
                 0
             } else {
                 143 - self.wy as usize
             };
-            output.draw_wrapping_rect(
-                self.wx as usize,
-                self.wy as usize,
-                width,
-                height,
-                [255, 0, 255, 255],
-            );
+            output.draw_wrapping_rect(0, 0, width, height, [255, 0, 255, 255]);
         }
     }
 
