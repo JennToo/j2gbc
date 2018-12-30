@@ -223,24 +223,13 @@ impl UiRender {
     }
 }
 
+#[derive(Default)]
 struct VisibilitySet {
     debugger_ui: bool,
     logger_ui: bool,
     disassembly_ui: bool,
     breakpoints_ui: bool,
     background_ui: bool,
-}
-
-impl Default for VisibilitySet {
-    fn default() -> VisibilitySet {
-        VisibilitySet {
-            debugger_ui: true,
-            logger_ui: true,
-            disassembly_ui: true,
-            breakpoints_ui: true,
-            background_ui: true,
-        }
-    }
 }
 
 #[derive(Default)]
