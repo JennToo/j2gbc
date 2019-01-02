@@ -36,7 +36,7 @@ impl Cart {
             }
         };
 
-        Ok(Cart { data: data, mbc })
+        Ok(Cart { data, mbc })
     }
 
     pub fn name(&self) -> String {

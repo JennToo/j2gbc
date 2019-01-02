@@ -512,6 +512,6 @@ impl UiTexture {
     }
 
     fn im_tex(&self) -> ImTexture {
-        self.im_tex.clone()
+        self.im_tex
     }
 }

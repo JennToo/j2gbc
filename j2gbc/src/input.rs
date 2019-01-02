@@ -34,7 +34,7 @@ impl Button {
         }
     }
 
-    fn output(&self) -> u8 {
+    fn output(self) -> u8 {
         match self {
             Button::Right | Button::A => P10,
             Button::Left | Button::B => P11,
@@ -62,7 +62,7 @@ impl Input {
             .active
             .iter()
             .filter(|x| x.selected_by_output(output_bits))
-            .map(Button::output)
+            .map(|b| b.output())
             .fold(0, u8::bitor))
             & INPUT_MASK
     }

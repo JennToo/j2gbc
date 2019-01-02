@@ -88,7 +88,7 @@ impl TentativePixel {
         }
     }
 
-    pub fn color(&self) -> Pixel {
+    pub fn color(self) -> Pixel {
         self.color
     }
 }

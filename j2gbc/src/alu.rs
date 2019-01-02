@@ -263,7 +263,6 @@ pub fn rrc(v: u8, mut f: Flags) -> (u8, Flags) {
     (r, f)
 }
 
-#[allow(if_same_then_else)]
 pub fn daa(v: u8, mut f: Flags) -> (u8, Flags) {
     let mut v = Wrapping(v);
     let mut correction = 0;

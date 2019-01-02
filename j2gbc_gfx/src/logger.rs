@@ -35,7 +35,7 @@ impl Log for DebugLogger {
         let timestamp = self.started.elapsed();
         let mut l = self.log.lock().unwrap();
         l.push(LogRecord {
-            timestamp: timestamp,
+            timestamp,
             message: r,
         });
     }

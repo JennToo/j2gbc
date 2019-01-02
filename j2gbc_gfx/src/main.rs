@@ -13,7 +13,7 @@ mod timer;
 fn load_system(args: &clap::ArgMatches<'static>) -> (System, save::Saver) {
     let cart_path = args.value_of("rom").unwrap();
 
-    let cart_file = File::open(cart_path.clone()).unwrap();
+    let cart_file = File::open(cart_path).unwrap();
 
     let sink: Box<AudioSink> = if !args.is_present("no-audio") {
         Box::new(audio::CpalSink::new().unwrap())

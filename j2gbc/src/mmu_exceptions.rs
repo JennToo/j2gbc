@@ -46,6 +46,6 @@ impl MmuExceptions {
             }
         }
 
-        return false;
+        false
     }
 }

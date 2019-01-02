@@ -22,7 +22,7 @@ impl Saver {
         if self.timer.elapsed().as_secs() > 0 {
             self.timer = Instant::now();
             let mut f = File::create(&self.path).unwrap();
-            f.write(system.read_cart_sram()).unwrap();
+            f.write_all(system.read_cart_sram()).unwrap();
         }
     }
 }
