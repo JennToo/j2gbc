@@ -44,14 +44,14 @@ impl Framebuffer {
 
     pub fn draw_wrapping_vline(&mut self, x: usize, y: usize, len: usize, color: Pixel) {
         for i in 0..len {
-            let y = i % self.size.1 + y;
+            let y = (y + i) % self.size.1;
             self.set(x, y, color);
         }
     }
 
     pub fn draw_wrapping_hline(&mut self, x: usize, y: usize, len: usize, color: Pixel) {
         for i in 0..len {
-            let x = i % self.size.0 + x;
+            let x = (x + i) % self.size.0;
             self.set(x, y, color);
         }
     }
