@@ -3,8 +3,14 @@ name = "j2gbc"
 version = "0.1.0"
 authors = ["Jennifer Wilcox <jennifer@nitori.org>"]
 edition = "2018"
+build = "build.rs"
 
 [dependencies]
 log = "*"
 j2ds = "*"
+toml = "*"
+
+[build-dependencies]
+serde = "*"
+serde_derive = "*"
 toml = "*"

@@ -205,7 +205,7 @@ impl UiRender {
     }
 
     pub fn handle_event(&mut self, event: &Event) {
-        imgui_glutin_support::handle_event(&mut self.ctx, &event);
+        imgui_glutin_support::handle_event(&mut self.ctx, event);
     }
 
     pub fn update_render_target(&mut self, out: ColorHandle) {

@@ -1,0 +1,14 @@
+[[test]]
+name = "blarg_01_special"
+path = "gb-test-roms/cpu_instrs/individual/01-special.gb"
+max_runtime = 3
+pass_value = "Passed"
+pass_addr = 0x9860
+
+[[test]]
+name = "blarg_02_interrupts"
+path = "gb-test-roms/cpu_instrs/individual/02-interrupts.gb"
+max_runtime = 1
+pass_value = "Passed"
+pass_addr = 0x9860
+
