@@ -12,3 +12,65 @@ max_runtime = 1
 pass_value = "Passed"
 pass_addr = 0x9860
 
+[[test]]
+name = "blarg_03_op_sp_hl"
+path = "gb-test-roms/cpu_instrs/individual/03-op sp,hl.gb"
+max_runtime = 3
+pass_value = "Passed"
+pass_addr = 0x9860
+
+[[test]]
+name = "blarg_04_op_r_imm"
+path = "gb-test-roms/cpu_instrs/individual/04-op r,imm.gb"
+max_runtime = 3
+pass_value = "Passed"
+pass_addr = 0x9860
+
+[[test]]
+name = "blarg_05_op_rp"
+path = "gb-test-roms/cpu_instrs/individual/05-op rp.gb"
+max_runtime = 4
+pass_value = "Passed"
+pass_addr = 0x9860
+
+[[test]]
+name = "blarg_06_ld_r_r"
+path = "gb-test-roms/cpu_instrs/individual/06-ld r,r.gb"
+max_runtime = 4
+pass_value = "Passed"
+pass_addr = 0x9860
+
+[[test]]
+name = "blarg_07_jmp_etc"
+path = "gb-test-roms/cpu_instrs/individual/07-jr,jp,call,ret,rst.gb"
+max_runtime = 1
+pass_value = "Passed"
+pass_addr = 0x9880
+
+[[test]]
+name = "blarg_08_misc"
+path = "gb-test-roms/cpu_instrs/individual/08-misc instrs.gb"
+max_runtime = 1
+pass_value = "Passed"
+pass_addr = 0x9860
+
+[[test]]
+name = "blarg_09_op_r_r"
+path = "gb-test-roms/cpu_instrs/individual/09-op r,r.gb"
+max_runtime = 10
+pass_value = "Passed"
+pass_addr = 0x9860
+
+[[test]]
+name = "blarg_10_bit_ops"
+path = "gb-test-roms/cpu_instrs/individual/10-bit ops.gb"
+max_runtime = 14
+pass_value = "Passed"
+pass_addr = 0x9860
+
+[[test]]
+name = "blarg_11_op_a_hl"
+path = "gb-test-roms/cpu_instrs/individual/11-op a,(hl).gb"
+max_runtime = 18
+pass_value = "Passed"
+pass_addr = 0x9860
