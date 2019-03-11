@@ -413,9 +413,8 @@ impl Instruction {
                     )),
                     2,
                 )),
-                _ => unreachable!(),
             },
-            _ => {
+            0xD3 | 0xDB | 0xDD | 0xE3 | 0xE4 | 0xEB | 0xEC | 0xED | 0xF4 | 0xFC | 0xFD => {
                 error!(
                     "Unknown instruction {:#X} {:#X} {:#X}",
                     bytes[0], bytes[1], bytes[2]
