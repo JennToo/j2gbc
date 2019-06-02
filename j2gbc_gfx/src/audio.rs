@@ -13,6 +13,7 @@ pub struct CpalSink {
     rate: u64,
 
     samples: Vec<f32>,
+    chans: [Vec<f32>; 4],
 }
 
 impl CpalSink {
@@ -45,6 +46,7 @@ impl CpalSink {
             local_queue: Vec::with_capacity(10),
             rate: u64::from(format.sample_rate.0),
             samples: Vec::new(),
+            chans: [Vec::new(), Vec::new(), Vec::new(), Vec::new()],
         })
     }
 }
@@ -66,6 +68,12 @@ impl AudioSink for CpalSink {
     fn sample_rate(&self) -> u64 {
         self.rate
     }
+
+    fn emit_raw_chans(&mut self, chans: [f32; 4]) {
+        for i in 0..4 {
+            self.chans[i].push(chans[i]);
+        }
+    }
 }
 
 impl Drop for CpalSink {
@@ -79,6 +87,15 @@ impl Drop for CpalSink {
         let mut writer = hound::WavWriter::create("target/audio.wav", spec).unwrap();
         for s in &self.samples {
             writer.write_sample(*s).unwrap();
+        }
+
+        for i in 0..4 {
+            let mut writer =
+                hound::WavWriter::create(format!("target/chan{}.wav", i), spec).unwrap();
+            for s in self.chans[i].iter() {
+                writer.write_sample(*s).unwrap();
+                writer.write_sample(*s).unwrap();
+            }
         }
     }
 }

@@ -1,10 +1,14 @@
-use j2ds::Clock;
+use j2ds::{Clock, Timer};
 
 pub struct SquareChannel {
     period: u64,
     duty_cycle: u8,
     use_len: bool,
     len: u8,
+    last_cpu_cycle: u64,
+    duty_cycle_step: usize,
+    duty_cycle_step_timer: Timer,
+    duty_cycle_step_timer_offset: u64,
 
     vol: u8,
     vol_orig: u8,
@@ -29,8 +33,12 @@ impl SquareChannel {
         SquareChannel {
             period: 0,
             duty_cycle: 0,
+            duty_cycle_step: 0,
+            duty_cycle_step_timer: Timer::new(1, 0, 0),
+            duty_cycle_step_timer_offset: 0,
             use_len: false,
             len: 0,
+            last_cpu_cycle: 0,
 
             vol: 0,
             vol_orig: 0,
@@ -105,7 +113,9 @@ impl SquareChannel {
 
     fn update_from_frequency(&mut self) {
         if self.frequency <= 2048 {
-            self.period = 4 * 8 * (2048 - self.frequency);
+            self.period = 4 * (2048 - self.frequency);
+            self.duty_cycle_step_timer = Timer::new(self.period, 0, 0);
+            self.duty_cycle_step_timer_offset = self.last_cpu_cycle;
         }
     }
 
@@ -141,15 +151,19 @@ impl SquareChannel {
         }
     }
 
-    pub fn sample(&self, cpu_cycle: u64) -> f32 {
+    pub fn sample(&mut self, cpu_cycle: u64) -> f32 {
         if self.period == 0 || self.frequency > 2048 || !self.is_active() {
             return 0.;
         }
-        let phase = cpu_cycle % self.period;
+        self.last_cpu_cycle = cpu_cycle;
+        while let Some(_) = self
+            .duty_cycle_step_timer
+            .update(cpu_cycle - self.duty_cycle_step_timer_offset)
+        {
+            self.duty_cycle_step = (self.duty_cycle_step + 1) % 8;
+        }
 
-        let duty_cycle_step = phase * 8 / self.period;
-
-        DUTY_VALUES[self.duty_cycle as usize][duty_cycle_step as usize]
+        DUTY_VALUES[self.duty_cycle as usize][self.duty_cycle_step as usize]
             * (f32::from(self.vol) / 15.0)
     }
 

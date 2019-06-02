@@ -22,7 +22,8 @@ impl EventHandler {
         }
     }
 
-    pub fn handle_events(&mut self, system: &mut System, renderer: &mut Renderer) {
+    pub fn handle_events(&mut self, system: &mut System, renderer: &mut Renderer) -> bool {
+        let mut should_exit = false;
         self.events_loop.poll_events(|event| {
             renderer.ui.handle_event(&event);
             if let Event::WindowEvent { event, .. } = event {
@@ -35,7 +36,7 @@ impl EventHandler {
                                 ..
                             },
                         ..
-                    } => std::process::exit(0),
+                    } => should_exit = true,
                     WindowEvent::KeyboardInput { input, .. } => {
                         handle_input(&input, system);
                     }
@@ -51,6 +52,7 @@ impl EventHandler {
         if self.elapsed > Duration::from_millis(17) {
             info!(target: "events", "Slow frame {:?}", self.elapsed);
         }
+        should_exit
     }
 }
 

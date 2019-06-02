@@ -58,6 +58,7 @@ impl Synth {
                 self.chan4.sample(cpu_cycle),
             ];
             self.sink.emit_sample(self.mixer.mix(samples));
+            self.sink.emit_raw_chans(samples);
         }
 
         if self.len_clock.update(cpu_cycle) == Some(TimerEvent::RisingEdge) {

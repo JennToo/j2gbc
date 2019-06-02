@@ -87,7 +87,9 @@ pub fn main() {
     let mut renderer = render::Renderer::new(gl_window);
 
     loop {
-        events.handle_events(&mut system, &mut renderer);
+        if events.handle_events(&mut system, &mut renderer) {
+            break;
+        }
         system.run_for_duration(&events.elapsed);
         saver.maybe_save(&system);
         renderer.draw(&mut system, events.elapsed);

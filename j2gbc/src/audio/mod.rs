@@ -59,6 +59,7 @@ pub struct Audio {
 
 pub trait AudioSink {
     fn emit_sample(&mut self, sample: (f32, f32));
+    fn emit_raw_chans(&mut self, _chans: [f32; 4]) {}
     fn sample_rate(&self) -> u64;
 }
 
