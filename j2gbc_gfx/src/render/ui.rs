@@ -1,5 +1,8 @@
+use std::sync::{atomic::Ordering, Arc};
 use std::time::Duration;
 
+use super::*;
+use crate::audio::CaptureConfig;
 use gfx::traits::Factory;
 use glutin::Event;
 use imgui::*;
@@ -9,8 +12,6 @@ use j2gbc::{
     debug::{Address, Register8, BG_SIZE},
     Framebuffer,
 };
-
-use super::*;
 
 const INSTRUCTION_PRINT_COUNT: usize = 40;
 
@@ -135,6 +136,7 @@ impl UiRender {
         encoder: &mut EncoderT,
         factory: &mut FactoryT,
         system: &mut System,
+        audio_capture_config: &Arc<CaptureConfig>,
     ) {
         let time = delta_time.as_secs() as f32 + delta_time.subsec_nanos() as f32 / 1_000_000_000.;
         let mut ui = self.ctx.frame(self.frame_size, time);
@@ -161,6 +163,20 @@ impl UiRender {
                 let ret = ui.menu_item(im_str!("Backgrounds")).build();
                 if ret {
                     visibility_set.background_ui = true;
+                }
+            });
+
+            ui.menu(im_str!("Audio")).build(|| {
+                if audio_capture_config.mixed.load(Ordering::Relaxed) {
+                    let ret = ui.menu_item(im_str!("Stop capturing mixed audio")).build();
+                    if ret {
+                        audio_capture_config.mixed.store(false, Ordering::Relaxed);
+                    }
+                } else {
+                    let ret = ui.menu_item(im_str!("Capture mixed audio")).build();
+                    if ret {
+                        audio_capture_config.mixed.store(true, Ordering::Relaxed);
+                    }
                 }
             });
         });

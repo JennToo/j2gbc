@@ -1,5 +1,8 @@
 use std::ops::DerefMut;
-use std::sync::{Arc, Mutex};
+use std::sync::{
+    atomic::{AtomicBool, Ordering},
+    Arc, Mutex,
+};
 use std::thread;
 
 use j2ds::{ElasticPopResult, ElasticRingBuffer};
@@ -14,6 +17,8 @@ pub struct CpalSink {
 
     samples: Vec<f32>,
     chans: [Vec<f32>; 4],
+
+    capture_config: Arc<CaptureConfig>,
 }
 
 impl CpalSink {
@@ -47,7 +52,12 @@ impl CpalSink {
             rate: u64::from(format.sample_rate.0),
             samples: Vec::new(),
             chans: [Vec::new(), Vec::new(), Vec::new(), Vec::new()],
+            capture_config: Arc::new(CaptureConfig::default()),
         })
+    }
+
+    pub fn get_capture_config(&self) -> Arc<CaptureConfig> {
+        self.capture_config.clone()
     }
 }
 
@@ -61,8 +71,11 @@ impl AudioSink for CpalSink {
                 .push_back_slice(self.local_queue.as_slice());
             self.local_queue.clear();
         }
-        // self.samples.push(sample.0);
-        // self.samples.push(sample.1);
+
+        if self.capture_config.mixed.load(Ordering::Relaxed) {
+            self.samples.push(sample.0);
+            self.samples.push(sample.1);
+        }
     }
 
     fn sample_rate(&self) -> u64 {
@@ -71,7 +84,9 @@ impl AudioSink for CpalSink {
 
     fn emit_raw_chans(&mut self, chans: [f32; 4]) {
         for i in 0..4 {
-            self.chans[i].push(chans[i]);
+            if self.capture_config.channels[i].load(Ordering::Relaxed) {
+                self.chans[i].push(chans[i]);
+            }
         }
     }
 }
@@ -84,17 +99,22 @@ impl Drop for CpalSink {
             bits_per_sample: 32,
             sample_format: hound::SampleFormat::Float,
         };
-        let mut writer = hound::WavWriter::create("target/audio.wav", spec).unwrap();
-        for s in &self.samples {
-            writer.write_sample(*s).unwrap();
+
+        if self.samples.len() > 0 {
+            let mut writer = hound::WavWriter::create("target/audio.wav", spec).unwrap();
+            for s in &self.samples {
+                writer.write_sample(*s).unwrap();
+            }
         }
 
         for i in 0..4 {
-            let mut writer =
-                hound::WavWriter::create(format!("target/chan{}.wav", i), spec).unwrap();
-            for s in self.chans[i].iter() {
-                writer.write_sample(*s).unwrap();
-                writer.write_sample(*s).unwrap();
+            if self.chans[i].len() > 0 {
+                let mut writer =
+                    hound::WavWriter::create(format!("target/chan{}.wav", i), spec).unwrap();
+                for s in self.chans[i].iter() {
+                    writer.write_sample(*s).unwrap();
+                    writer.write_sample(*s).unwrap();
+                }
             }
         }
     }
@@ -127,4 +147,18 @@ fn feed_cpal_events(
 
         _ => (),
     });
+}
+
+pub struct CaptureConfig {
+    pub mixed: AtomicBool,
+    pub channels: [AtomicBool; 4],
+}
+
+impl Default for CaptureConfig {
+    fn default() -> CaptureConfig {
+        CaptureConfig {
+            mixed: false.into(),
+            channels: [false.into(), false.into(), false.into(), false.into()],
+        }
+    }
 }

@@ -1,7 +1,9 @@
+use crate::audio::CaptureConfig;
 use gfx;
 use gfx::Device;
 use glutin::GlContext;
 use j2gbc::System;
+use std::sync::Arc;
 use std::time::Duration;
 
 mod lcd;
@@ -53,12 +55,22 @@ impl Renderer {
         }
     }
 
-    pub fn draw(&mut self, system: &mut System, dt: Duration) {
+    pub fn draw(
+        &mut self,
+        system: &mut System,
+        audio_capture_config: &Arc<CaptureConfig>,
+        dt: Duration,
+    ) {
         self.encoder.clear(&self.main_color, CLEAR_COLOR);
 
         self.lcd.draw(&mut self.encoder, system);
-        self.ui
-            .draw(dt, &mut self.encoder, &mut self.factory, system);
+        self.ui.draw(
+            dt,
+            &mut self.encoder,
+            &mut self.factory,
+            system,
+            audio_capture_config,
+        );
 
         self.encoder.flush(&mut self.device);
         self.window.swap_buffers().unwrap();

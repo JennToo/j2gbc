@@ -1,5 +1,6 @@
 use std::fs::File;
 use std::io::Read;
+use std::sync::Arc;
 
 use j2gbc::{AudioSink, NullSink, System};
 
@@ -10,15 +11,22 @@ mod render;
 mod save;
 mod timer;
 
-fn load_system(args: &clap::ArgMatches<'static>) -> (System, save::Saver) {
+fn load_system(
+    args: &clap::ArgMatches<'static>,
+) -> (System, save::Saver, Arc<audio::CaptureConfig>) {
     let cart_path = args.value_of("rom").unwrap();
 
     let cart_file = File::open(cart_path).unwrap();
 
-    let sink: Box<AudioSink> = if !args.is_present("no-audio") {
-        Box::new(audio::CpalSink::new().unwrap())
+    let (sink, capture_config): (Box<AudioSink>, _) = if !args.is_present("no-audio") {
+        let sink = audio::CpalSink::new().unwrap();
+        let config = sink.get_capture_config();
+        (Box::new(sink), config)
     } else {
-        Box::new(NullSink)
+        (
+            Box::new(NullSink),
+            Arc::new(audio::CaptureConfig::default()),
+        )
     };
 
     let cgb_mode = if let Some(m) = args.value_of("mode") {
@@ -40,7 +48,7 @@ fn load_system(args: &clap::ArgMatches<'static>) -> (System, save::Saver) {
     }
     let saver = save::Saver::new(save_path.as_str());
 
-    (system, saver)
+    (system, saver, capture_config)
 }
 
 fn parse_args() -> clap::ArgMatches<'static> {
@@ -72,7 +80,7 @@ fn parse_args() -> clap::ArgMatches<'static> {
 pub fn main() {
     logger::install_logger();
     let args = parse_args();
-    let (mut system, mut saver) = load_system(&args);
+    let (mut system, mut saver, audio_capture_config) = load_system(&args);
 
     let events_loop = glutin::EventsLoop::new();
     let window_config = glutin::WindowBuilder::new()
@@ -92,6 +100,6 @@ pub fn main() {
         }
         system.run_for_duration(&events.elapsed);
         saver.maybe_save(&system);
-        renderer.draw(&mut system, events.elapsed);
+        renderer.draw(&mut system, &audio_capture_config, events.elapsed);
     }
 }
