@@ -1,4 +1,7 @@
-use std::sync::{atomic::Ordering, Arc};
+use std::sync::{
+    atomic::{AtomicBool, Ordering},
+    Arc,
+};
 use std::time::Duration;
 
 use super::*;
@@ -167,17 +170,11 @@ impl UiRender {
             });
 
             ui.menu(im_str!("Audio")).build(|| {
-                if audio_capture_config.mixed.load(Ordering::Relaxed) {
-                    let ret = ui.menu_item(im_str!("Stop capturing mixed audio")).build();
-                    if ret {
-                        audio_capture_config.mixed.store(false, Ordering::Relaxed);
-                    }
-                } else {
-                    let ret = ui.menu_item(im_str!("Capture mixed audio")).build();
-                    if ret {
-                        audio_capture_config.mixed.store(true, Ordering::Relaxed);
-                    }
-                }
+                audio_menu_item(&ui, &audio_capture_config.mixed, "mixed");
+                audio_menu_item(&ui, &audio_capture_config.channels[0], "square 1 channel");
+                audio_menu_item(&ui, &audio_capture_config.channels[1], "square 2 channel");
+                audio_menu_item(&ui, &audio_capture_config.channels[2], "wave channel");
+                audio_menu_item(&ui, &audio_capture_config.channels[3], "noise channel");
             });
         });
 
@@ -236,6 +233,24 @@ impl UiRender {
             logical_size: logical_size.into(),
             hidpi_factor,
         };
+    }
+}
+
+fn audio_menu_item<'ui>(ui: &Ui<'ui>, value: &AtomicBool, name: &str) {
+    if value.load(Ordering::Relaxed) {
+        let ret = ui
+            .menu_item(&ImString::new(format!("Stop capturing {} audio", name)))
+            .build();
+        if ret {
+            value.store(false, Ordering::Relaxed);
+        }
+    } else {
+        let ret = ui
+            .menu_item(&ImString::new(format!("Capture {} audio", name)))
+            .build();
+        if ret {
+            value.store(true, Ordering::Relaxed);
+        }
     }
 }
 
