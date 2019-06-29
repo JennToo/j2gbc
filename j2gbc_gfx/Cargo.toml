@@ -14,6 +14,7 @@ j2ds = "*"
 clap = "*"
 gdk-pixbuf = "*"
 glib = "*"
+gdk = "*"
 
 [dependencies.gtk]
 version = "0.7.0"

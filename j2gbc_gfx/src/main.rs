@@ -1,12 +1,14 @@
+use std::cell::RefCell;
 use std::fs::File;
 use std::io::Read;
+use std::rc::Rc;
 use std::sync::Arc;
 
 use gio::prelude::*;
 use gtk::prelude::*;
 use gtk::{Application, ApplicationWindow};
 
-use j2gbc::{AudioSink, NullSink, System, SCREEN_SIZE};
+use j2gbc::{AudioSink, Button, NullSink, System, SCREEN_SIZE};
 
 mod audio;
 mod logger;
@@ -79,6 +81,8 @@ fn parse_args() -> clap::ArgMatches<'static> {
         ).get_matches()
 }
 
+type SystemRef = Rc<RefCell<System>>;
+
 pub fn main() {
     logger::install_logger();
     let application =
@@ -87,7 +91,8 @@ pub fn main() {
 
     application.connect_activate(|app| {
         let args = parse_args();
-        let (mut system, mut saver, _) = load_system(&args);
+        let (system, mut saver, _) = load_system(&args);
+        let system = Rc::new(RefCell::new(system));
 
         let window = ApplicationWindow::new(app);
         window.set_title("First GTK+ Program");
@@ -107,11 +112,27 @@ pub fn main() {
 
         let mut dt = timer::DeltaTimer::new();
 
-        gtk::timeout_add(16, move || {
-            saver.maybe_save(&system);
-            system.run_for_duration(&dt.elapsed());
+        let key_press_system = system.clone();
+        window.connect_key_press_event(move |_, event| {
+            if let Some(button) = keycode_to_button(event.get_keyval()) {
+                key_press_system.borrow_mut().activate_button(button);
+            }
+            Inhibit(false)
+        });
+        let key_release_system = system.clone();
+        window.connect_key_release_event(move |_, event| {
+            if let Some(button) = keycode_to_button(event.get_keyval()) {
+                key_release_system.borrow_mut().deactivate_button(button);
+            }
+            Inhibit(false)
+        });
 
-            let fb = system.get_framebuffer();
+        gtk::timeout_add(16, move || {
+            saver.maybe_save(&system.borrow());
+            system.borrow_mut().run_for_duration(&dt.elapsed());
+
+            let sys = system.borrow_mut();
+            let fb = sys.get_framebuffer();
             unsafe {
                 let count = pixbuf.get_pixels().len();
                 std::ptr::copy_nonoverlapping(
@@ -137,4 +158,18 @@ pub fn main() {
     });
 
     application.run(&[]);
+}
+
+fn keycode_to_button(keycode: gdk::enums::key::Key) -> Option<Button> {
+    match keycode {
+        gdk::enums::key::Up => Some(Button::Up),
+        gdk::enums::key::Down => Some(Button::Down),
+        gdk::enums::key::Left => Some(Button::Left),
+        gdk::enums::key::Right => Some(Button::Right),
+        gdk::enums::key::z => Some(Button::A),
+        gdk::enums::key::x => Some(Button::B),
+        gdk::enums::key::a => Some(Button::Select),
+        gdk::enums::key::s => Some(Button::Start),
+        _ => None,
+    }
 }
