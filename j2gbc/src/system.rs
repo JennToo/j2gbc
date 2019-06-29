@@ -14,7 +14,7 @@ pub struct System {
 impl System {
     pub fn new<R: Read>(
         cart_data: R,
-        audio_sink: Box<dyn AudioSink>,
+        audio_sink: Box<dyn AudioSink + Send>,
         allow_cgb_mode: bool,
     ) -> std::io::Result<System> {
         let c = Cart::load(cart_data)?;

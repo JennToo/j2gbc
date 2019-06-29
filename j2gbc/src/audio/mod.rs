@@ -76,7 +76,7 @@ impl AudioSink for NullSink {
 }
 
 impl Audio {
-    pub fn new(sink: Box<AudioSink>) -> Audio {
+    pub fn new(sink: Box<AudioSink + Send>) -> Audio {
         Audio {
             wav: Ram::new(RNG_SND_WAV_RAM.len()),
             nr10: 0,

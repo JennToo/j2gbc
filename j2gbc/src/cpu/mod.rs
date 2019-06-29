@@ -45,7 +45,7 @@ pub struct Cpu {
 }
 
 impl Cpu {
-    pub fn new(c: Cart, audio_sink: Box<AudioSink>, mut cgb_mode: bool) -> Cpu {
+    pub fn new(c: Cart, audio_sink: Box<AudioSink + Send>, mut cgb_mode: bool) -> Cpu {
         let initial_breakpoints = HashSet::new();
 
         if cgb_mode {

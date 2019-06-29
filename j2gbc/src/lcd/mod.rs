@@ -444,7 +444,7 @@ impl Lcd {
                 self.sy as usize,
                 fb::SCREEN_SIZE.0,
                 fb::SCREEN_SIZE.1,
-                [0, 0, 0, 255],
+                [0, 0, 0],
             );
         }
 
@@ -459,7 +459,7 @@ impl Lcd {
             } else {
                 143 - self.wy as usize
             };
-            output.draw_wrapping_rect(0, 0, width, height, [255, 0, 255, 255]);
+            output.draw_wrapping_rect(0, 0, width, height, [255, 0, 255]);
         }
     }
 
@@ -615,7 +615,7 @@ fn load_color_from_data(data: &[u8], pal_out: &mut [CgbPalette]) {
             let ag = (g * 255 / 0x1F) as u8;
             let ab = (b * 255 / 0x1F) as u8;
 
-            pal_out[pal as usize][color_index as usize] = [ar, ag, ab, a];
+            pal_out[pal as usize][color_index as usize] = [ar, ag, ab];
 
             i += 2;
         }

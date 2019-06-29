@@ -2,12 +2,14 @@ use std::fs::File;
 use std::io::Read;
 use std::sync::Arc;
 
-use j2gbc::{AudioSink, NullSink, System};
+use gio::prelude::*;
+use gtk::prelude::*;
+use gtk::{Application, ApplicationWindow};
+
+use j2gbc::{AudioSink, NullSink, System, SCREEN_SIZE};
 
 mod audio;
-mod event;
 mod logger;
-mod render;
 mod save;
 mod timer;
 
@@ -18,7 +20,7 @@ fn load_system(
 
     let cart_file = File::open(cart_path).unwrap();
 
-    let (sink, capture_config): (Box<AudioSink>, _) = if !args.is_present("no-audio") {
+    let (sink, capture_config): (Box<AudioSink + Send>, _) = if !args.is_present("no-audio") {
         let sink = audio::CpalSink::new().unwrap();
         let config = sink.get_capture_config();
         (Box::new(sink), config)
@@ -79,27 +81,60 @@ fn parse_args() -> clap::ArgMatches<'static> {
 
 pub fn main() {
     logger::install_logger();
-    let args = parse_args();
-    let (mut system, mut saver, audio_capture_config) = load_system(&args);
+    let application =
+        Application::new(Some("com.github.gtk-rs.examples.basic"), Default::default())
+            .expect("failed to initialize GTK application");
 
-    let events_loop = glutin::EventsLoop::new();
-    let window_config = glutin::WindowBuilder::new()
-        .with_title(format!("j2gbc -- {}", args.value_of("rom").unwrap()))
-        .with_maximized(true);
-    let context = glutin::ContextBuilder::new()
-        .with_gl(glutin::GlRequest::Specific(glutin::Api::OpenGl, (3, 2)))
-        .with_vsync(true);
-    let gl_window = glutin::GlWindow::new(window_config, context, &events_loop).unwrap();
+    application.connect_activate(|app| {
+        let args = parse_args();
+        let (mut system, mut saver, _) = load_system(&args);
 
-    let mut events = event::EventHandler::new(events_loop);
-    let mut renderer = render::Renderer::new(gl_window);
+        let window = ApplicationWindow::new(app);
+        window.set_title("First GTK+ Program");
+        window.set_default_size(600, 480);
 
-    loop {
-        if events.handle_events(&mut system, &mut renderer) {
-            break;
-        }
-        system.run_for_duration(&events.elapsed);
-        saver.maybe_save(&system);
-        renderer.draw(&mut system, &audio_capture_config, events.elapsed);
-    }
+        let pixbuf = gdk_pixbuf::Pixbuf::new(
+            gdk_pixbuf::Colorspace::Rgb,
+            false,
+            8,
+            SCREEN_SIZE.0 as i32,
+            SCREEN_SIZE.1 as i32,
+        )
+        .unwrap();
+
+        let image = gtk::Image::new_from_pixbuf(Some(&pixbuf));
+        window.add(&image);
+
+        let mut dt = timer::DeltaTimer::new();
+
+        gtk::timeout_add(16, move || {
+            saver.maybe_save(&system);
+            system.run_for_duration(&dt.elapsed());
+
+            let fb = system.get_framebuffer();
+            unsafe {
+                let count = pixbuf.get_pixels().len();
+                std::ptr::copy_nonoverlapping(
+                    fb.raw().as_ptr() as *const u8,
+                    pixbuf.get_pixels().as_mut_ptr(),
+                    count,
+                );
+            }
+            let scaled = pixbuf
+                .scale_simple(
+                    image.get_allocated_width(),
+                    image.get_allocated_height(),
+                    gdk_pixbuf::InterpType::Nearest,
+                )
+                .unwrap();
+
+            image.set_from_pixbuf(Some(&scaled));
+
+            glib::source::Continue(true)
+        });
+
+        window.show_all();
+    });
+
+    application.run(&[]);
 }

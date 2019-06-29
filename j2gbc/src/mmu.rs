@@ -41,7 +41,7 @@ pub struct Mmu {
 }
 
 impl Mmu {
-    pub fn new(cart: Cart, audio_sink: Box<AudioSink>, cgb_mode: bool) -> Mmu {
+    pub fn new(cart: Cart, audio_sink: Box<AudioSink + Send>, cgb_mode: bool) -> Mmu {
         Mmu {
             internal_ram: Ram::new(RNG_INT_RAM_0.len() * 8),
             tiny_ram: Ram::new(RNG_INT_TINY_RAM.len()),

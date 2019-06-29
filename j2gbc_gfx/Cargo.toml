@@ -5,17 +5,20 @@ authors = ["Jennifer Wilcox <jennifer@nitori.org>"]
 edition = "2018"
 
 [dependencies]
-gfx = "*"
-gfx_window_glutin = "*"
-gfx_device_gl = "*"
-glutin = "*"
 j2gbc = { path = "../j2gbc" }
 log = "*"
-imgui = "*"
-imgui-gfx-renderer = "*"
-imgui-glutin-support = "*"
 lazy_static = "*"
 cpal = "*"
 hound = "*"
 j2ds = "*"
 clap = "*"
+gdk-pixbuf = "*"
+glib = "*"
+
+[dependencies.gtk]
+version = "0.7.0"
+features = ["v3_16"]
+
+[dependencies.gio]
+version = ""
+features = ["v2_44"]
