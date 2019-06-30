@@ -8,6 +8,7 @@ use gtk::{Application, ApplicationWindow};
 use j2gbc::{System, SCREEN_SIZE};
 
 mod audio;
+mod debugger;
 mod event;
 mod loader;
 mod logger;
@@ -15,8 +16,6 @@ mod save;
 mod timer;
 
 pub type SystemRef = Rc<RefCell<System>>;
-
-const DEBUGGER_UI: &str = include_str!("../../assets/ui/debugger.glade");
 
 pub fn main() {
     logger::install_logger();
@@ -47,6 +46,7 @@ pub fn main() {
         let mut dt = timer::DeltaTimer::new();
 
         event::install_event_handlers(&window, &system);
+        debugger::load_debugger(&system);
 
         gtk::timeout_add(16, move || {
             saver.maybe_save(&system.borrow());
@@ -54,10 +54,6 @@ pub fn main() {
             glib::source::Continue(true)
         });
 
-        window.show_all();
-
-        let builder = gtk::Builder::new_from_string(DEBUGGER_UI);
-        let window: gtk::Window = builder.get_object("debugger_window").unwrap();
         window.show_all();
     });
 

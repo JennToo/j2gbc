@@ -15,6 +15,7 @@ clap = "*"
 gdk-pixbuf = "*"
 glib = "*"
 gdk = "*"
+enclose = "*"
 
 [dependencies.gtk]
 version = "0.7.0"
