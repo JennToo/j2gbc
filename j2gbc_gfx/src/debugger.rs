@@ -1,6 +1,6 @@
 use enclose::enclose;
 use gtk::prelude::*;
-use j2gbc::debug::Register8;
+use j2gbc::debug::{Address, Register8};
 
 use crate::SystemRef;
 
@@ -12,6 +12,8 @@ struct Context {
     pause_button: gtk::ToolButton,
     resume_button: gtk::ToolButton,
     step_button: gtk::ToolButton,
+
+    disassembly: gtk::TextView,
 
     register_af: gtk::Label,
     register_bc: gtk::Label,
@@ -57,6 +59,8 @@ impl Context {
             resume_button: builder.get_object("resume_button").unwrap(),
             step_button: builder.get_object("step_button").unwrap(),
 
+            disassembly: builder.get_object("disassembly").unwrap(),
+
             register_af: builder.get_object("register_AF").unwrap(),
             register_bc: builder.get_object("register_BC").unwrap(),
             register_de: builder.get_object("register_DE").unwrap(),
@@ -77,6 +81,7 @@ impl Context {
         self.pause_button.set_sensitive(false);
 
         self.update_regs();
+        self.update_disassembly();
     }
 
     pub fn update_regs(&self) {
@@ -111,5 +116,34 @@ impl Context {
             .set_text(format!("{}", debug.read_pc(),).as_str());
         self.register_sp
             .set_text(format!("{}", debug.read_sp(),).as_str());
+    }
+
+    pub fn update_disassembly(&self) {
+        let mut sys = self.system.borrow_mut();
+        let debug = sys.debugger();
+        let mut disassembly = String::default();
+
+        let mut address = debug.read_pc();
+        for _ in 0..50 {
+            match debug.fetch_instruction(address) {
+                Result::Ok((ins, len)) => {
+                    if address == debug.read_pc() {
+                        disassembly += format!(" => {}: {}\n", address, ins).as_str();
+                    } else {
+                        disassembly += format!("    {}: {}\n", address, ins).as_str();
+                    }
+                    address += Address(u16::from(len));
+                }
+                Result::Err(()) => {
+                    disassembly += format!("{}: Invalid\n", address).as_str();
+                    address += Address(1);
+                }
+            }
+        }
+
+        self.disassembly
+            .get_buffer()
+            .unwrap()
+            .set_text(disassembly.as_str());
     }
 }
