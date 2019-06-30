@@ -1,9 +1,0 @@
-language: rust
-rust:
-  - stable
-addons:
-  apt:
-    packages:
-      - libasound2-dev
-      - libgtk-3-dev
-cache: cargo
