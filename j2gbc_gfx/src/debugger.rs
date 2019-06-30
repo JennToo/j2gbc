@@ -18,6 +18,7 @@ struct Context {
     register_af: gtk::Label,
     register_bc: gtk::Label,
     register_de: gtk::Label,
+    register_hl: gtk::Label,
     register_sp: gtk::Label,
     register_pc: gtk::Label,
 }
@@ -64,6 +65,7 @@ impl Context {
             register_af: builder.get_object("register_AF").unwrap(),
             register_bc: builder.get_object("register_BC").unwrap(),
             register_de: builder.get_object("register_DE").unwrap(),
+            register_hl: builder.get_object("register_HL").unwrap(),
             register_sp: builder.get_object("register_SP").unwrap(),
             register_pc: builder.get_object("register_PC").unwrap(),
         }
@@ -108,6 +110,14 @@ impl Context {
                 "0x{:02x}{:02x}",
                 debug.read_reg(Register8::D),
                 debug.read_reg(Register8::E)
+            )
+            .as_str(),
+        );
+        self.register_hl.set_text(
+            format!(
+                "0x{:02x}{:02x}",
+                debug.read_reg(Register8::H),
+                debug.read_reg(Register8::L)
             )
             .as_str(),
         );
