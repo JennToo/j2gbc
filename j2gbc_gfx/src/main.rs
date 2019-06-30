@@ -16,6 +16,8 @@ mod timer;
 
 pub type SystemRef = Rc<RefCell<System>>;
 
+const DEBUGGER_UI: &str = include_str!("../../assets/ui/debugger.glade");
+
 pub fn main() {
     logger::install_logger();
     let application = Application::new(Some("org.nitori.j2gbc"), Default::default())
@@ -52,6 +54,10 @@ pub fn main() {
             glib::source::Continue(true)
         });
 
+        window.show_all();
+
+        let builder = gtk::Builder::new_from_string(DEBUGGER_UI);
+        let window: gtk::Window = builder.get_object("debugger_window").unwrap();
         window.show_all();
     });
 
