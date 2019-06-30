@@ -4,7 +4,6 @@ use std::rc::Rc;
 use gio::prelude::*;
 use gtk::prelude::*;
 use gtk::{Application, ApplicationWindow};
-
 use j2gbc::{System, SCREEN_SIZE};
 
 mod audio;

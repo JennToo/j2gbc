@@ -1,3 +1,4 @@
+use enclose::enclose;
 use gdk_pixbuf::Pixbuf;
 use gtk::prelude::*;
 use gtk::Image;
@@ -9,20 +10,18 @@ pub fn install_event_handlers<W>(key_widget: &W, system: &SystemRef)
 where
     W: WidgetExt,
 {
-    let key_press_system = system.clone();
-    key_widget.connect_key_press_event(move |_, event| {
+    key_widget.connect_key_press_event(enclose!((system) move |_, event| {
         if let Some(button) = keycode_to_button(event.get_keyval()) {
-            key_press_system.borrow_mut().activate_button(button);
+            system.borrow_mut().activate_button(button);
         }
         Inhibit(false)
-    });
-    let key_release_system = system.clone();
-    key_widget.connect_key_release_event(move |_, event| {
+    }));
+    key_widget.connect_key_release_event(enclose!((system) move |_, event| {
         if let Some(button) = keycode_to_button(event.get_keyval()) {
-            key_release_system.borrow_mut().deactivate_button(button);
+            system.borrow_mut().deactivate_button(button);
         }
         Inhibit(false)
-    });
+    }));
 }
 
 fn keycode_to_button(keycode: gdk::enums::key::Key) -> Option<Button> {
