@@ -18,7 +18,7 @@ gdk = "*"
 enclose = "*"
 
 [dependencies.gtk]
-version = "0.7.0"
+version = "0.7.1"
 features = ["v3_16"]
 
 [dependencies.gio]
