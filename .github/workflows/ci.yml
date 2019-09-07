@@ -5,6 +5,5 @@ jobs:
     name: CI Tests
     runs-on: ubuntu-latest
     steps:
-      - uses: icepuma/rust-action@1.37.0
-        with:
-          args: cargo fmt -- --check && cargo clippy -- -Dwarnings && cargo test
+      - uses: actions/checkout@master
+      - uses: Nitori-/j2gbc/action@master
