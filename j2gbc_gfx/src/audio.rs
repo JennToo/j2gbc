@@ -7,6 +7,7 @@ use std::thread;
 
 use j2ds::{ElasticPopResult, ElasticRingBuffer};
 use log::info;
+use cpal::traits::{HostTrait, EventLoopTrait, DeviceTrait};
 
 use j2gbc::AudioSink;
 
@@ -23,8 +24,9 @@ pub struct CpalSink {
 
 impl CpalSink {
     pub fn new() -> Result<CpalSink, String> {
-        let event_loop = cpal::EventLoop::new();
-        let device_o = cpal::default_output_device();
+        let host = cpal::default_host();
+        let event_loop = host.event_loop();
+        let device_o = host.default_output_device();
         if device_o.is_none() {
             return Err("No default output device".into());
         }
@@ -125,7 +127,7 @@ fn feed_cpal_events(
     queue: Arc<Mutex<ElasticRingBuffer<(f32, f32)>>>,
 ) {
     let mut temp_buffer = Vec::new();
-    event_loop.run(move |_, data| match data {
+    event_loop.run(move |_, data| match data.unwrap() {
         cpal::StreamData::Output {
             buffer: cpal::UnknownTypeOutputBuffer::F32(mut buffer),
         } => {
