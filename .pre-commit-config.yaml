@@ -1,0 +1,6 @@
+- repo: https://github.com/doublify/pre-commit-rust
+  rev: 55f347186aec7f2a4ec13c31effdb4b26512f2bc
+  hooks:
+  - id: fmt
+  - id: cargo-check
+  - id: clippy
