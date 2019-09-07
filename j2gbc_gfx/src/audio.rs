@@ -38,7 +38,7 @@ impl CpalSink {
         let stream_id = event_loop
             .build_output_stream(&device, &format)
             .map_err(|e| e.to_string())?;
-        event_loop.play_stream(stream_id);
+        event_loop.play_stream(stream_id).unwrap();
 
         let queue = Arc::new(Mutex::new(ElasticRingBuffer::new(
             format.sample_rate.0 as usize / 4,
@@ -113,7 +113,7 @@ impl Drop for CpalSink {
         }
 
         for i in 0..4 {
-            if self.chans[i].len() > 0 {
+            if !self.chans[i].is_empty() {
                 let mut writer =
                     hound::WavWriter::create(format!("target/chan{}.wav", i), spec).unwrap();
                 for s in self.chans[i].iter() {
@@ -130,10 +130,11 @@ fn feed_cpal_events(
     queue: Arc<Mutex<ElasticRingBuffer<(f32, f32)>>>,
 ) {
     let mut temp_buffer = Vec::new();
-    event_loop.run(move |_, data| match data.unwrap() {
-        StreamData::Output {
+    event_loop.run(move |_, data| {
+        if let Ok(StreamData::Output {
             buffer: UnknownTypeOutputBuffer::F32(mut buffer),
-        } => {
+        }) = data
+        {
             temp_buffer.resize(buffer.deref_mut().len() / 2, (0., 0.));
             let r = queue
                 .lock()
@@ -149,8 +150,6 @@ fn feed_cpal_events(
                 buffer.deref_mut()[2 * i + 1] = temp_buffer[i].1;
             }
         }
-
-        _ => (),
     });
 }
 

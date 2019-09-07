@@ -6,7 +6,7 @@ use super::{
 use crate::cpu::CLOCK_RATE;
 
 pub struct Synth {
-    sink: Box<AudioSink + Send>,
+    sink: Box<dyn AudioSink + Send>,
 
     sample_clock: Timer,
     len_clock: Timer,
@@ -22,7 +22,7 @@ pub struct Synth {
 }
 
 impl Synth {
-    pub fn new(sink: Box<AudioSink + Send>) -> Synth {
+    pub fn new(sink: Box<dyn AudioSink + Send>) -> Synth {
         Synth {
             sample_clock: Timer::new(CLOCK_RATE / sink.sample_rate(), 0, 0),
             len_clock: Timer::new(CLOCK_RATE / 256, 0, 0),

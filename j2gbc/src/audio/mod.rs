@@ -76,7 +76,7 @@ impl AudioSink for NullSink {
 }
 
 impl Audio {
-    pub fn new(sink: Box<AudioSink + Send>) -> Audio {
+    pub fn new(sink: Box<dyn AudioSink + Send>) -> Audio {
         Audio {
             wav: Ram::new(RNG_SND_WAV_RAM.len()),
             nr10: 0,
@@ -306,8 +306,8 @@ impl MemDevice for Audio {
                 REG_NR50 => {
                     self.nr50 = v;
                     self.synth.mixer.set_master_volumes(
-                        ((v >> 4) & 0b111) as f32 / 7.,
-                        (v & 0b111) as f32 / 7.,
+                        f32::from((v >> 4) & 0b111) / 7.,
+                        f32::from(v & 0b111) / 7.,
                     );
                     Ok(())
                 }

@@ -41,7 +41,7 @@ impl MemDevice for Mbc0 {
 
 impl Mbc for Mbc0 {
     fn map_address_into_rom(&self, a: Address) -> ExtendedAddress {
-        ExtendedAddress(a.0 as u32)
+        ExtendedAddress(u32::from(a.0))
     }
 
     fn get_sram(&self) -> &[u8] {

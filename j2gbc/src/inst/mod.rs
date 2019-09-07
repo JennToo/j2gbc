@@ -243,7 +243,7 @@ impl Instruction {
                 2,
             )),
 
-            0x40...0x75 | 0x77...0x7F => Ok((
+            0x40..=0x75 | 0x77..=0x7F => Ok((
                 Instruction::Load(Load::Ld(
                     Operand::from_bits(bytes[0], 3),
                     Operand::from_bits(bytes[0], 0),
@@ -269,7 +269,7 @@ impl Instruction {
 
             0xFE => Ok((Instruction::Cp(Operand::Immediate(bytes[1])), 2)),
 
-            0xB8...0xBF => Ok((Instruction::Cp(Operand::from_bits(bytes[0], 0)), 1)),
+            0xB8..=0xBF => Ok((Instruction::Cp(Operand::from_bits(bytes[0], 0)), 1)),
 
             0x20 => Ok((Instruction::Control(Control::JrNZI(bytes[1] as i8)), 2)),
             0x30 => Ok((Instruction::Control(Control::JrNCI(bytes[1] as i8)), 2)),
@@ -277,7 +277,7 @@ impl Instruction {
             0x28 => Ok((Instruction::Control(Control::JrZI(bytes[1] as i8)), 2)),
             0x38 => Ok((Instruction::Control(Control::JrCI(bytes[1] as i8)), 2)),
 
-            0x80...0x87 => Ok((
+            0x80..=0x87 => Ok((
                 Instruction::Arith(Arith::Add(Operand::from_bits(bytes[0], 0))),
                 1,
             )),
@@ -286,7 +286,7 @@ impl Instruction {
                 2,
             )),
 
-            0x88...0x8F => Ok((
+            0x88..=0x8F => Ok((
                 Instruction::Arith(Arith::Adc(Operand::from_bits(bytes[0], 0))),
                 1,
             )),
@@ -295,7 +295,7 @@ impl Instruction {
                 2,
             )),
 
-            0x90...0x97 => Ok((
+            0x90..=0x97 => Ok((
                 Instruction::Arith(Arith::Sub(Operand::from_bits(bytes[0], 0))),
                 1,
             )),
@@ -304,7 +304,7 @@ impl Instruction {
                 2,
             )),
 
-            0x98...0x9F => Ok((
+            0x98..=0x9F => Ok((
                 Instruction::Arith(Arith::Sbc(Operand::from_bits(bytes[0], 0))),
                 1,
             )),
@@ -360,53 +360,53 @@ impl Instruction {
             0x0F => Ok((Instruction::Bits(Bits::Rrca), 1)),
 
             0xCB => match bytes[1] {
-                0x00...0x07 => Ok((
+                0x00..=0x07 => Ok((
                     Instruction::Bits(Bits::Rlc(Operand::from_bits(bytes[1], 0))),
                     2,
                 )),
-                0x08...0x0F => Ok((
+                0x08..=0x0F => Ok((
                     Instruction::Bits(Bits::Rrc(Operand::from_bits(bytes[1], 0))),
                     2,
                 )),
-                0x10...0x17 => Ok((
+                0x10..=0x17 => Ok((
                     Instruction::Bits(Bits::Rl(Operand::from_bits(bytes[1], 0))),
                     2,
                 )),
-                0x18...0x1F => Ok((
+                0x18..=0x1F => Ok((
                     Instruction::Bits(Bits::Rr(Operand::from_bits(bytes[1], 0))),
                     2,
                 )),
-                0x20...0x27 => Ok((
+                0x20..=0x27 => Ok((
                     Instruction::Bits(Bits::Sla(Operand::from_bits(bytes[1], 0))),
                     2,
                 )),
-                0x28...0x2F => Ok((
+                0x28..=0x2F => Ok((
                     Instruction::Bits(Bits::Sra(Operand::from_bits(bytes[1], 0))),
                     2,
                 )),
-                0x30...0x37 => Ok((
+                0x30..=0x37 => Ok((
                     Instruction::Bits(Bits::Swap(Operand::from_bits(bytes[1], 0))),
                     2,
                 )),
-                0x38...0x3F => Ok((
+                0x38..=0x3F => Ok((
                     Instruction::Bits(Bits::Srl(Operand::from_bits(bytes[1], 0))),
                     2,
                 )),
-                0x40...0x7F => Ok((
+                0x40..=0x7F => Ok((
                     Instruction::Bits(Bits::Bit(
                         get_bits_bit(bytes[1]),
                         Operand::from_bits(bytes[1], 0),
                     )),
                     2,
                 )),
-                0x80...0xBF => Ok((
+                0x80..=0xBF => Ok((
                     Instruction::Bits(Bits::Res(
                         get_bits_bit(bytes[1]),
                         Operand::from_bits(bytes[1], 0),
                     )),
                     2,
                 )),
-                0xC0...0xFF => Ok((
+                0xC0..=0xFF => Ok((
                     Instruction::Bits(Bits::Set(
                         get_bits_bit(bytes[1]),
                         Operand::from_bits(bytes[1], 0),

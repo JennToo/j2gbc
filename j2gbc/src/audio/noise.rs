@@ -65,7 +65,7 @@ impl NoiseChannel {
     }
 
     pub fn set_vol_env_period(&mut self, p: u8) {
-        self.vol_counter = Clock::new(p as u64);
+        self.vol_counter = Clock::new(u64::from(p));
     }
 
     pub fn increment_vol_env(&mut self, inc: bool) {

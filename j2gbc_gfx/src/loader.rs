@@ -14,7 +14,7 @@ pub fn load_system(args: &clap::ArgMatches<'static>) -> (System, Saver, Arc<Capt
 
     let cart_file = File::open(cart_path).unwrap();
 
-    let (sink, capture_config): (Box<AudioSink + Send>, _) = if !args.is_present("no-audio") {
+    let (sink, capture_config): (Box<dyn AudioSink + Send>, _) = if !args.is_present("no-audio") {
         let sink = CpalSink::new().unwrap();
         let config = sink.get_capture_config();
         (Box::new(sink), config)

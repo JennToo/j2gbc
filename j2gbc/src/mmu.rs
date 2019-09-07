@@ -41,7 +41,7 @@ pub struct Mmu {
 }
 
 impl Mmu {
-    pub fn new(cart: Cart, audio_sink: Box<AudioSink + Send>, cgb_mode: bool) -> Mmu {
+    pub fn new(cart: Cart, audio_sink: Box<dyn AudioSink + Send>, cgb_mode: bool) -> Mmu {
         Mmu {
             internal_ram: Ram::new(RNG_INT_RAM_0.len() * 8),
             tiny_ram: Ram::new(RNG_INT_TINY_RAM.len()),
@@ -179,7 +179,7 @@ impl Mmu {
                 panic!("HDMA HBlank not supported");
             }
             let src_start = Address(hi_lo(self.hdma1, self.hdma2) & 0b1111_1111_1111_0000);
-            let src_end = src_start + Address(((v & 0b0111_1111) as u16 + 1) * 16);
+            let src_end = src_start + Address((u16::from(v & 0b0111_1111) + 1) * 16);
             let dest =
                 Address((hi_lo(self.hdma3, self.hdma4) & 0b0001_1111_1111_0000) | (0b1 << 15));
             self.hdma5 = 0xFF;

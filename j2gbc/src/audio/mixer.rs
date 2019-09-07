@@ -18,25 +18,20 @@ impl Mixer {
     }
 
     pub fn mix(&self, samples: [f32; 4]) -> (f32, f32) {
-        let mut left_val = 0.;
-        for i in 0..4 {
-            if self.left_enable[i] {
-                left_val += samples[i];
-            }
-        }
-        left_val /= 4.;
-
-        let mut right_val = 0.;
-        for i in 0..4 {
-            if self.right_enable[i] {
-                right_val += samples[i];
-            }
-        }
-        right_val /= 4.;
+        let left_val: f32 = samples
+            .iter()
+            .zip(self.left_enable.iter())
+            .map(|(sample, enabled)| if *enabled { *sample } else { 0. })
+            .sum();
+        let right_val: f32 = samples
+            .iter()
+            .zip(self.right_enable.iter())
+            .map(|(sample, enabled)| if *enabled { *sample } else { 0. })
+            .sum();
 
         (
-            left_val * self.left_master_vol,
-            right_val * self.right_master_vol,
+            left_val / 4. * self.left_master_vol,
+            right_val / 4. * self.right_master_vol,
         )
     }
 

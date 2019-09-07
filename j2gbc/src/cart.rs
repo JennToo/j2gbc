@@ -12,7 +12,7 @@ use crate::mmu_exceptions::MmuExceptions;
 
 pub struct Cart {
     pub data: Vec<u8>,
-    mbc: Box<Mbc + Send>,
+    mbc: Box<dyn Mbc + Send>,
 }
 
 const OFF_CART_NAME_START: usize = 0x134;
@@ -27,7 +27,7 @@ impl Cart {
         let mut data = Vec::new();
         r.read_to_end(&mut data)?;
 
-        let mbc: Box<Mbc + Send> = match data[OFF_CART_TYPE] {
+        let mbc: Box<dyn Mbc + Send> = match data[OFF_CART_TYPE] {
             0x00 => Box::new(Mbc0::new(data.clone())),
             0x01 | 0x02 | 0x03 => Box::new(Mbc1::new(data.clone())),
             0x19 | 0x1A | 0x1B | 0x1C | 0x1D | 0x1E => Box::new(Mbc5::new(data.clone())),

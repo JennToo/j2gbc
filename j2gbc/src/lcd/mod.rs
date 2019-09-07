@@ -606,10 +606,9 @@ fn load_color_from_data(data: &[u8], pal_out: &mut [CgbPalette]) {
             let l = data[i];
             let h = data[i + 1];
 
-            let r = (l & 0b0001_1111) as u16;
-            let g = ((l >> 5) | ((h & 0b11) << 3)) as u16;
-            let b = ((h >> 2) & 0b0001_1111) as u16;
-            let a = 255;
+            let r = u16::from(l & 0b0001_1111);
+            let g = u16::from((l >> 5) | ((h & 0b11) << 3));
+            let b = u16::from((h >> 2) & 0b0001_1111);
 
             let ar = (r * 255 / 0x1F) as u8;
             let ag = (g * 255 / 0x1F) as u8;
