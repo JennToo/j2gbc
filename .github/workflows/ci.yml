@@ -1,0 +1,10 @@
+on: push
+name: CI Tests
+jobs:
+  ci:
+    name: CI Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: icepuma/rust-action@1.37.0
+        with:
+          args: cargo fmt --check && cargo clippy -- -Dwarnings && cargo test
