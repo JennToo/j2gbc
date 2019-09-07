@@ -7,4 +7,4 @@ jobs:
     steps:
       - uses: icepuma/rust-action@1.37.0
         with:
-          args: cargo fmt --check && cargo clippy -- -Dwarnings && cargo test
+          args: cargo fmt -- --check && cargo clippy -- -Dwarnings && cargo test
