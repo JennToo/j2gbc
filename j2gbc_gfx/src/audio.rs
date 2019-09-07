@@ -5,9 +5,12 @@ use std::sync::{
 };
 use std::thread;
 
+use cpal::{
+    traits::{DeviceTrait, EventLoopTrait, HostTrait},
+    StreamData, UnknownTypeOutputBuffer,
+};
 use j2ds::{ElasticPopResult, ElasticRingBuffer};
 use log::info;
-use cpal::traits::{HostTrait, EventLoopTrait, DeviceTrait};
 
 use j2gbc::AudioSink;
 
@@ -128,8 +131,8 @@ fn feed_cpal_events(
 ) {
     let mut temp_buffer = Vec::new();
     event_loop.run(move |_, data| match data.unwrap() {
-        cpal::StreamData::Output {
-            buffer: cpal::UnknownTypeOutputBuffer::F32(mut buffer),
+        StreamData::Output {
+            buffer: UnknownTypeOutputBuffer::F32(mut buffer),
         } => {
             temp_buffer.resize(buffer.deref_mut().len() / 2, (0., 0.));
             let r = queue
