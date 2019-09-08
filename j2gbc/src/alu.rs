@@ -32,32 +32,32 @@ impl Flags {
         self
     }
 
-    pub fn set_zero(&mut self, v: bool) {
-        if v {
+    pub fn set_zero(&mut self, value: bool) {
+        if value {
             self.0 |= MASK_FLAG_Z;
         } else {
             self.0 &= !MASK_FLAG_Z;
         }
     }
 
-    pub fn set_subtract(&mut self, v: bool) {
-        if v {
+    pub fn set_subtract(&mut self, value: bool) {
+        if value {
             self.0 |= MASK_FLAG_N;
         } else {
             self.0 &= !MASK_FLAG_N;
         }
     }
 
-    pub fn set_carry(&mut self, v: bool) {
-        if v {
+    pub fn set_carry(&mut self, value: bool) {
+        if value {
             self.0 |= MASK_FLAG_C;
         } else {
             self.0 &= !MASK_FLAG_C;
         }
     }
 
-    pub fn set_halfcarry(&mut self, v: bool) {
-        if v {
+    pub fn set_halfcarry(&mut self, value: bool) {
+        if value {
             self.0 |= MASK_FLAG_H;
         } else {
             self.0 &= !MASK_FLAG_H;
@@ -85,207 +85,210 @@ pub fn hi_lo(hi: u8, lo: u8) -> u16 {
     u16::from(hi) << 8 | u16::from(lo)
 }
 
-pub fn hi(v: u16) -> u8 {
-    ((v >> 8) & 0xFF) as u8
+pub fn hi(value: u16) -> u8 {
+    ((value >> 8) & 0xFF) as u8
 }
 
-pub fn lo(v: u16) -> u8 {
-    (v & 0xFF) as u8
+pub fn lo(value: u16) -> u8 {
+    (value & 0xFF) as u8
 }
 
-pub fn sub(l: u8, r: u8) -> (u8, Flags) {
-    let mut f = Flags(0);
-    let v = (Wrapping(l) - Wrapping(r)).0;
-    f.set_zero(v == 0);
-    f.set_subtract(true);
-    f.set_carry(l < r);
-    f.set_halfcarry(l & 0x0F < r & 0x0F);
-    (v, f)
+pub fn sub(left: u8, right: u8) -> (u8, Flags) {
+    let mut flags = Flags(0);
+    let result = (Wrapping(left) - Wrapping(right)).0;
+    flags.set_zero(result == 0);
+    flags.set_subtract(true);
+    flags.set_carry(left < right);
+    flags.set_halfcarry(left & 0x0F < right & 0x0F);
+    (result, flags)
 }
 
-pub fn sbc(l: u8, r: u8, carry: bool) -> (u8, Flags) {
-    let mut f = Flags(0);
-    let c = if carry { 1 } else { 0 };
-    let v = (Wrapping(l) - Wrapping(r) - Wrapping(c)).0;
-    let full_o = (Wrapping(l) - Wrapping(r)).0;
-    f.set_zero(v == 0);
-    f.set_subtract(true);
-    f.set_carry(l < r || full_o < c);
-    f.set_halfcarry(l & 0x0F < r & 0x0F || full_o & 0x0F < c);
-    (v, f)
+pub fn sbc(left: u8, right: u8, carry: bool) -> (u8, Flags) {
+    let mut flags = Flags(0);
+    let carry_as_value = if carry { 1 } else { 0 };
+    let result = (Wrapping(left) - Wrapping(right) - Wrapping(carry_as_value)).0;
+    let full_o = (Wrapping(left) - Wrapping(right)).0;
+    flags.set_zero(result == 0);
+    flags.set_subtract(true);
+    flags.set_carry(left < right || full_o < carry_as_value);
+    flags.set_halfcarry(left & 0x0F < right & 0x0F || full_o & 0x0F < carry_as_value);
+    (result, flags)
 }
 
-pub fn add(l: u8, r: u8) -> (u8, Flags) {
-    let mut f = Flags(0);
-    let v = (Wrapping(l) + Wrapping(r)).0;
-    f.set_zero(v == 0);
-    f.set_halfcarry((l & 0x0F) + (r & 0x0F) > 0x0F);
-    f.set_carry(u16::from(l) + u16::from(r) > 0xFF);
-    f.set_subtract(false);
-    (v, f)
+pub fn add(left: u8, right: u8) -> (u8, Flags) {
+    let mut flags = Flags(0);
+    let result = (Wrapping(left) + Wrapping(right)).0;
+    flags.set_zero(result == 0);
+    flags.set_halfcarry((left & 0x0F) + (right & 0x0F) > 0x0F);
+    flags.set_carry(u16::from(left) + u16::from(right) > 0xFF);
+    flags.set_subtract(false);
+    (result, flags)
 }
 
-pub fn adc(l: u8, r: u8, carry: bool) -> (u8, Flags) {
-    let mut f = Flags(0);
-    let c = if carry { 1 } else { 0 };
-    let v = (Wrapping(l) + Wrapping(r) + Wrapping(c)).0;
-    let full_l = u16::from(l) + u16::from(c);
-    f.set_zero(v == 0);
-    f.set_halfcarry((full_l & 0x0F) as u8 + (r & 0x0F) > 0x0F || (l & 0x0F == 0x0F && c == 1));
-    f.set_carry(full_l + u16::from(r) > 0xFF);
-    f.set_subtract(false);
-    (v, f)
+pub fn adc(left: u8, right: u8, carry: bool) -> (u8, Flags) {
+    let mut flags = Flags(0);
+    let carry_as_value = if carry { 1 } else { 0 };
+    let result = (Wrapping(left) + Wrapping(right) + Wrapping(carry_as_value)).0;
+    let full_l = u16::from(left) + u16::from(carry_as_value);
+    flags.set_zero(result == 0);
+    flags.set_halfcarry(
+        (full_l & 0x0F) as u8 + (right & 0x0F) > 0x0F
+            || (left & 0x0F == 0x0F && carry_as_value == 1),
+    );
+    flags.set_carry(full_l + u16::from(right) > 0xFF);
+    flags.set_subtract(false);
+    (result, flags)
 }
 
-pub fn add16(l: u16, r: u16, mut f: Flags) -> (u16, Flags) {
-    let v = (Wrapping(l) + Wrapping(r)).0;
-    f.set_subtract(false);
-    f.set_halfcarry((l & 0x0FFF) + (r & 0x0FFF) > 0x0FFF);
-    f.set_carry(u32::from(l) + u32::from(r) > 0xFFFF);
-    (v, f)
+pub fn add16(left: u16, right: u16, mut flags: Flags) -> (u16, Flags) {
+    let result = (Wrapping(left) + Wrapping(right)).0;
+    flags.set_subtract(false);
+    flags.set_halfcarry((left & 0x0FFF) + (right & 0x0FFF) > 0x0FFF);
+    flags.set_carry(u32::from(left) + u32::from(right) > 0xFFFF);
+    (result, flags)
 }
 
-pub fn inc(l: u8, mut f: Flags) -> (u8, Flags) {
-    let v = (Wrapping(l) + Wrapping(1)).0;
-    f.set_zero(v == 0);
-    f.set_halfcarry((l & 0x0F) + 1 == 0x10);
-    f.set_subtract(false);
+pub fn inc(value: u8, mut flags: Flags) -> (u8, Flags) {
+    let result = (Wrapping(value) + Wrapping(1)).0;
+    flags.set_zero(result == 0);
+    flags.set_halfcarry((value & 0x0F) + 1 == 0x10);
+    flags.set_subtract(false);
 
-    (v, f)
+    (result, flags)
 }
 
-pub fn dec(l: u8, mut f: Flags) -> (u8, Flags) {
-    let v = (Wrapping(l) - Wrapping(1)).0;
-    f.set_zero(v == 0);
-    f.set_halfcarry((l as i8) & 0x0F < (1 as i8) & 0x0F);
-    f.set_subtract(true);
+pub fn dec(value: u8, mut flags: Flags) -> (u8, Flags) {
+    let result = (Wrapping(value) - Wrapping(1)).0;
+    flags.set_zero(result == 0);
+    flags.set_halfcarry((value as i8) & 0x0F < (1 as i8) & 0x0F);
+    flags.set_subtract(true);
 
-    (v, f)
+    (result, flags)
 }
 
-pub fn and(l: u8, r: u8) -> (u8, Flags) {
-    let mut f = Flags(0);
-    let v = l & r;
-    f.set_halfcarry(true);
-    f.set_zero(v == 0);
-    (v, f)
+pub fn and(left: u8, right: u8) -> (u8, Flags) {
+    let mut flags = Flags(0);
+    let result = left & right;
+    flags.set_halfcarry(true);
+    flags.set_zero(result == 0);
+    (result, flags)
 }
 
-pub fn or(l: u8, r: u8) -> (u8, Flags) {
-    let mut f = Flags(0);
-    let v = l | r;
-    f.set_zero(v == 0);
-    (v, f)
+pub fn or(left: u8, right: u8) -> (u8, Flags) {
+    let mut flags = Flags(0);
+    let result = left | right;
+    flags.set_zero(result == 0);
+    (result, flags)
 }
 
-pub fn xor(l: u8, r: u8) -> (u8, Flags) {
-    let mut f = Flags(0);
-    let v = l ^ r;
-    f.set_zero(v == 0);
-    (v, f)
+pub fn xor(left: u8, right: u8) -> (u8, Flags) {
+    let mut flags = Flags(0);
+    let result = left ^ right;
+    flags.set_zero(result == 0);
+    (result, flags)
 }
 
-pub fn swap(v: u8) -> (u8, Flags) {
-    let mut f = Flags(0);
-    f.set_zero(v == 0);
-    (v << 4 | v >> 4, f)
+pub fn swap(value: u8) -> (u8, Flags) {
+    let mut flags = Flags(0);
+    flags.set_zero(value == 0);
+    (value << 4 | value >> 4, flags)
 }
 
-pub fn sla(v: u8) -> (u8, Flags) {
-    let mut f = Flags(0);
-    let r = v << 1;
-    f.set_carry(v & 0b1000_0000 != 0);
-    f.set_halfcarry(false);
-    f.set_subtract(false);
-    f.set_zero(r == 0);
-    (r, f)
+pub fn sla(value: u8) -> (u8, Flags) {
+    let mut flags = Flags(0);
+    let result = value << 1;
+    flags.set_carry(value & 0b1000_0000 != 0);
+    flags.set_halfcarry(false);
+    flags.set_subtract(false);
+    flags.set_zero(result == 0);
+    (result, flags)
 }
 
-pub fn sra(v: u8) -> (u8, Flags) {
-    let mut f = Flags(0);
-    let r = v >> 1 | (0b1000_0000 & v);
-    f.set_carry(v & 0b1 != 0);
-    f.set_halfcarry(false);
-    f.set_subtract(false);
-    f.set_zero(r == 0);
-    (r, f)
+pub fn sra(value: u8) -> (u8, Flags) {
+    let mut flags = Flags(0);
+    let result = value >> 1 | (0b1000_0000 & value);
+    flags.set_carry(value & 0b1 != 0);
+    flags.set_halfcarry(false);
+    flags.set_subtract(false);
+    flags.set_zero(result == 0);
+    (result, flags)
 }
 
-pub fn srl(v: u8) -> (u8, Flags) {
-    let mut f = Flags(0);
-    let r = v >> 1;
-    f.set_carry(v & 0b0000_0001 != 0);
-    f.set_halfcarry(false);
-    f.set_subtract(false);
-    f.set_zero(r == 0);
-    (r, f)
+pub fn srl(value: u8) -> (u8, Flags) {
+    let mut flags = Flags(0);
+    let result = value >> 1;
+    flags.set_carry(value & 0b0000_0001 != 0);
+    flags.set_halfcarry(false);
+    flags.set_subtract(false);
+    flags.set_zero(result == 0);
+    (result, flags)
 }
 
-pub fn rl(v: u8, mut f: Flags) -> (u8, Flags) {
-    let mut r = v << 1;
-    if f.get_carry() {
-        r |= 1;
+pub fn rl(value: u8, mut flags: Flags) -> (u8, Flags) {
+    let mut result = value << 1;
+    if flags.get_carry() {
+        result |= 1;
     }
-    f.set_carry(v & 0b1000_0000 != 0);
-    f.set_halfcarry(false);
-    f.set_subtract(false);
-    f.set_zero(r == 0);
-    (r, f)
+    flags.set_carry(value & 0b1000_0000 != 0);
+    flags.set_halfcarry(false);
+    flags.set_subtract(false);
+    flags.set_zero(result == 0);
+    (result, flags)
 }
 
-pub fn rlc(v: u8, mut f: Flags) -> (u8, Flags) {
-    let r = v.rotate_left(1);
-    f.set_carry(v & 0b1000_0000 != 0);
-    f.set_halfcarry(false);
-    f.set_subtract(false);
-    f.set_zero(r == 0);
-    (r, f)
+pub fn rlc(value: u8, mut flags: Flags) -> (u8, Flags) {
+    let result = value.rotate_left(1);
+    flags.set_carry(value & 0b1000_0000 != 0);
+    flags.set_halfcarry(false);
+    flags.set_subtract(false);
+    flags.set_zero(result == 0);
+    (result, flags)
 }
 
-pub fn rr(v: u8, mut f: Flags) -> (u8, Flags) {
-    let mut r = v >> 1;
-    if f.get_carry() {
-        r |= 0b1000_0000;
+pub fn rr(value: u8, mut flags: Flags) -> (u8, Flags) {
+    let mut result = value >> 1;
+    if flags.get_carry() {
+        result |= 0b1000_0000;
     }
-    f.set_carry(v & 1 != 0);
-    f.set_halfcarry(false);
-    f.set_subtract(false);
-    f.set_zero(r == 0);
-    (r, f)
+    flags.set_carry(value & 1 != 0);
+    flags.set_halfcarry(false);
+    flags.set_subtract(false);
+    flags.set_zero(result == 0);
+    (result, flags)
 }
 
-pub fn rrc(v: u8, mut f: Flags) -> (u8, Flags) {
-    let r = v.rotate_right(1);
-    f.set_carry(v & 1 != 0);
-    f.set_halfcarry(false);
-    f.set_subtract(false);
-    f.set_zero(r == 0);
-    (r, f)
+pub fn rrc(value: u8, mut flags: Flags) -> (u8, Flags) {
+    let result = value.rotate_right(1);
+    flags.set_carry(value & 1 != 0);
+    flags.set_halfcarry(false);
+    flags.set_subtract(false);
+    flags.set_zero(result == 0);
+    (result, flags)
 }
 
-pub fn daa(v: u8, mut f: Flags) -> (u8, Flags) {
-    let mut v = Wrapping(v);
+pub fn daa(value: u8, mut flags: Flags) -> (u8, Flags) {
+    let mut value = Wrapping(value);
     let mut correction = 0;
 
-    if f.get_halfcarry() || (!f.get_subtract() && v.0 & 0x0F > 0x09) {
+    if flags.get_halfcarry() || (!flags.get_subtract() && value.0 & 0x0F > 0x09) {
         correction |= 0x06;
     }
 
-    if f.get_carry() || (!f.get_subtract() && v.0 > 0x99) {
+    if flags.get_carry() || (!flags.get_subtract() && value.0 > 0x99) {
         correction |= 0x60;
-        f.set_carry(true);
+        flags.set_carry(true);
     }
 
-    if f.get_subtract() {
-        v -= Wrapping(correction);
+    if flags.get_subtract() {
+        value -= Wrapping(correction);
     } else {
-        v += Wrapping(correction);
+        value += Wrapping(correction);
     }
 
-    f.set_zero(v.0 == 0);
-    f.set_halfcarry(false);
+    flags.set_zero(value.0 == 0);
+    flags.set_halfcarry(false);
 
-    (v.0, f)
+    (value.0, flags)
 }
 
 #[test]
