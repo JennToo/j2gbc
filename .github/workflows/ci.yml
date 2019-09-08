@@ -8,4 +8,13 @@ jobs:
       - uses: actions/checkout@master
         with:
           submodules: true
-      - uses: ./.github/actions/ci
+      - uses: Nitori-/rust-actions/get-rust@master
+        with:
+          version: stable
+          make_default: true
+          components: "rustfmt"
+      - run: "apt-get install -y libasound-dev libgtk-3-dev"
+      - run: "cargo fmt -- --check"
+      - run: "cargo test"
+        env:
+          RUST_BACKTRACE: 1
