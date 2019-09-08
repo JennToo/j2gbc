@@ -129,8 +129,8 @@ impl Drop for CpalSink {
     }
 }
 
-fn feed_cpal_events(
-    event_loop: &cpal::EventLoop,
+fn feed_cpal_events<E: EventLoopTrait>(
+    event_loop: &E,
     queue: Arc<Mutex<ElasticRingBuffer<(f32, f32)>>>,
 ) {
     let mut temp_buffer = Vec::new();
