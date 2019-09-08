@@ -88,9 +88,13 @@ impl AudioSink for CpalSink {
     }
 
     fn emit_raw_chans(&mut self, chans: [f32; 4]) {
-        for i in 0..4 {
-            if self.capture_config.channels[i].load(Ordering::Relaxed) {
-                self.chans[i].push(chans[i]);
+        for ((source, dest), config) in chans
+            .iter()
+            .zip(self.chans.iter_mut())
+            .zip(self.capture_config.channels.iter())
+        {
+            if config.load(Ordering::Relaxed) {
+                dest.push(*source);
             }
         }
     }
@@ -105,7 +109,7 @@ impl Drop for CpalSink {
             sample_format: hound::SampleFormat::Float,
         };
 
-        if self.samples.len() > 0 {
+        if !self.samples.is_empty() {
             let mut writer = hound::WavWriter::create("target/audio.wav", spec).unwrap();
             for s in &self.samples {
                 writer.write_sample(*s).unwrap();
@@ -145,9 +149,9 @@ fn feed_cpal_events(
                 info!(target: "events", "Pop front result {:?}", r);
             }
 
-            for i in 0..temp_buffer.len() {
-                buffer.deref_mut()[2 * i] = temp_buffer[i].0;
-                buffer.deref_mut()[2 * i + 1] = temp_buffer[i].1;
+            for (i, value) in temp_buffer.iter().enumerate() {
+                buffer.deref_mut()[2 * i] = value.0;
+                buffer.deref_mut()[2 * i + 1] = value.1;
             }
         }
     });
