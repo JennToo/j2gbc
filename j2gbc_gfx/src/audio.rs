@@ -20,7 +20,7 @@ pub struct CpalSink {
     rate: u64,
 
     samples: Vec<f32>,
-    chans: [Vec<f32>; 4],
+    channel_buffers: [Vec<f32>; 4],
 
     capture_config: Arc<CaptureConfig>,
 }
@@ -56,7 +56,7 @@ impl CpalSink {
             local_queue: Vec::with_capacity(10),
             rate: u64::from(format.sample_rate.0),
             samples: Vec::new(),
-            chans: [Vec::new(), Vec::new(), Vec::new(), Vec::new()],
+            channel_buffers: [Vec::new(), Vec::new(), Vec::new(), Vec::new()],
             capture_config: Arc::new(CaptureConfig::default()),
         })
     }
@@ -90,7 +90,7 @@ impl AudioSink for CpalSink {
     fn emit_raw_chans(&mut self, chans: [f32; 4]) {
         for ((source, dest), config) in chans
             .iter()
-            .zip(self.chans.iter_mut())
+            .zip(self.channel_buffers.iter_mut())
             .zip(self.capture_config.channels.iter())
         {
             if config.load(Ordering::Relaxed) {
@@ -117,10 +117,10 @@ impl Drop for CpalSink {
         }
 
         for i in 0..4 {
-            if !self.chans[i].is_empty() {
+            if !self.channel_buffers[i].is_empty() {
                 let mut writer =
                     hound::WavWriter::create(format!("target/chan{}.wav", i), spec).unwrap();
-                for s in self.chans[i].iter() {
+                for s in self.channel_buffers[i].iter() {
                     writer.write_sample(*s).unwrap();
                     writer.write_sample(*s).unwrap();
                 }
