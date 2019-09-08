@@ -12,6 +12,7 @@ const TIMA_INCREMENT_CYCLE_COUNT: [u64; 4] = [
     CLOCK_RATE / 16_384,
 ];
 
+#[derive(Default)]
 pub struct Timer {
     div: u8,
     tima: u8,

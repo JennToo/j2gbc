@@ -1,3 +1,4 @@
+#[derive(Default)]
 pub struct Mixer {
     left_enable: [bool; 4],
     right_enable: [bool; 4],

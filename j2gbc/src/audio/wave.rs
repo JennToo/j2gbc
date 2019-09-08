@@ -1,3 +1,4 @@
+#[derive(Default)]
 pub struct WaveChannel {
     samples: [f32; 32],
     period: u64,

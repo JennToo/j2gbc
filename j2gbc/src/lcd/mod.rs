@@ -433,8 +433,8 @@ impl Lcd {
             let mut bg_screen_row =
                 [fb::TentativePixel::new(fb::DMG_COLOR_WHITE, false, true); BG_SIZE.0];
             self.render_tile_row(y as u8, 0, 0, 0, tile_address, &mut bg_screen_row);
-            for x in 0..BG_SIZE.0 {
-                output.set(x, y, bg_screen_row[x].color());
+            for (x, pixel) in bg_screen_row.iter().enumerate() {
+                output.set(x, y, pixel.color());
             }
         }
 
@@ -603,12 +603,12 @@ fn load_color_from_data(data: &[u8], pal_out: &mut [CgbPalette]) {
     let mut i = 0;
     for pal in 0..8 {
         for color_index in 0..4 {
-            let l = data[i];
-            let h = data[i + 1];
+            let low = data[i];
+            let hi = data[i + 1];
 
-            let r = u16::from(l & 0b0001_1111);
-            let g = u16::from((l >> 5) | ((h & 0b11) << 3));
-            let b = u16::from((h >> 2) & 0b0001_1111);
+            let r = u16::from(low & 0b0001_1111);
+            let g = u16::from((low >> 5) | ((hi & 0b11) << 3));
+            let b = u16::from((hi >> 2) & 0b0001_1111);
 
             let ar = (r * 255 / 0x1F) as u8;
             let ag = (g * 255 / 0x1F) as u8;

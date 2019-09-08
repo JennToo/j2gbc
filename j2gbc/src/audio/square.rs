@@ -28,6 +28,12 @@ const DUTY_VALUES: [[f32; 8]; 4] = [
     [-1., 1., 1., 1., 1., 1., 1., -1.],
 ];
 
+impl Default for SquareChannel {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl SquareChannel {
     pub fn new() -> SquareChannel {
         SquareChannel {

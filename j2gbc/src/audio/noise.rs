@@ -20,6 +20,12 @@ pub struct NoiseChannel {
 
 const DIVISORS: [u64; 8] = [8, 16, 32, 48, 64, 80, 96, 112];
 
+impl Default for NoiseChannel {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl NoiseChannel {
     pub fn new() -> NoiseChannel {
         NoiseChannel {

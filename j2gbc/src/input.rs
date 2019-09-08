@@ -44,6 +44,7 @@ impl Button {
     }
 }
 
+#[derive(Default)]
 pub struct Input {
     active: HashSet<Button>,
     p1: u8,

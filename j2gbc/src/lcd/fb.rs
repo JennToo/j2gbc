@@ -109,12 +109,10 @@ pub fn resolve_pixel_cgb(oam: Option<TentativePixel>, bg: TentativePixel) -> Pix
             } else {
                 bg.color
             }
+        } else if oam.data_was_zero {
+            bg.color
         } else {
-            if oam.data_was_zero {
-                bg.color
-            } else {
-                oam.color
-            }
+            oam.color
         }
     } else {
         bg.color
