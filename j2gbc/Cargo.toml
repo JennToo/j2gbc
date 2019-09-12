@@ -1,16 +1,17 @@
 [package]
 name = "j2gbc"
 version = "0.1.0"
+description = "A Game Boy Color emulator (core library)"
 authors = ["Jennifer Wilcox <jennifer@nitori.org>"]
 edition = "2018"
 build = "build.rs"
 
 [dependencies]
-log = "*"
-j2ds = "*"
-toml = "*"
+log = "^0.4.8"
+j2ds = "^0.3.0"
+toml = "^0.5.3"
 
 [build-dependencies]
-serde = "*"
-serde_derive = "*"
-toml = "*"
+serde = "^1.0.100"
+serde_derive = "^1.0.100"
+toml = "^0.5.3"

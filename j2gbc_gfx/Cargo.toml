@@ -1,21 +1,22 @@
 [package]
 name = "j2gbc_gfx"
 version = "0.1.0"
+description = "A Game Boy Color emulator (GTK frontend)"
 authors = ["Jennifer Wilcox <jennifer@nitori.org>"]
 edition = "2018"
 
 [dependencies]
 j2gbc = { path = "../j2gbc" }
-log = "*"
-lazy_static = "*"
-cpal = "*"
-hound = "*"
-j2ds = "*"
-clap = "*"
-gdk-pixbuf = "*"
-glib = "*"
-gdk = "*"
-enclose = "*"
+log = "^0.4.8"
+lazy_static = "^1.4.0"
+cpal = "^0.10.0"
+hound = "^3.4.0"
+j2ds = "^0.3.0"
+clap = "^2.33.0"
+gdk-pixbuf = "^0.7.0"
+glib = "^0.8.1"
+gdk = "^0.11.0"
+enclose = "^1.1.8"
 
 [dependencies.gtk]
 version = "0.7.0"
