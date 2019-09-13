@@ -360,23 +360,8 @@ impl Cpu {
             Control::JpI(a) => {
                 self.pc = a;
             }
-            Control::JpCI(a) => {
-                if self.flags().get_carry() {
-                    self.pc = a;
-                }
-            }
-            Control::JpZI(a) => {
-                if self.flags().get_zero() {
-                    self.pc = a;
-                }
-            }
-            Control::JpNCI(a) => {
-                if !self.flags().get_carry() {
-                    self.pc = a;
-                }
-            }
-            Control::JpNZI(a) => {
-                if !self.flags().get_zero() {
+            Control::JpCondI(a, cond) => {
+                if self.flags().matches(cond) {
                     self.pc = a;
                 }
             }

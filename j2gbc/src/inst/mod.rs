@@ -131,20 +131,11 @@ impl Instruction {
                 Instruction::Control(Control::JpI(Address(hi_lo(bytes[2], bytes[1])))),
                 3,
             )),
-            0xC2 => Ok((
-                Instruction::Control(Control::JpNZI(Address(hi_lo(bytes[2], bytes[1])))),
-                3,
-            )),
-            0xD2 => Ok((
-                Instruction::Control(Control::JpNCI(Address(hi_lo(bytes[2], bytes[1])))),
-                3,
-            )),
-            0xCA => Ok((
-                Instruction::Control(Control::JpZI(Address(hi_lo(bytes[2], bytes[1])))),
-                3,
-            )),
-            0xDA => Ok((
-                Instruction::Control(Control::JpCI(Address(hi_lo(bytes[2], bytes[1])))),
+            0xC2 | 0xD2 | 0xCA | 0xDA => Ok((
+                Instruction::Control(Control::JpCondI(
+                    Address(hi_lo(bytes[2], bytes[1])),
+                    ConditionCode::from_bits(bytes[0]),
+                )),
                 3,
             )),
 

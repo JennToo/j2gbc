@@ -13,10 +13,7 @@ pub enum Control {
     RetCond(ConditionCode),
     JpN,
     JpI(Address),
-    JpCI(Address),
-    JpZI(Address),
-    JpNCI(Address),
-    JpNZI(Address),
+    JpCondI(Address, ConditionCode),
     CallI(Address),
     CallINZ(Address),
     CallINC(Address),
@@ -30,11 +27,7 @@ impl Control {
         match self {
             Control::Rst(_) => 16,
             Control::JpN => 4,
-            Control::JpCI(_)
-            | Control::JpI(_)
-            | Control::JpZI(_)
-            | Control::JpNCI(_)
-            | Control::JpNZI(_) => 16,
+            Control::JpCondI(_, _) | Control::JpI(_) => 16,
             Control::CallI(_)
             | Control::CallIC(_)
             | Control::CallINC(_)
@@ -58,10 +51,7 @@ impl Display for Control {
             Control::RetCond(cond) => write!(f, "ret {}", cond),
             Control::JpN => write!(f, "jmp [hl]"),
             Control::JpI(a) => write!(f, "jmp {}", a),
-            Control::JpCI(a) => write!(f, "jmpc {}", a),
-            Control::JpZI(a) => write!(f, "jmpz {}", a),
-            Control::JpNCI(a) => write!(f, "jmpnc {}", a),
-            Control::JpNZI(a) => write!(f, "jmpnz {}", a),
+            Control::JpCondI(a, cond) => write!(f, "jmp{} {}", cond, a),
             Control::CallI(a) => write!(f, "call {}", a),
             Control::CallIC(a) => write!(f, "callc {}", a),
             Control::CallIZ(a) => write!(f, "callz {}", a),
