@@ -352,10 +352,10 @@ impl Instruction {
             0xC9 => Ok((Instruction::Control(Control::Ret), 1)),
             0xD9 => Ok((Instruction::Control(Control::Reti), 1)),
 
-            0xC0 => Ok((Instruction::Control(Control::RetNZ), 1)),
-            0xD0 => Ok((Instruction::Control(Control::RetNC), 1)),
-            0xC8 => Ok((Instruction::Control(Control::RetZ), 1)),
-            0xD8 => Ok((Instruction::Control(Control::RetC), 1)),
+            0xC0 | 0xD0 | 0xC8 | 0xD8 => Ok((
+                Instruction::Control(Control::RetCond(ConditionCode::from_bits(bytes[0]))),
+                1,
+            )),
 
             0x17 => Ok((Instruction::Bits(Bits::Rla), 1)),
             0x1F => Ok((Instruction::Bits(Bits::Rra), 1)),

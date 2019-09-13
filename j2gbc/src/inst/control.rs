@@ -10,10 +10,7 @@ pub enum Control {
     JrI(i8),
     Ret,
     Reti,
-    RetNZ,
-    RetNC,
-    RetZ,
-    RetC,
+    RetCond(ConditionCode),
     JpN,
     JpI(Address),
     JpCI(Address),
@@ -46,7 +43,7 @@ impl Control {
             // TODO: This is actually variable
             Control::JrCondI(_, _) | Control::JrI(_) => 12,
             Control::Ret | Control::Reti => 16,
-            Control::RetC | Control::RetZ | Control::RetNC | Control::RetNZ => 8,
+            Control::RetCond(_) => 8,
         }
     }
 }
@@ -58,10 +55,7 @@ impl Display for Control {
             Control::JrI(i) => write!(f, "jr {}", i),
             Control::Ret => write!(f, "ret"),
             Control::Reti => write!(f, "reti"),
-            Control::RetC => write!(f, "ret c"),
-            Control::RetZ => write!(f, "ret z"),
-            Control::RetNC => write!(f, "ret nc"),
-            Control::RetNZ => write!(f, "ret nz"),
+            Control::RetCond(cond) => write!(f, "ret {}", cond),
             Control::JpN => write!(f, "jmp [hl]"),
             Control::JpI(a) => write!(f, "jmp {}", a),
             Control::JpCI(a) => write!(f, "jmpc {}", a),

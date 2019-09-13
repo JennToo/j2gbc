@@ -347,26 +347,8 @@ impl Cpu {
                 self.sp += Address(2);
                 self.interrupt_master_enable = true;
             }
-            Control::RetC => {
-                if self.flags().get_carry() {
-                    self.pc = Address(self.mmu.read16(self.sp)?);
-                    self.sp += Address(2);
-                }
-            }
-            Control::RetZ => {
-                if self.flags().get_zero() {
-                    self.pc = Address(self.mmu.read16(self.sp)?);
-                    self.sp += Address(2);
-                }
-            }
-            Control::RetNC => {
-                if !self.flags().get_carry() {
-                    self.pc = Address(self.mmu.read16(self.sp)?);
-                    self.sp += Address(2);
-                }
-            }
-            Control::RetNZ => {
-                if !self.flags().get_zero() {
+            Control::RetCond(cond) => {
+                if self.flags().matches(cond) {
                     self.pc = Address(self.mmu.read16(self.sp)?);
                     self.sp += Address(2);
                 }
