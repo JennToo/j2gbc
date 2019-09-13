@@ -15,10 +15,7 @@ pub enum Control {
     JpI(Address),
     JpCondI(Address, ConditionCode),
     CallI(Address),
-    CallINZ(Address),
-    CallINC(Address),
-    CallIC(Address),
-    CallIZ(Address),
+    CallCondI(Address, ConditionCode),
     Rst(Address),
 }
 
@@ -28,11 +25,7 @@ impl Control {
             Control::Rst(_) => 16,
             Control::JpN => 4,
             Control::JpCondI(_, _) | Control::JpI(_) => 16,
-            Control::CallI(_)
-            | Control::CallIC(_)
-            | Control::CallINC(_)
-            | Control::CallINZ(_)
-            | Control::CallIZ(_) => 24,
+            Control::CallI(_) | Control::CallCondI(_, _) => 24,
             // TODO: This is actually variable
             Control::JrCondI(_, _) | Control::JrI(_) => 12,
             Control::Ret | Control::Reti => 16,
@@ -53,10 +46,7 @@ impl Display for Control {
             Control::JpI(a) => write!(f, "jmp {}", a),
             Control::JpCondI(a, cond) => write!(f, "jmp{} {}", cond, a),
             Control::CallI(a) => write!(f, "call {}", a),
-            Control::CallIC(a) => write!(f, "callc {}", a),
-            Control::CallIZ(a) => write!(f, "callz {}", a),
-            Control::CallINC(a) => write!(f, "callnc {}", a),
-            Control::CallINZ(a) => write!(f, "callnz {}", a),
+            Control::CallCondI(a, cond) => write!(f, "call{} {}", cond, a),
             Control::Rst(a) => write!(f, "rst {}", a),
         }
     }

@@ -153,20 +153,11 @@ impl Instruction {
                 Instruction::Control(Control::CallI(Address(hi_lo(bytes[2], bytes[1])))),
                 3,
             )),
-            0xC4 => Ok((
-                Instruction::Control(Control::CallINZ(Address(hi_lo(bytes[2], bytes[1])))),
-                3,
-            )),
-            0xD4 => Ok((
-                Instruction::Control(Control::CallINC(Address(hi_lo(bytes[2], bytes[1])))),
-                3,
-            )),
-            0xCC => Ok((
-                Instruction::Control(Control::CallIZ(Address(hi_lo(bytes[2], bytes[1])))),
-                3,
-            )),
-            0xDC => Ok((
-                Instruction::Control(Control::CallIC(Address(hi_lo(bytes[2], bytes[1])))),
+            0xC4 | 0xD4 | 0xCC | 0xDC => Ok((
+                Instruction::Control(Control::CallCondI(
+                    Address(hi_lo(bytes[2], bytes[1])),
+                    ConditionCode::from_bits(bytes[0]),
+                )),
                 3,
             )),
 
