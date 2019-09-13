@@ -12,7 +12,7 @@ pub struct ScanlineSweeper {
 
 impl ScanlineSweeper {
     pub fn new() -> ScanlineSweeper {
-        let mut timer = Timer::new(LINE_CYCLE_TIME, 0, 1);
+        let mut timer = Timer::new(LINE_CYCLE_TIME, 0, 0);
         timer.update(0);
         ScanlineSweeper {
             ly: 0,
@@ -24,6 +24,7 @@ impl ScanlineSweeper {
 
     pub fn pump_cycle(&mut self, cycle: u64) -> Option<Interrupt> {
         if self.timer.update(cycle) == Some(TimerEvent::RisingEdge) {
+            assert_eq!(self.timer.update(cycle), None); // We should never end up too far behind
             self.ly = (self.ly + 1) % TOTAL_SCANLINES as u8;
 
             if self.ly == self.lyc && self.interrupt_enabled {
@@ -70,14 +71,35 @@ impl ScanlineSweeper {
 }
 
 #[test]
-fn sweep_and_wrap() {
+fn test_sweep_and_wrap() {
     let mut sweeper = ScanlineSweeper::new();
 
-    sweeper.set_lyc(42);
+    assert_eq!(sweeper.ly(), 0);
+    sweeper.pump_cycle(LINE_CYCLE_TIME - 1);
+    assert_eq!(sweeper.ly(), 0);
 
+    for scanline in 1..TOTAL_SCANLINES {
+        sweeper.pump_cycle(LINE_CYCLE_TIME * scanline);
+        assert_eq!(sweeper.ly(), scanline as u8);
+    }
+
+    sweeper.pump_cycle(LINE_CYCLE_TIME * TOTAL_SCANLINES);
     assert_eq!(sweeper.ly(), 0);
-    assert_eq!(sweeper.pump_cycle(LINE_CYCLE_TIME - 1), None);
-    assert_eq!(sweeper.ly(), 0);
-    assert_eq!(sweeper.pump_cycle(LINE_CYCLE_TIME), None);
-    assert_eq!(sweeper.ly(), 1);
+}
+
+#[test]
+fn test_lyc() {
+    let mut sweeper = ScanlineSweeper::new();
+    sweeper.set_lyc(42);
+    for scanline in 0..42 {
+        assert_eq!(sweeper.stat_flags(), 0);
+        assert_eq!(sweeper.pump_cycle(LINE_CYCLE_TIME * scanline), None);
+    }
+
+    sweeper.update_stat(LYC_MATCH_INT_FLAG);
+    assert_eq!(
+        sweeper.pump_cycle(LINE_CYCLE_TIME * 42),
+        Some(Interrupt::LCDC)
+    );
+    assert_eq!(sweeper.stat_flags(), LYC_MATCH_FLAG);
 }
