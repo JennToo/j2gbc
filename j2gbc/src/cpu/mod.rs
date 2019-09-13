@@ -27,7 +27,7 @@ mod test;
 
 pub use self::{
     interrupt::{Interrupt, InterruptSet},
-    register::{Operand, Register16, Register8},
+    register::{ConditionCode, Operand, Register16, Register8},
 };
 
 pub struct Cpu {
@@ -330,28 +330,13 @@ impl Cpu {
 
     fn execute_control(&mut self, c: Control) -> Result<(), ()> {
         match c {
-            Control::JrNZI(o) => {
-                if !self.flags().get_zero() {
-                    self.pc += o;
-                }
-            }
-            Control::JrNCI(o) => {
-                if !self.flags().get_carry() {
+            Control::JrCondI(o, cond) => {
+                if self.flags().matches(cond) {
                     self.pc += o;
                 }
             }
             Control::JrI(o) => {
                 self.pc += o;
-            }
-            Control::JrZI(o) => {
-                if self.flags().get_zero() {
-                    self.pc += o;
-                }
-            }
-            Control::JrCI(o) => {
-                if self.flags().get_carry() {
-                    self.pc += o;
-                }
             }
             Control::Ret => {
                 self.pc = Address(self.mmu.read16(self.sp)?);

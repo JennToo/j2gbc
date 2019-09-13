@@ -5,6 +5,8 @@ pub const MASK_FLAG_N: u8 = 0b0100_0000;
 pub const MASK_FLAG_H: u8 = 0b0010_0000;
 pub const MASK_FLAG_C: u8 = 0b0001_0000;
 
+use crate::cpu::ConditionCode;
+
 pub struct Flags(pub u8);
 
 impl Flags {
@@ -78,6 +80,15 @@ impl Flags {
 
     pub fn get_halfcarry(&self) -> bool {
         self.0 & MASK_FLAG_H != 0
+    }
+
+    pub fn matches(self, cond: ConditionCode) -> bool {
+        match cond {
+            ConditionCode::NotZero => !self.get_zero(),
+            ConditionCode::NotCarry => !self.get_carry(),
+            ConditionCode::Zero => self.get_zero(),
+            ConditionCode::Carry => self.get_carry(),
+        }
     }
 }
 

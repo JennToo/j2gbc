@@ -1,15 +1,13 @@
 use std::fmt;
 use std::fmt::Display;
 
+use crate::cpu::ConditionCode;
 use crate::mem::Address;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Control {
-    JrNZI(i8),
+    JrCondI(i8, ConditionCode),
     JrI(i8),
-    JrNCI(i8),
-    JrZI(i8),
-    JrCI(i8),
     Ret,
     Reti,
     RetNZ,
@@ -46,11 +44,7 @@ impl Control {
             | Control::CallINZ(_)
             | Control::CallIZ(_) => 24,
             // TODO: This is actually variable
-            Control::JrNZI(_)
-            | Control::JrNCI(_)
-            | Control::JrI(_)
-            | Control::JrCI(_)
-            | Control::JrZI(_) => 12,
+            Control::JrCondI(_, _) | Control::JrI(_) => 12,
             Control::Ret | Control::Reti => 16,
             Control::RetC | Control::RetZ | Control::RetNC | Control::RetNZ => 8,
         }
@@ -60,11 +54,8 @@ impl Control {
 impl Display for Control {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            Control::JrNZI(i) => write!(f, "jrnz {}", i),
+            Control::JrCondI(i, cond) => write!(f, "jr{} {}", cond, i),
             Control::JrI(i) => write!(f, "jr {}", i),
-            Control::JrNCI(i) => write!(f, "jrnc {}", i),
-            Control::JrZI(i) => write!(f, "jrz {}", i),
-            Control::JrCI(i) => write!(f, "jrc {}", i),
             Control::Ret => write!(f, "ret"),
             Control::Reti => write!(f, "reti"),
             Control::RetC => write!(f, "ret c"),

@@ -88,3 +88,35 @@ impl Operand {
         }
     }
 }
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+pub enum ConditionCode {
+    NotZero,
+    NotCarry,
+    Zero,
+    Carry,
+}
+
+impl Display for ConditionCode {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            ConditionCode::NotZero => write!(f, "nz"),
+            ConditionCode::NotCarry => write!(f, "nc"),
+            ConditionCode::Zero => write!(f, "z"),
+            ConditionCode::Carry => write!(f, "c"),
+        }
+    }
+}
+
+impl ConditionCode {
+    pub fn from_bits(byte: u8) -> Self {
+        let bits = (byte >> 3) & 0b11;
+        match bits {
+            0b00 => ConditionCode::NotZero,
+            0b10 => ConditionCode::NotCarry,
+            0b01 => ConditionCode::Zero,
+            0b11 => ConditionCode::Carry,
+            _ => unreachable!(),
+        }
+    }
+}

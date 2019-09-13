@@ -4,7 +4,7 @@ use std::fmt::Display;
 use log::error;
 
 use super::alu::hi_lo;
-use super::cpu::{Operand, Register16, Register8};
+use super::cpu::{ConditionCode, Operand, Register16, Register8};
 use super::mem::Address;
 
 mod arith;
@@ -271,11 +271,14 @@ impl Instruction {
 
             0xB8..=0xBF => Ok((Instruction::Cp(Operand::from_bits(bytes[0], 0)), 1)),
 
-            0x20 => Ok((Instruction::Control(Control::JrNZI(bytes[1] as i8)), 2)),
-            0x30 => Ok((Instruction::Control(Control::JrNCI(bytes[1] as i8)), 2)),
+            0x20 | 0x30 | 0x28 | 0x38 => Ok((
+                Instruction::Control(Control::JrCondI(
+                    bytes[1] as i8,
+                    ConditionCode::from_bits(bytes[0]),
+                )),
+                2,
+            )),
             0x18 => Ok((Instruction::Control(Control::JrI(bytes[1] as i8)), 2)),
-            0x28 => Ok((Instruction::Control(Control::JrZI(bytes[1] as i8)), 2)),
-            0x38 => Ok((Instruction::Control(Control::JrCI(bytes[1] as i8)), 2)),
 
             0x80..=0x87 => Ok((
                 Instruction::Arith(Arith::Add(Operand::from_bits(bytes[0], 0))),
