@@ -20,16 +20,39 @@ pub enum Control {
 }
 
 impl Control {
-    pub fn cycles(self) -> u8 {
+    pub fn cycles(self, branch_taken: bool) -> u8 {
         match self {
             Control::Reset(_) => 16,
             Control::JumpIndirect => 4,
-            Control::JumpConditional(_, _) | Control::Jump(_) => 16,
-            Control::Call(_) | Control::CallConditional(_, _) => 24,
-            // TODO: This is actually variable
-            Control::JumpRelativeConditional(_, _) | Control::JumpRelative(_) => 12,
+            Control::JumpConditional(_, _) | Control::Jump(_) => {
+                if branch_taken {
+                    16
+                } else {
+                    12
+                }
+            }
+            Control::Call(_) | Control::CallConditional(_, _) => {
+                if branch_taken {
+                    24
+                } else {
+                    12
+                }
+            }
+            Control::JumpRelativeConditional(_, _) | Control::JumpRelative(_) => {
+                if branch_taken {
+                    12
+                } else {
+                    8
+                }
+            }
             Control::Return | Control::InterruptReturn => 16,
-            Control::ReturnConditional(_) => 8,
+            Control::ReturnConditional(_) => {
+                if branch_taken {
+                    20
+                } else {
+                    8
+                }
+            }
         }
     }
 }

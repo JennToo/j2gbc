@@ -37,7 +37,7 @@ pub enum Instruction {
 }
 
 impl Instruction {
-    pub fn cycles(self) -> u8 {
+    pub fn cycles(self, branch_taken: bool) -> u8 {
         // TODO: Audit this list for accuracy
         match self {
             Instruction::Nop => 4,
@@ -53,7 +53,7 @@ impl Instruction {
             Instruction::Arith(a) => a.cycles(),
             Instruction::Bits(b) => b.cycles(),
             Instruction::Load(l) => l.cycles(),
-            Instruction::Control(c) => c.cycles(),
+            Instruction::Control(c) => c.cycles(branch_taken),
             Instruction::Logic(l) => l.cycles(),
 
             Instruction::Compare(_) => unimplemented!(),

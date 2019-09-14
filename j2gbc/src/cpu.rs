@@ -85,6 +85,7 @@ impl Cpu {
     }
 
     fn execute(&mut self, i: Instruction) -> Result<(), ()> {
+        let mut branch_taken = false;
         match i {
             Instruction::Nop => {}
             Instruction::EnableInterrupts => {
@@ -130,7 +131,7 @@ impl Cpu {
                 self.execute_bits(b)?;
             }
             Instruction::Control(c) => {
-                self.execute_control(c)?;
+                self.execute_control(c, &mut branch_taken)?;
             }
             Instruction::Load(l) => {
                 self.execute_load(l)?;
@@ -140,9 +141,9 @@ impl Cpu {
             }
         }
         let cycle_cost = if self.mmu.double_speed_mode {
-            i.cycles() / 2
+            i.cycles(branch_taken) / 2
         } else {
-            i.cycles()
+            i.cycles(branch_taken)
         };
         self.cycle += u64::from(cycle_cost);
         Ok(())
@@ -328,53 +329,63 @@ impl Cpu {
         Ok(())
     }
 
-    fn execute_control(&mut self, c: Control) -> Result<(), ()> {
+    fn execute_control(&mut self, c: Control, branch_taken: &mut bool) -> Result<(), ()> {
         match c {
             Control::JumpRelativeConditional(o, cond) => {
                 if self.flags().matches(cond) {
                     self.pc += o;
+                    *branch_taken = true;
                 }
             }
             Control::JumpRelative(o) => {
                 self.pc += o;
+                *branch_taken = true;
             }
             Control::Return => {
                 self.pc = Address(self.mmu.read16(self.sp)?);
                 self.sp += Address(2);
+                *branch_taken = true;
             }
             Control::InterruptReturn => {
                 self.pc = Address(self.mmu.read16(self.sp)?);
                 self.sp += Address(2);
                 self.interrupt_master_enable = true;
+                *branch_taken = true;
             }
             Control::ReturnConditional(cond) => {
                 if self.flags().matches(cond) {
                     self.pc = Address(self.mmu.read16(self.sp)?);
                     self.sp += Address(2);
+                    *branch_taken = true;
                 }
             }
             Control::JumpIndirect => {
                 let a = Address(self.read_r16(Register16::HL));
                 self.pc = a;
+                *branch_taken = true;
             }
             Control::Jump(a) => {
                 self.pc = a;
+                *branch_taken = true;
             }
             Control::JumpConditional(a, cond) => {
                 if self.flags().matches(cond) {
                     self.pc = a;
+                    *branch_taken = true;
                 }
             }
             Control::Call(a) | Control::Reset(a) => {
                 let v = self.pc.into();
                 self.push16(v)?;
                 self.pc = a;
+                *branch_taken = true;
             }
             Control::CallConditional(a, cond) => {
                 if self.flags().matches(cond) {
                     let v = self.pc.into();
                     self.push16(v)?;
                     self.pc = a;
+                    *branch_taken = true;
                 }
             }
         }
