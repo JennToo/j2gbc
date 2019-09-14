@@ -5,89 +5,92 @@ use crate::cpu::Operand;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Bits {
-    Cpl,
-    Rra,
-    Rrca,
-    Rla,
-    Rlca,
-    Rlc(Operand),
-    Rrc(Operand),
-    Rl(Operand),
-    Rr(Operand),
-    Sla(Operand),
-    Sra(Operand),
+    Complement,
+    RotateRightAccumulator,
+    RotateRightCarryAccumulator,
+    RotateLeftAccumulator,
+    RotateLeftCarryAccumulator,
+    RotateLeftCarry(Operand),
+    RotateRightCarry(Operand),
+    RotateLeft(Operand),
+    RotateRight(Operand),
+    ShiftLeftArithmetic(Operand),
+    ShiftRightArithmetic(Operand),
     Swap(Operand),
-    Srl(Operand),
-    Bit(u8, Operand),
-    Res(u8, Operand),
-    Set(u8, Operand),
+    ShiftRightLogical(Operand),
+    GetBit(u8, Operand),
+    ResetBit(u8, Operand),
+    SetBit(u8, Operand),
 }
 
 impl Bits {
     pub fn cycles(self) -> u8 {
         // TODO: Audit this list for accuracy
         match self {
-            Bits::Cpl => 4,
+            Bits::Complement => 4,
 
-            Bits::Set(_, Operand::Register(_))
-            | Bits::Bit(_, Operand::Register(_))
-            | Bits::Res(_, Operand::Register(_))
+            Bits::SetBit(_, Operand::Register(_))
+            | Bits::GetBit(_, Operand::Register(_))
+            | Bits::ResetBit(_, Operand::Register(_))
             | Bits::Swap(Operand::Register(_))
-            | Bits::Rl(Operand::Register(_))
-            | Bits::Rr(Operand::Register(_))
-            | Bits::Rlc(Operand::Register(_))
-            | Bits::Rrc(Operand::Register(_))
-            | Bits::Sla(Operand::Register(_))
-            | Bits::Sra(Operand::Register(_))
-            | Bits::Srl(Operand::Register(_)) => 8,
+            | Bits::RotateLeft(Operand::Register(_))
+            | Bits::RotateRight(Operand::Register(_))
+            | Bits::RotateLeftCarry(Operand::Register(_))
+            | Bits::RotateRightCarry(Operand::Register(_))
+            | Bits::ShiftLeftArithmetic(Operand::Register(_))
+            | Bits::ShiftRightArithmetic(Operand::Register(_))
+            | Bits::ShiftRightLogical(Operand::Register(_)) => 8,
 
-            Bits::Set(_, Operand::IndirectRegister(_))
-            | Bits::Bit(_, Operand::IndirectRegister(_))
-            | Bits::Res(_, Operand::IndirectRegister(_))
+            Bits::SetBit(_, Operand::IndirectRegister(_))
+            | Bits::GetBit(_, Operand::IndirectRegister(_))
+            | Bits::ResetBit(_, Operand::IndirectRegister(_))
             | Bits::Swap(Operand::IndirectRegister(_))
-            | Bits::Rl(Operand::IndirectRegister(_))
-            | Bits::Rr(Operand::IndirectRegister(_))
-            | Bits::Rlc(Operand::IndirectRegister(_))
-            | Bits::Rrc(Operand::IndirectRegister(_))
-            | Bits::Sla(Operand::IndirectRegister(_))
-            | Bits::Sra(Operand::IndirectRegister(_))
-            | Bits::Srl(Operand::IndirectRegister(_)) => 8,
+            | Bits::RotateLeft(Operand::IndirectRegister(_))
+            | Bits::RotateRight(Operand::IndirectRegister(_))
+            | Bits::RotateLeftCarry(Operand::IndirectRegister(_))
+            | Bits::RotateRightCarry(Operand::IndirectRegister(_))
+            | Bits::ShiftLeftArithmetic(Operand::IndirectRegister(_))
+            | Bits::ShiftRightArithmetic(Operand::IndirectRegister(_))
+            | Bits::ShiftRightLogical(Operand::IndirectRegister(_)) => 8,
 
-            Bits::Rra | Bits::Rrca | Bits::Rla | Bits::Rlca => 4,
+            Bits::RotateRightAccumulator
+            | Bits::RotateRightCarryAccumulator
+            | Bits::RotateLeftAccumulator
+            | Bits::RotateLeftCarryAccumulator => 4,
 
-            Bits::Set(_, _)
-            | Bits::Bit(_, _)
-            | Bits::Res(_, _)
+            Bits::SetBit(_, _)
+            | Bits::GetBit(_, _)
+            | Bits::ResetBit(_, _)
             | Bits::Swap(_)
-            | Bits::Rl(_)
-            | Bits::Rr(_)
-            | Bits::Rlc(_)
-            | Bits::Rrc(_)
-            | Bits::Sla(_)
-            | Bits::Sra(_)
-            | Bits::Srl(_) => unimplemented!(),
+            | Bits::RotateLeft(_)
+            | Bits::RotateRight(_)
+            | Bits::RotateLeftCarry(_)
+            | Bits::RotateRightCarry(_)
+            | Bits::ShiftLeftArithmetic(_)
+            | Bits::ShiftRightArithmetic(_)
+            | Bits::ShiftRightLogical(_) => unimplemented!(),
         }
     }
 }
 impl Display for Bits {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            Bits::Cpl => write!(f, "cpl"),
-            Bits::Bit(b, o) => write!(f, "bit {},{}", b, o),
-            Bits::Res(b, o) => write!(f, "res {},{}", b, o),
-            Bits::Set(b, o) => write!(f, "set {},{}", b, o),
+            Bits::Complement => write!(f, "cpl"),
+            Bits::GetBit(b, o) => write!(f, "bit {},{}", b, o),
+            Bits::ResetBit(b, o) => write!(f, "res {},{}", b, o),
+            Bits::SetBit(b, o) => write!(f, "set {},{}", b, o),
             Bits::Swap(o) => write!(f, "swap {}", o),
-            Bits::Sla(o) => write!(f, "sla {}", o),
-            Bits::Sra(o) => write!(f, "sra {}", o),
-            Bits::Rl(o) => write!(f, "rl {}", o),
-            Bits::Rr(o) => write!(f, "rr {}", o),
-            Bits::Rlc(o) => write!(f, "rlc {}", o),
-            Bits::Rrc(o) => write!(f, "rrc {}", o),
-            Bits::Srl(o) => write!(f, "srl {}", o),
-            Bits::Rra => write!(f, "rra"),
-            Bits::Rrca => write!(f, "rrca"),
-            Bits::Rla => write!(f, "rla"),
-            Bits::Rlca => write!(f, "rlca"),
+            Bits::ShiftLeftArithmetic(o) => write!(f, "sla {}", o),
+            Bits::ShiftRightArithmetic(o) => write!(f, "sra {}", o),
+            Bits::RotateLeft(o) => write!(f, "rl {}", o),
+            Bits::RotateRight(o) => write!(f, "rr {}", o),
+            Bits::RotateLeftCarry(o) => write!(f, "rlc {}", o),
+            Bits::RotateRightCarry(o) => write!(f, "rrc {}", o),
+            Bits::ShiftRightLogical(o) => write!(f, "srl {}", o),
+            Bits::RotateRightAccumulator => write!(f, "rra"),
+            Bits::RotateRightCarryAccumulator => write!(f, "rrca"),
+            Bits::RotateLeftAccumulator => write!(f, "rla"),
+            Bits::RotateLeftCarryAccumulator => write!(f, "rlca"),
         }
     }
 }

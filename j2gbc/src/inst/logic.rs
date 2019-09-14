@@ -5,25 +5,25 @@ use crate::cpu::Register8;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Logic {
-    AndI(/* will always love */ u8),
-    AndR(Register8),
-    AndN,
+    AndImmediate(u8),
+    AndRegister(Register8),
+    AndIndirect,
 
-    /* hallowed are the */ OrI(u8),
-    OrR(Register8),
-    OrN,
+    OrImmediate(u8),
+    OrRegister(Register8),
+    OrIndirect,
 
-    XorI(u8),
-    XorR(Register8),
-    XorN,
+    XorImmediate(u8),
+    XorRegister(Register8),
+    XorIndirect,
 }
 
 impl Logic {
     pub fn cycles(self) -> u8 {
         match self {
-            Logic::AndI(_) | Logic::OrI(_) | Logic::XorI(_) => 8,
-            Logic::XorR(_) | Logic::AndR(_) | Logic::OrR(_) => 4,
-            Logic::AndN | Logic::OrN | Logic::XorN => 8,
+            Logic::AndImmediate(_) | Logic::OrImmediate(_) | Logic::XorImmediate(_) => 8,
+            Logic::XorRegister(_) | Logic::AndRegister(_) | Logic::OrRegister(_) => 4,
+            Logic::AndIndirect | Logic::OrIndirect | Logic::XorIndirect => 8,
         }
     }
 }
@@ -31,15 +31,15 @@ impl Logic {
 impl Display for Logic {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            Logic::AndI(i) => write!(f, "and {:#x}", i),
-            Logic::OrI(i) => write!(f, "or {:#x}", i),
-            Logic::XorI(i) => write!(f, "xor {:#x}", i),
-            Logic::XorR(r) => write!(f, "xor {}", r),
-            Logic::AndR(r) => write!(f, "and {}", r),
-            Logic::OrR(r) => write!(f, "or {}", r),
-            Logic::AndN => write!(f, "and [hl]"),
-            Logic::OrN => write!(f, "or [hl]"),
-            Logic::XorN => write!(f, "xor [hl]"),
+            Logic::AndImmediate(i) => write!(f, "and {:#x}", i),
+            Logic::OrImmediate(i) => write!(f, "or {:#x}", i),
+            Logic::XorImmediate(i) => write!(f, "xor {:#x}", i),
+            Logic::XorRegister(r) => write!(f, "xor {}", r),
+            Logic::AndRegister(r) => write!(f, "and {}", r),
+            Logic::OrRegister(r) => write!(f, "or {}", r),
+            Logic::AndIndirect => write!(f, "and [hl]"),
+            Logic::OrIndirect => write!(f, "or [hl]"),
+            Logic::XorIndirect => write!(f, "xor [hl]"),
         }
     }
 }

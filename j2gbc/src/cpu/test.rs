@@ -27,7 +27,7 @@ fn test_ei() {
     let mut cpu = make_test_cpu();
     cpu.interrupt_master_enable = false;
 
-    let i = Instruction::Ei;
+    let i = Instruction::EnableInterrupts;
     cpu.execute(i).unwrap();
     assert_eq!(cpu.interrupt_master_enable, true);
 
@@ -41,7 +41,7 @@ fn test_di() {
     let mut cpu = make_test_cpu();
     cpu.interrupt_master_enable = true;
 
-    let i = Instruction::Di;
+    let i = Instruction::DisableInterrupts;
     cpu.execute(i).unwrap();
     assert_eq!(cpu.interrupt_master_enable, false);
 
@@ -69,7 +69,7 @@ fn test_scf() {
     let mut cpu = make_test_cpu();
     cpu[Register8::F] = Flags(0).zero().0;
 
-    let i = Instruction::Scf;
+    let i = Instruction::SetCarry;
     cpu.execute(i).unwrap();
 
     assert_reg_vals(&cpu, &[(Register8::F, Flags(0).carry().zero().0)]);
@@ -82,7 +82,7 @@ fn test_cpi() {
     let mut cpu = make_test_cpu();
     cpu[Register8::A] = 0x3C;
 
-    let i = Instruction::Cp(Operand::Immediate(0x3C));
+    let i = Instruction::Compare(Operand::Immediate(0x3C));
     cpu.execute(i).unwrap();
 
     assert_reg_vals(
@@ -102,7 +102,7 @@ fn test_cpr() {
     cpu[Register8::A] = 0x3C;
     cpu[Register8::B] = 0x2F;
 
-    let i = Instruction::Cp(Operand::Register(Register8::B));
+    let i = Instruction::Compare(Operand::Register(Register8::B));
     cpu.execute(i).unwrap();
 
     assert_reg_vals(
@@ -174,7 +174,7 @@ fn test_load_indirect_increment() {
     cpu[Register8::L] = 0x80;
     cpu.mmu.write(Address(0xFF80), 0x12).unwrap();
 
-    let i = Instruction::Load(Load::LdNA(1));
+    let i = Instruction::Load(Load::LoadIndirectFromA(1));
     cpu.execute(i).unwrap();
 
     assert_eq!(cpu.mmu.read(Address(0xFF80)).unwrap(), 0x3C);
@@ -199,7 +199,7 @@ fn test_load_indirect_decrement() {
     cpu[Register8::L] = 0x80;
     cpu.mmu.write(Address(0xFF80), 0x12).unwrap();
 
-    let i = Instruction::Load(Load::LdNA(-1));
+    let i = Instruction::Load(Load::LoadIndirectFromA(-1));
     cpu.execute(i).unwrap();
 
     assert_eq!(cpu.mmu.read(Address(0xFF80)).unwrap(), 0x3C);

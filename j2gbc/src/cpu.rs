@@ -87,10 +87,10 @@ impl Cpu {
     fn execute(&mut self, i: Instruction) -> Result<(), ()> {
         match i {
             Instruction::Nop => {}
-            Instruction::Ei => {
+            Instruction::EnableInterrupts => {
                 self.interrupt_master_enable = true;
             }
-            Instruction::Di => {
+            Instruction::DisableInterrupts => {
                 self.interrupt_master_enable = false;
             }
             Instruction::Stop => {
@@ -104,21 +104,21 @@ impl Cpu {
             Instruction::Halt => {
                 self.halted = true;
             }
-            Instruction::Scf => {
+            Instruction::SetCarry => {
                 let mut f = self.flags();
                 f.set_subtract(false);
                 f.set_halfcarry(false);
                 f.set_carry(true);
                 self[Register8::F] = f.0;
             }
-            Instruction::Ccf => {
+            Instruction::ClearCarry => {
                 let mut f = self.flags();
                 f.set_subtract(false);
                 f.set_halfcarry(false);
                 f.set_carry(!self.flags().get_carry());
                 self[Register8::F] = f.0;
             }
-            Instruction::Cp(o) => {
+            Instruction::Compare(o) => {
                 let v = self.read_operand(o)?;
                 let (_, flags) = sub(self[Register8::A], v);
                 self[Register8::F] = flags.0;
@@ -157,48 +157,48 @@ impl Cpu {
                 self[Register8::A] = v;
                 self[Register8::F] = flags.0;
             }
-            Arith::Adc(o) => {
+            Arith::AddWithCarry(o) => {
                 let v1 = self[Register8::A];
                 let v2 = self.read_operand(o)?;
                 let (v, flags) = adc(v1, v2, self.flags().get_carry());
                 self[Register8::A] = v;
                 self[Register8::F] = flags.0;
             }
-            Arith::Sub(o) => {
+            Arith::Subtract(o) => {
                 let v1 = self[Register8::A];
                 let v2 = self.read_operand(o)?;
                 let (v, flags) = sub(v1, v2);
                 self[Register8::A] = v;
                 self[Register8::F] = flags.0;
             }
-            Arith::Sbc(o) => {
+            Arith::SubtractWithCarry(o) => {
                 let v1 = self[Register8::A];
                 let v2 = self.read_operand(o)?;
                 let (v, flags) = sbc(v1, v2, self.flags().get_carry());
                 self[Register8::A] = v;
                 self[Register8::F] = flags.0;
             }
-            Arith::Inc(o) => {
+            Arith::Increment(o) => {
                 let v = self.read_operand(o)?;
                 let (v, flags) = inc(v, self.flags());
                 self.write_operand(o, v)?;
                 self[Register8::F] = flags.0;
             }
-            Arith::Dec(o) => {
+            Arith::Decrement(o) => {
                 let v = self.read_operand(o)?;
                 let (v, flags) = dec(v, self.flags());
                 self.write_operand(o, v)?;
                 self[Register8::F] = flags.0;
             }
-            Arith::DecR16(r) => {
+            Arith::DecrementRegister16(r) => {
                 let v = Wrapping(self.read_r16(r));
                 self.write_r16(r, (v - Wrapping(1)).0);
             }
-            Arith::IncR16(r) => {
+            Arith::IncrementRegister16(r) => {
                 let v = Wrapping(self.read_r16(r));
                 self.write_r16(r, (v + Wrapping(1)).0);
             }
-            Arith::AddRR16(d, s) => {
+            Arith::AddRegisterRegister16(d, s) => {
                 let v1 = self.read_r16(d);
                 let v2 = self.read_r16(s);
                 let (v3, flags) = add16(v1, v2, self.flags());
@@ -216,7 +216,7 @@ impl Cpu {
                 self.write_r16(Register16::SP, v3);
                 self[Register8::F] = flags.0;
             }
-            Arith::Daa => {
+            Arith::DecimalAdjustAccumulator => {
                 let (v, f) = daa(self[Register8::A], self.flags());
                 self[Register8::A] = v;
                 self[Register8::F] = f.0;
@@ -227,7 +227,7 @@ impl Cpu {
 
     fn execute_bits(&mut self, b: Bits) -> Result<(), ()> {
         match b {
-            Bits::Cpl => {
+            Bits::Complement => {
                 let mut f = self.flags();
                 f.set_subtract(true);
                 f.set_halfcarry(true);
@@ -241,73 +241,73 @@ impl Cpu {
                 self.write_operand(o, v)?;
                 self[Register8::F] = flags.0;
             }
-            Bits::Sla(o) => {
+            Bits::ShiftLeftArithmetic(o) => {
                 let v = self.read_operand(o)?;
                 let (v, flags) = sla(v);
                 self.write_operand(o, v)?;
                 self[Register8::F] = flags.0;
             }
-            Bits::Sra(o) => {
+            Bits::ShiftRightArithmetic(o) => {
                 let v = self.read_operand(o)?;
                 let (v, flags) = sra(v);
                 self.write_operand(o, v)?;
                 self[Register8::F] = flags.0;
             }
-            Bits::Srl(o) => {
+            Bits::ShiftRightLogical(o) => {
                 let v = self.read_operand(o)?;
                 let (v, flags) = srl(v);
                 self.write_operand(o, v)?;
                 self[Register8::F] = flags.0;
             }
-            Bits::Rlc(o) => {
+            Bits::RotateLeftCarry(o) => {
                 let v = self.read_operand(o)?;
                 let (v, flags) = rlc(v, self.flags());
                 self.write_operand(o, v)?;
                 self[Register8::F] = flags.0;
             }
-            Bits::Rrc(o) => {
+            Bits::RotateRightCarry(o) => {
                 let v = self.read_operand(o)?;
                 let (v, flags) = rrc(v, self.flags());
                 self.write_operand(o, v)?;
                 self[Register8::F] = flags.0;
             }
-            Bits::Rl(o) => {
+            Bits::RotateLeft(o) => {
                 let v = self.read_operand(o)?;
                 let (v, flags) = rl(v, self.flags());
                 self.write_operand(o, v)?;
                 self[Register8::F] = flags.0;
             }
-            Bits::Rr(o) => {
+            Bits::RotateRight(o) => {
                 let v = self.read_operand(o)?;
                 let (v, flags) = rr(v, self.flags());
                 self.write_operand(o, v)?;
                 self[Register8::F] = flags.0;
             }
-            Bits::Rra => {
+            Bits::RotateRightAccumulator => {
                 let (v, mut flags) = rr(self[Register8::A], self.flags());
                 flags.set_zero(false);
                 self[Register8::A] = v;
                 self[Register8::F] = flags.0;
             }
-            Bits::Rla => {
+            Bits::RotateLeftAccumulator => {
                 let (v, mut flags) = rl(self[Register8::A], self.flags());
                 flags.set_zero(false);
                 self[Register8::A] = v;
                 self[Register8::F] = flags.0;
             }
-            Bits::Rrca => {
+            Bits::RotateRightCarryAccumulator => {
                 let (v, mut flags) = rrc(self[Register8::A], self.flags());
                 flags.set_zero(false);
                 self[Register8::A] = v;
                 self[Register8::F] = flags.0;
             }
-            Bits::Rlca => {
+            Bits::RotateLeftCarryAccumulator => {
                 let (v, mut flags) = rlc(self[Register8::A], self.flags());
                 flags.set_zero(false);
                 self[Register8::A] = v;
                 self[Register8::F] = flags.0;
             }
-            Bits::Bit(b, o) => {
+            Bits::GetBit(b, o) => {
                 let v = self.read_operand(o)?;
                 let mut flags = self.flags();
                 flags.set_halfcarry(true);
@@ -315,11 +315,11 @@ impl Cpu {
                 flags.set_zero(v & (1 << b) == 0);
                 self[Register8::F] = flags.0;
             }
-            Bits::Res(b, o) => {
+            Bits::ResetBit(b, o) => {
                 let v = self.read_operand(o)?;
                 self.write_operand(o, v & !(1 << b))?;
             }
-            Bits::Set(b, o) => {
+            Bits::SetBit(b, o) => {
                 let v = self.read_operand(o)?;
                 self.write_operand(o, v | (1 << b))?;
             }
@@ -330,47 +330,47 @@ impl Cpu {
 
     fn execute_control(&mut self, c: Control) -> Result<(), ()> {
         match c {
-            Control::JrCondI(o, cond) => {
+            Control::JumpRelativeConditional(o, cond) => {
                 if self.flags().matches(cond) {
                     self.pc += o;
                 }
             }
-            Control::JrI(o) => {
+            Control::JumpRelative(o) => {
                 self.pc += o;
             }
-            Control::Ret => {
+            Control::Return => {
                 self.pc = Address(self.mmu.read16(self.sp)?);
                 self.sp += Address(2);
             }
-            Control::Reti => {
+            Control::InterruptReturn => {
                 self.pc = Address(self.mmu.read16(self.sp)?);
                 self.sp += Address(2);
                 self.interrupt_master_enable = true;
             }
-            Control::RetCond(cond) => {
+            Control::ReturnConditional(cond) => {
                 if self.flags().matches(cond) {
                     self.pc = Address(self.mmu.read16(self.sp)?);
                     self.sp += Address(2);
                 }
             }
-            Control::JpN => {
+            Control::JumpIndirect => {
                 let a = Address(self.read_r16(Register16::HL));
                 self.pc = a;
             }
-            Control::JpI(a) => {
+            Control::Jump(a) => {
                 self.pc = a;
             }
-            Control::JpCondI(a, cond) => {
+            Control::JumpConditional(a, cond) => {
                 if self.flags().matches(cond) {
                     self.pc = a;
                 }
             }
-            Control::CallI(a) | Control::Rst(a) => {
+            Control::Call(a) | Control::Reset(a) => {
                 let v = self.pc.into();
                 self.push16(v)?;
                 self.pc = a;
             }
-            Control::CallCondI(a, cond) => {
+            Control::CallConditional(a, cond) => {
                 if self.flags().matches(cond) {
                     let v = self.pc.into();
                     self.push16(v)?;
@@ -384,32 +384,32 @@ impl Cpu {
 
     fn execute_load(&mut self, l: Load) -> Result<(), ()> {
         match l {
-            Load::Ld(o1, o2) => {
+            Load::Load(o1, o2) => {
                 let v = self.read_operand(o2)?;
                 self.write_operand(o1, v)?;
             }
-            Load::LdNA(d) => {
+            Load::LoadIndirectFromA(d) => {
                 let a = self.read_r16(Register16::HL);
                 let v = self[Register8::A];
                 self.mmu.write(Address(a), v)?;
                 self.write_r16(Register16::HL, (Wrapping(a) + Wrapping(d as u16)).0);
             }
-            Load::LdAN(d) => {
+            Load::LoadAFromIndirect(d) => {
                 let a = self.read_r16(Register16::HL);
                 self[Register8::A] = self.mmu.read(Address(a))?;
                 self.write_r16(Register16::HL, (Wrapping(a) + Wrapping(d as u16)).0);
             }
-            Load::LdNCA => {
+            Load::LoadIndirectHiFromA => {
                 let a = Address(u16::from(self[Register8::C]) + 0xFF00);
                 let v = self[Register8::A];
                 self.mmu.write(a, v)?;
             }
-            Load::LdANC => {
+            Load::LoadAFromIndirectHi => {
                 let a = Address(u16::from(self[Register8::C]) + 0xFF00);
                 let v = self.mmu.read(a)?;
                 self[Register8::A] = v;
             }
-            Load::LdHLSPI(v) => {
+            Load::LoadHLFromSP(v) => {
                 let v1 = self.read_r16(Register16::SP);
                 // Flags are based on 8-bit addition
                 let (_, mut flags) = add(v1 as u8, v as u8);
@@ -422,30 +422,30 @@ impl Cpu {
                 self.write_r16(Register16::HL, v);
                 self[Register8::F] = flags.0;
             }
-            Load::LdSPHL => {
+            Load::LoadSPFromHL => {
                 let v = self.read_r16(Register16::HL);
                 self.write_r16(Register16::SP, v);
             }
-            Load::LdIndirectSP(a) => {
+            Load::LoadMemoryFromSP(a) => {
                 let v = self.read_r16(Register16::SP);
                 self.mmu.write16(a, v)?;
             }
-            Load::LdNR16(r) => {
+            Load::LoadIndirectRegisterFromA(r) => {
                 let v = self[Register8::A];
                 self.write_indirect(r, v)?;
             }
-            Load::LdRN16(r) => {
+            Load::LoadAFromIndirectRegister(r) => {
                 let v = self.read_indirect(r)?;
                 self[Register8::A] = v;
             }
-            Load::LdRI16(r, i) => {
+            Load::LoadRegisterImmediate16(r, i) => {
                 self.write_r16(r, i);
             }
-            Load::LdNIA16(a) => {
+            Load::LoadMemoryFromA(a) => {
                 let v = self[Register8::A];
                 self.mmu.write(a, v)?;
             }
-            Load::LdANI16(a) => {
+            Load::LoadAFromMemory(a) => {
                 let v = self.mmu.read(a)?;
                 self[Register8::A] = v;
             }
@@ -464,49 +464,49 @@ impl Cpu {
 
     fn execute_logic(&mut self, l: Logic) -> Result<(), ()> {
         match l {
-            Logic::AndI(v) => {
+            Logic::AndImmediate(v) => {
                 let (value, flags) = and(self[Register8::A], v);
                 self[Register8::A] = value;
                 self[Register8::F] = flags.0;
             }
-            Logic::AndR(r) => {
+            Logic::AndRegister(r) => {
                 let (value, flags) = and(self[Register8::A], self[r]);
                 self[Register8::A] = value;
                 self[Register8::F] = flags.0;
             }
-            Logic::AndN => {
+            Logic::AndIndirect => {
                 let v = self.read_indirect(Register16::HL)?;
                 let (value, flags) = and(self[Register8::A], v);
                 self[Register8::A] = value;
                 self[Register8::F] = flags.0;
             }
-            Logic::OrI(v) => {
+            Logic::OrImmediate(v) => {
                 let (value, flags) = or(self[Register8::A], v);
                 self[Register8::A] = value;
                 self[Register8::F] = flags.0;
             }
-            Logic::OrR(r) => {
+            Logic::OrRegister(r) => {
                 let (value, flags) = or(self[Register8::A], self[r]);
                 self[Register8::A] = value;
                 self[Register8::F] = flags.0;
             }
-            Logic::OrN => {
+            Logic::OrIndirect => {
                 let v = self.read_indirect(Register16::HL)?;
                 let (value, flags) = or(self[Register8::A], v);
                 self[Register8::A] = value;
                 self[Register8::F] = flags.0;
             }
-            Logic::XorI(v) => {
+            Logic::XorImmediate(v) => {
                 let (value, flags) = xor(self[Register8::A], v);
                 self[Register8::A] = value;
                 self[Register8::F] = flags.0;
             }
-            Logic::XorR(r) => {
+            Logic::XorRegister(r) => {
                 let (value, flags) = xor(self[Register8::A], self[r]);
                 self[Register8::A] = value;
                 self[Register8::F] = flags.0;
             }
-            Logic::XorN => {
+            Logic::XorIndirect => {
                 let v = self.read_indirect(Register16::HL)?;
                 let (value, flags) = xor(self[Register8::A], v);
                 self[Register8::A] = value;

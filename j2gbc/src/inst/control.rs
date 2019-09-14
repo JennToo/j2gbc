@@ -6,30 +6,30 @@ use crate::mem::Address;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Control {
-    JrCondI(i8, ConditionCode),
-    JrI(i8),
-    Ret,
-    Reti,
-    RetCond(ConditionCode),
-    JpN,
-    JpI(Address),
-    JpCondI(Address, ConditionCode),
-    CallI(Address),
-    CallCondI(Address, ConditionCode),
-    Rst(Address),
+    JumpRelativeConditional(i8, ConditionCode),
+    JumpRelative(i8),
+    Return,
+    InterruptReturn,
+    ReturnConditional(ConditionCode),
+    JumpIndirect,
+    Jump(Address),
+    JumpConditional(Address, ConditionCode),
+    Call(Address),
+    CallConditional(Address, ConditionCode),
+    Reset(Address),
 }
 
 impl Control {
     pub fn cycles(self) -> u8 {
         match self {
-            Control::Rst(_) => 16,
-            Control::JpN => 4,
-            Control::JpCondI(_, _) | Control::JpI(_) => 16,
-            Control::CallI(_) | Control::CallCondI(_, _) => 24,
+            Control::Reset(_) => 16,
+            Control::JumpIndirect => 4,
+            Control::JumpConditional(_, _) | Control::Jump(_) => 16,
+            Control::Call(_) | Control::CallConditional(_, _) => 24,
             // TODO: This is actually variable
-            Control::JrCondI(_, _) | Control::JrI(_) => 12,
-            Control::Ret | Control::Reti => 16,
-            Control::RetCond(_) => 8,
+            Control::JumpRelativeConditional(_, _) | Control::JumpRelative(_) => 12,
+            Control::Return | Control::InterruptReturn => 16,
+            Control::ReturnConditional(_) => 8,
         }
     }
 }
@@ -37,17 +37,17 @@ impl Control {
 impl Display for Control {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            Control::JrCondI(i, cond) => write!(f, "jr{} {}", cond, i),
-            Control::JrI(i) => write!(f, "jr {}", i),
-            Control::Ret => write!(f, "ret"),
-            Control::Reti => write!(f, "reti"),
-            Control::RetCond(cond) => write!(f, "ret {}", cond),
-            Control::JpN => write!(f, "jmp [hl]"),
-            Control::JpI(a) => write!(f, "jmp {}", a),
-            Control::JpCondI(a, cond) => write!(f, "jmp{} {}", cond, a),
-            Control::CallI(a) => write!(f, "call {}", a),
-            Control::CallCondI(a, cond) => write!(f, "call{} {}", cond, a),
-            Control::Rst(a) => write!(f, "rst {}", a),
+            Control::JumpRelativeConditional(i, cond) => write!(f, "jr{} {}", cond, i),
+            Control::JumpRelative(i) => write!(f, "jr {}", i),
+            Control::Return => write!(f, "ret"),
+            Control::InterruptReturn => write!(f, "reti"),
+            Control::ReturnConditional(cond) => write!(f, "ret {}", cond),
+            Control::JumpIndirect => write!(f, "jmp [hl]"),
+            Control::Jump(a) => write!(f, "jmp {}", a),
+            Control::JumpConditional(a, cond) => write!(f, "jmp{} {}", cond, a),
+            Control::Call(a) => write!(f, "call {}", a),
+            Control::CallConditional(a, cond) => write!(f, "call{} {}", cond, a),
+            Control::Reset(a) => write!(f, "rst {}", a),
         }
     }
 }
