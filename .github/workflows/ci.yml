@@ -10,6 +10,7 @@ jobs:
           submodules: true
       - uses: Nitori-/rust-actions/get-rust@master
       - run: "sudo apt-get install -y libasound-dev libgtk-3-dev"
+      - run: "make -C j2gbc/gb-conformance"
       - run: "cargo fmt -- --check"
       - run: "cargo clippy -- -Dwarnings"
       - run: "cargo test"
