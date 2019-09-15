@@ -6,6 +6,7 @@ use std::{
     fs::File,
     io::{Read, Write},
     path::Path,
+    process::Command,
 };
 
 #[derive(Deserialize)]
@@ -19,6 +20,8 @@ struct ConformanceTestData {
 }
 
 fn main() {
+    build_conformance_roms();
+
     let out_dir = std::env::var("OUT_DIR").unwrap();
     let destination = Path::new(&out_dir).join("conformance_test_list.rs");
     let mut output = File::create(&destination).unwrap();
@@ -44,4 +47,11 @@ fn main() {
         )
         .unwrap();
     }
+}
+
+fn build_conformance_roms() {
+    Command::new("make")
+        .current_dir("gb-conformance")
+        .spawn()
+        .expect("Failed to build ROMs");
 }

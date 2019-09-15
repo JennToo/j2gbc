@@ -1,3 +1,6 @@
 [submodule "j2gbc/gb-test-roms"]
 	path = j2gbc/gb-test-roms
 	url = https://github.com/Nitori-/gb-test-roms.git
+[submodule "j2gbc/gb-conformance"]
+	path = j2gbc/gb-conformance
+	url = git@github.com:Nitori-/gb-conformance.git

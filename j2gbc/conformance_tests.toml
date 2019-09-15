@@ -74,3 +74,10 @@ path = "gb-test-roms/cpu_instrs/individual/11-op a,(hl).gb"
 max_runtime = 18
 pass_value = "Passed"
 pass_addr = 0x9860
+
+[[test]]
+name = "conformance_can_boot"
+path = "gb-conformance/build/roms/tests/basic/can_boot.gb"
+max_runtime = 1
+pass_value = "Passed"
+pass_addr = 0x9860
