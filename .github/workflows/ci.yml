@@ -6,8 +6,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@master
-        with:
-          submodules: true
+      - run: "git submodule update --init --recursive"
       - uses: Nitori-/rust-actions/get-rust@master
       - run: "sudo apt-get install -y libasound-dev libgtk-3-dev"
       - run: "make -C j2gbc/gb-conformance"
