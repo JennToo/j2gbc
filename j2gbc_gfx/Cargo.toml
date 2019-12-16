@@ -9,7 +9,7 @@ edition = "2018"
 j2gbc = { path = "../j2gbc" }
 log = "^0.4.10"
 lazy_static = "^1.4.0"
-cpal = "^0.10.0"
+cpal = "^0.11.0"
 hound = "^3.4.0"
 j2ds = "^0.3.0"
 clap = "^2.33.0"
