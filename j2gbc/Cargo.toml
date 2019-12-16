@@ -7,7 +7,7 @@ edition = "2018"
 build = "build.rs"
 
 [dependencies]
-log = "^0.4.8"
+log = "^0.4.10"
 j2ds = "^0.3.0"
 toml = "^0.5.5"
 
