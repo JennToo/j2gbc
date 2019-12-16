@@ -7,7 +7,7 @@ edition = "2018"
 
 [dependencies]
 j2gbc = { path = "../j2gbc" }
-log = "^0.4.8"
+log = "^0.4.10"
 lazy_static = "^1.4.0"
 cpal = "^0.10.0"
 hound = "^3.4.0"
