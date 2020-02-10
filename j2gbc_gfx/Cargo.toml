@@ -19,7 +19,7 @@ gdk = "^0.12.0"
 enclose = "^1.1.8"
 
 [dependencies.gtk]
-version = "0.8.0"
+version = "0.8.1"
 features = ["v3_16"]
 
 [dependencies.gio]
