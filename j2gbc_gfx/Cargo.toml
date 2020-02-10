@@ -15,7 +15,7 @@ j2ds = "^0.3.0"
 clap = "^2.33.0"
 gdk-pixbuf = "^0.8.0"
 glib = "^0.9.1"
-gdk = "^0.12.0"
+gdk = "^0.12.1"
 enclose = "^1.1.8"
 
 [dependencies.gtk]
