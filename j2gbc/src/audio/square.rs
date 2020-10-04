@@ -162,9 +162,10 @@ impl SquareChannel {
             return 0.;
         }
         self.last_cpu_cycle = cpu_cycle;
-        while let Some(_) = self
+        while self
             .duty_cycle_step_timer
             .update(cpu_cycle - self.duty_cycle_step_timer_offset)
+            .is_some()
         {
             self.duty_cycle_step = (self.duty_cycle_step + 1) % 8;
         }
