@@ -24,16 +24,16 @@ where
     }));
 }
 
-fn keycode_to_button(keycode: gdk::enums::key::Key) -> Option<Button> {
+fn keycode_to_button(keycode: gdk::keys::Key) -> Option<Button> {
     match keycode {
-        gdk::enums::key::Up => Some(Button::Up),
-        gdk::enums::key::Down => Some(Button::Down),
-        gdk::enums::key::Left => Some(Button::Left),
-        gdk::enums::key::Right => Some(Button::Right),
-        gdk::enums::key::z => Some(Button::A),
-        gdk::enums::key::x => Some(Button::B),
-        gdk::enums::key::a => Some(Button::Select),
-        gdk::enums::key::s => Some(Button::Start),
+        gdk::keys::constants::Up => Some(Button::Up),
+        gdk::keys::constants::Down => Some(Button::Down),
+        gdk::keys::constants::Left => Some(Button::Left),
+        gdk::keys::constants::Right => Some(Button::Right),
+        gdk::keys::constants::z => Some(Button::A),
+        gdk::keys::constants::x => Some(Button::B),
+        gdk::keys::constants::a => Some(Button::Select),
+        gdk::keys::constants::s => Some(Button::Start),
         _ => None,
     }
 }

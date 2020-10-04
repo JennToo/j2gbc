@@ -24,7 +24,7 @@ struct Context {
 }
 
 pub fn load_debugger(system: &SystemRef) -> gtk::Window {
-    let builder = gtk::Builder::new_from_string(DEBUGGER_UI);
+    let builder = gtk::Builder::from_string(DEBUGGER_UI);
     let window: gtk::Window = builder.get_object("debugger_window").unwrap();
     let context = Context::from_builder(system.clone(), builder);
     context.running();

@@ -39,7 +39,7 @@ pub fn main() {
         )
         .unwrap();
 
-        let image = gtk::Image::new_from_pixbuf(Some(&pixbuf));
+        let image = gtk::Image::from_pixbuf(Some(&pixbuf));
         window.add(&image);
 
         let mut dt = timer::DeltaTimer::new();
@@ -47,7 +47,7 @@ pub fn main() {
         event::install_event_handlers(&window, &system);
         debugger::load_debugger(&system);
 
-        gtk::timeout_add(16, move || {
+        glib::timeout_add_local(16, move || {
             saver.maybe_save(&system.borrow());
             event::run_frame(&image, &pixbuf, &system, &mut dt);
             glib::source::Continue(true)
