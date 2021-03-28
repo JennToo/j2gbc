@@ -6,4 +6,7 @@ edition = "2018"
 
 [dependencies]
 j2gbc = { path = "../j2gbc" }
+frontend_utils = { path = "../frontend_utils" }
+cpal_audio = { path = "../cpal_audio" }
 minifb = "0.19.3"
+clap = "^2.33.0"

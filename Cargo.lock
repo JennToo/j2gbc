@@ -809,6 +809,9 @@ dependencies = [
 name = "minifb_frontend"
 version = "0.1.0"
 dependencies = [
+ "clap",
+ "cpal_audio",
+ "frontend_utils",
  "j2gbc",
  "minifb",
 ]
