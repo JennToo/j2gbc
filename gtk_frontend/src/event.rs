@@ -1,10 +1,11 @@
 use enclose::enclose;
+use frontend_utils::DeltaTimer;
 use gdk_pixbuf::Pixbuf;
 use gtk::prelude::*;
 use gtk::Image;
 use j2gbc::Button;
 
-use crate::{timer::DeltaTimer, SystemRef};
+use crate::SystemRef;
 
 pub fn install_event_handlers<W>(key_widget: &W, system: &SystemRef)
 where

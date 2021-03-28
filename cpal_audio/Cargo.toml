@@ -1,0 +1,12 @@
+[package]
+name = "cpal_audio"
+version = "0.1.0"
+authors = ["Jennifer Wilcox <jennifer@nitori.org>"]
+edition = "2018"
+
+[dependencies]
+j2gbc = { path = "../j2gbc" }
+j2ds = "^0.3.0"
+cpal = "^0.11.0"
+log = "^0.4.10"
+hound = "^3.4.0"

@@ -6,13 +6,10 @@ use gtk::prelude::*;
 use gtk::{Application, ApplicationWindow};
 use j2gbc::{System, SCREEN_SIZE};
 
-mod audio;
 mod debugger;
 mod event;
 mod loader;
 mod logger;
-mod save;
-mod timer;
 
 pub type SystemRef = Rc<RefCell<System>>;
 
@@ -22,7 +19,7 @@ pub fn main() {
         .expect("failed to initialize GTK application");
 
     application.connect_activate(|app| {
-        let args = loader::parse_args();
+        let args = frontend_utils::parse_args();
         let (system, mut saver, _) = loader::load_system(&args);
         let system = Rc::new(RefCell::new(system));
 
@@ -42,7 +39,7 @@ pub fn main() {
         let image = gtk::Image::from_pixbuf(Some(&pixbuf));
         window.add(&image);
 
-        let mut dt = timer::DeltaTimer::new();
+        let mut dt = frontend_utils::DeltaTimer::new();
 
         event::install_event_handlers(&window, &system);
         debugger::load_debugger(&system);

@@ -2,12 +2,9 @@ use std::fs::File;
 use std::io::Read;
 use std::sync::Arc;
 
+use cpal_audio::{CaptureConfig, CpalSink};
+use frontend_utils::Saver;
 use j2gbc::{AudioSink, NullSink, System};
-
-use crate::{
-    audio::{CaptureConfig, CpalSink},
-    save::Saver,
-};
 
 pub fn load_system(args: &clap::ArgMatches<'static>) -> (System, Saver, Arc<CaptureConfig>) {
     let cart_path = args.value_of("rom").unwrap();
@@ -42,30 +39,4 @@ pub fn load_system(args: &clap::ArgMatches<'static>) -> (System, Saver, Arc<Capt
     let saver = Saver::new(save_path.as_str());
 
     (system, saver, capture_config)
-}
-
-pub fn parse_args() -> clap::ArgMatches<'static> {
-    clap::App::new("j2gbc -- DMG and CGB emulator")
-        .author("Jennifer Wilcox <jennifer@nitori.org>")
-        .arg(
-            clap::Arg::with_name("mode")
-                .short("m")
-                .long("mode")
-                .takes_value(true)
-                .help("Operate as a DMG or CGB [default: cgb]")
-                .possible_values(&["dmg", "cgb"]),
-        )
-        .arg(clap::Arg::with_name("no-pedantic-mmu")
-            .long("no-pedantic-mmu")
-            .help("Disable pedantic MMU. Otherwise by default the MMU will trap if an invalid memory access occurs.")
-        )
-        .arg(clap::Arg::with_name("no-audio")
-             .long("no-audio")
-             .help("Disable audio")
-        )
-        .arg(
-            clap::Arg::with_name("rom")
-                .help("ROM file to load")
-                .required(true),
-        ).get_matches()
 }

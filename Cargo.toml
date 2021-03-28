@@ -1,5 +1,8 @@
 [workspace]
 members = [
     "j2gbc",
-    "j2gbc_gfx",
+    "gtk_frontend",
+    "cpal_audio",
+    "minifb_frontend",
+    "frontend_utils",
 ]

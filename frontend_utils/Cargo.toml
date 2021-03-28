@@ -1,0 +1,9 @@
+[package]
+name = "frontend_utils"
+version = "0.1.0"
+authors = ["Jennifer Wilcox <jennifer@nitori.org>"]
+edition = "2018"
+
+[dependencies]
+j2gbc = { path = "../j2gbc" }
+clap = "^2.33.0"
