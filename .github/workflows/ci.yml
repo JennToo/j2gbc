@@ -7,7 +7,9 @@ jobs:
     steps:
       - uses: actions/checkout@master
       - run: "git submodule update --init --recursive"
-      - uses: Nitori-/rust-actions/get-rust@master
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
       - run: "sudo apt-get update"
       - run: "sudo apt-get install -y libasound-dev libgtk-3-dev byacc flex"
       - run: "make -C j2gbc/gb-conformance"
