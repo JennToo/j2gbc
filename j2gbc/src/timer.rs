@@ -3,6 +3,7 @@ use std::num::Wrapping;
 
 use super::cpu::{Interrupt, InterruptSet, CLOCK_RATE};
 use super::mem::*;
+use crate::error::ExecutionError;
 
 const DIV_INCREMENT_CYCLE_COUNT: u64 = CLOCK_RATE / 16_779;
 const TIMA_INCREMENT_CYCLE_COUNT: [u64; 4] = [
@@ -93,7 +94,7 @@ fn maybe_half_cycle(cycle_count: u64, double_speed: bool) -> u64 {
 }
 
 impl MemDevice for Timer {
-    fn read(&self, a: Address) -> Result<u8, ()> {
+    fn read(&self, a: Address) -> Result<u8, ExecutionError> {
         match a {
             REG_DIV => Ok(self.div),
             REG_TIMA => Ok(self.tima),
@@ -103,7 +104,7 @@ impl MemDevice for Timer {
         }
     }
 
-    fn write(&mut self, a: Address, v: u8) -> Result<(), ()> {
+    fn write(&mut self, a: Address, v: u8) -> Result<(), ExecutionError> {
         match a {
             REG_DIV => {
                 self.div = 0;

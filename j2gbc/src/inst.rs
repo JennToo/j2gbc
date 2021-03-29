@@ -18,6 +18,7 @@ pub use self::bits::Bits;
 pub use self::control::Control;
 pub use self::load::Load;
 pub use self::logic::Logic;
+use crate::error::ExecutionError;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Instruction {
@@ -60,7 +61,7 @@ impl Instruction {
         }
     }
 
-    pub fn decode(bytes: [u8; 3]) -> Result<(Instruction, u8), ()> {
+    pub fn decode(bytes: [u8; 3]) -> Result<(Instruction, u8), ExecutionError> {
         match bytes[0] {
             0 => Ok((Instruction::Nop, 1)),
 
@@ -74,7 +75,7 @@ impl Instruction {
                         "Unknown instruction {:#X} {:#X} {:#X}",
                         bytes[0], bytes[1], bytes[2]
                     );
-                    Err(())
+                    Err(ExecutionError::InvalidInstruction)
                 }
             },
             0x76 => Ok((Instruction::Halt, 1)),
@@ -457,7 +458,7 @@ impl Instruction {
                     "Unknown instruction {:#X} {:#X} {:#X}",
                     bytes[0], bytes[1], bytes[2]
                 );
-                Err(())
+                Err(ExecutionError::InvalidInstruction)
             }
         }
     }

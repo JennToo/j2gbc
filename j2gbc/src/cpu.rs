@@ -29,6 +29,7 @@ pub use self::{
     interrupt::{Interrupt, InterruptSet},
     register::{ConditionCode, Operand, Register16, Register8},
 };
+use crate::error::ExecutionError;
 
 pub struct Cpu {
     registers: [u8; 8],
@@ -84,7 +85,7 @@ impl Cpu {
         self.cycle
     }
 
-    fn execute(&mut self, i: Instruction) -> Result<(), ()> {
+    fn execute(&mut self, i: Instruction) -> Result<(), ExecutionError> {
         let mut branch_taken = false;
         match i {
             Instruction::Nop => {}
@@ -99,7 +100,7 @@ impl Cpu {
                     self.mmu.toggle_double_speed();
                 } else {
                     error!("Stop executed without speed switch mode prepared");
-                    return Err(());
+                    return Err(ExecutionError::StopWithoutSpeed);
                 }
             }
             Instruction::Halt => {
@@ -149,7 +150,7 @@ impl Cpu {
         Ok(())
     }
 
-    fn execute_arith(&mut self, a: Arith) -> Result<(), ()> {
+    fn execute_arith(&mut self, a: Arith) -> Result<(), ExecutionError> {
         match a {
             Arith::Add(o) => {
                 let v1 = self[Register8::A];
@@ -226,7 +227,7 @@ impl Cpu {
         Ok(())
     }
 
-    fn execute_bits(&mut self, b: Bits) -> Result<(), ()> {
+    fn execute_bits(&mut self, b: Bits) -> Result<(), ExecutionError> {
         match b {
             Bits::Complement => {
                 let mut f = self.flags();
@@ -329,7 +330,11 @@ impl Cpu {
         Ok(())
     }
 
-    fn execute_control(&mut self, c: Control, branch_taken: &mut bool) -> Result<(), ()> {
+    fn execute_control(
+        &mut self,
+        c: Control,
+        branch_taken: &mut bool,
+    ) -> Result<(), ExecutionError> {
         match c {
             Control::JumpRelativeConditional(o, cond) => {
                 if self.flags().matches(cond) {
@@ -393,7 +398,7 @@ impl Cpu {
         Ok(())
     }
 
-    fn execute_load(&mut self, l: Load) -> Result<(), ()> {
+    fn execute_load(&mut self, l: Load) -> Result<(), ExecutionError> {
         match l {
             Load::Load(o1, o2) => {
                 let v = self.read_operand(o2)?;
@@ -473,7 +478,7 @@ impl Cpu {
         Ok(())
     }
 
-    fn execute_logic(&mut self, l: Logic) -> Result<(), ()> {
+    fn execute_logic(&mut self, l: Logic) -> Result<(), ExecutionError> {
         match l {
             Logic::AndImmediate(v) => {
                 let (value, flags) = and(self[Register8::A], v);
@@ -528,7 +533,7 @@ impl Cpu {
         Ok(())
     }
 
-    fn read_operand(&self, o: Operand) -> Result<u8, ()> {
+    fn read_operand(&self, o: Operand) -> Result<u8, ExecutionError> {
         match o {
             Operand::Immediate(v) => Ok(v),
             Operand::Register(r) => Ok(self[r]),
@@ -537,7 +542,7 @@ impl Cpu {
         }
     }
 
-    fn write_operand(&mut self, o: Operand, v: u8) -> Result<(), ()> {
+    fn write_operand(&mut self, o: Operand, v: u8) -> Result<(), ExecutionError> {
         match o {
             Operand::Immediate(_) => panic!("Invalid instruction requesting write to immediate"),
             Operand::Register(r) => {
@@ -549,7 +554,7 @@ impl Cpu {
         }
     }
 
-    pub fn run_cycle(&mut self) -> Result<(), ()> {
+    pub fn run_cycle(&mut self) -> Result<(), ExecutionError> {
         self.fire_interrupts()?;
 
         if self.halted {
@@ -559,7 +564,7 @@ impl Cpu {
         if self.breakpoints.contains(&self.pc) {
             self.breakpoints.remove(&self.pc);
             error!("Breakpoint");
-            return Err(());
+            return Err(ExecutionError::Breakpoint);
         }
 
         let (instruction, len) = self.fetch_instruction(self.pc)?;
@@ -567,7 +572,8 @@ impl Cpu {
         self.pc += Address(u16::from(len));
         self.execute(instruction)?;
 
-        self.drive_peripherals()
+        self.drive_peripherals();
+        Ok(())
     }
 
     pub fn run_for_duration(&mut self, duration: &Duration) {
@@ -589,22 +595,18 @@ impl Cpu {
                         min(self.mmu.timer.get_next_event_cycle(), stop_at_cycle),
                     ),
                 );
-                if self.drive_peripherals().is_err() {
-                    self.debug_halted = true;
-                }
+                self.drive_peripherals();
             }
         }
     }
 
-    fn drive_peripherals(&mut self) -> Result<(), ()> {
+    fn drive_peripherals(&mut self) {
         self.mmu.audio.synth.pump_cycle(self.cycle);
 
         let i1 = self.mmu.lcd.pump_cycle(self.cycle);
         let i2 = self.mmu.timer.pump_cycle(self.cycle);
 
         self.request_interrupts(i1.merge(i2));
-
-        Ok(())
     }
 
     fn request_interrupts(&mut self, ints: InterruptSet) {
@@ -614,7 +616,7 @@ impl Cpu {
         }
     }
 
-    fn fire_interrupts(&mut self) -> Result<(), ()> {
+    fn fire_interrupts(&mut self) -> Result<(), ExecutionError> {
         if self.interrupt_master_enable {
             if let (Some(int), if_) =
                 Interrupt::int_to_run(self.mmu.interrupt_flag, self.mmu.interrupt_enable)
@@ -632,7 +634,7 @@ impl Cpu {
         Ok(())
     }
 
-    fn fire_interrupt(&mut self, int: Interrupt) -> Result<(), ()> {
+    fn fire_interrupt(&mut self, int: Interrupt) -> Result<(), ExecutionError> {
         let v = self.pc.into();
         self.push16(v)?;
 
@@ -642,7 +644,7 @@ impl Cpu {
         Ok(())
     }
 
-    pub fn fetch_instruction(&self, address: Address) -> Result<(Instruction, u8), ()> {
+    pub fn fetch_instruction(&self, address: Address) -> Result<(Instruction, u8), ExecutionError> {
         let bytes = [
             self.mmu.read(address)?,
             self.mmu.read(address + Address(1))?,
@@ -685,25 +687,25 @@ impl Cpu {
         }
     }
 
-    fn push16(&mut self, v: u16) -> Result<(), ()> {
+    fn push16(&mut self, v: u16) -> Result<(), ExecutionError> {
         let nsp = self.sp - Address(2);
         self.mmu.write16(nsp, v)?;
         self.sp = nsp;
         Ok(())
     }
 
-    fn pop16(&mut self) -> Result<u16, ()> {
+    fn pop16(&mut self) -> Result<u16, ExecutionError> {
         let v = self.mmu.read16(self.sp)?;
         self.sp += Address(2);
         Ok(v)
     }
 
-    fn read_indirect(&self, r: Register16) -> Result<u8, ()> {
+    fn read_indirect(&self, r: Register16) -> Result<u8, ExecutionError> {
         let a = Address(self.read_r16(r));
         self.mmu.read(a)
     }
 
-    fn write_indirect(&mut self, r: Register16, v: u8) -> Result<(), ()> {
+    fn write_indirect(&mut self, r: Register16, v: u8) -> Result<(), ExecutionError> {
         let a = Address(self.read_r16(r));
         self.mmu.write(a, v)
     }

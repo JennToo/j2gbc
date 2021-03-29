@@ -1,10 +1,12 @@
 #![allow(unknown_lints)]
+#![allow(clippy::upper_case_acronyms)]
 
 mod alu;
 mod audio;
 mod cart;
 mod cpu;
 pub mod debug;
+mod error;
 mod input;
 mod inst;
 mod lcd;

@@ -1,6 +1,7 @@
 use log::error;
 
 use super::Mbc;
+use crate::error::ExecutionError;
 use crate::mem::{Address, ExtendedAddress, MemDevice, Ram, RNG_EXT_RAM, RNG_ROM_BANK1};
 
 pub struct Mbc0 {
@@ -18,23 +19,23 @@ impl Mbc0 {
 }
 
 impl MemDevice for Mbc0 {
-    fn read(&self, a: Address) -> Result<u8, ()> {
+    fn read(&self, a: Address) -> Result<u8, ExecutionError> {
         if a.in_(RNG_ROM_BANK1) {
             Ok(self.rom[a.0 as usize])
         } else if a.in_(RNG_EXT_RAM) {
             self.ram.read(a - RNG_EXT_RAM.0)
         } else {
             error!("Address out of range for MBC 0");
-            Err(())
+            Err(ExecutionError::BusError)
         }
     }
 
-    fn write(&mut self, a: Address, v: u8) -> Result<(), ()> {
+    fn write(&mut self, a: Address, v: u8) -> Result<(), ExecutionError> {
         if a.in_(RNG_EXT_RAM) {
             self.ram.write(a - RNG_EXT_RAM.0, v)
         } else {
             error!("Unknown MBC0 register {}", a);
-            Err(())
+            Err(ExecutionError::BusError)
         }
     }
 }

@@ -171,7 +171,7 @@ pub fn inc(value: u8, mut flags: Flags) -> (u8, Flags) {
 pub fn dec(value: u8, mut flags: Flags) -> (u8, Flags) {
     let result = (Wrapping(value) - Wrapping(1)).0;
     flags.set_zero(result == 0);
-    flags.set_halfcarry((value as i8) & 0x0F < (1 as i8) & 0x0F);
+    flags.set_halfcarry(((value as i8) & 0x0F) < (1_i8 & 0x0F));
     flags.set_subtract(true);
 
     (result, flags)

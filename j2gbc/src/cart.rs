@@ -1,6 +1,7 @@
 use std::io;
 use std::io::Read;
 
+use crate::error::ExecutionError;
 use crate::mbc::mbc0::Mbc0;
 use crate::mbc::mbc1::Mbc1;
 use crate::mbc::mbc5::Mbc5;
@@ -95,7 +96,7 @@ impl Cart {
 }
 
 impl MemDevice for Cart {
-    fn read(&self, a: Address) -> Result<u8, ()> {
+    fn read(&self, a: Address) -> Result<u8, ExecutionError> {
         if a.in_(RNG_ROM_BANK0) || a.in_(RNG_INTR_TABLE) {
             Ok(self.data[a.0 as usize])
         } else {
@@ -103,7 +104,7 @@ impl MemDevice for Cart {
         }
     }
 
-    fn write(&mut self, a: Address, v: u8) -> Result<(), ()> {
+    fn write(&mut self, a: Address, v: u8) -> Result<(), ExecutionError> {
         self.mbc.write(a, v)
     }
 }

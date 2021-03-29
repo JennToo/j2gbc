@@ -5,6 +5,7 @@ use log::{error, info};
 use crate::alu::hi_lo;
 use crate::audio::{Audio, AudioSink};
 use crate::cart::Cart;
+use crate::error::ExecutionError;
 use crate::input::Input;
 use crate::lcd::Lcd;
 use crate::mem::*;
@@ -68,7 +69,7 @@ impl Mmu {
         }
     }
 
-    fn dma(&mut self, mut src: Address) -> Result<(), ()> {
+    fn dma(&mut self, mut src: Address) -> Result<(), ExecutionError> {
         // TODO: This should actually take 160us worth of cycles
         let mut dst = RNG_LCD_OAM.0;
         while dst < RNG_LCD_OAM.1 {
@@ -81,7 +82,7 @@ impl Mmu {
         Ok(())
     }
 
-    fn hdma(&mut self, src: AddressRange, mut dest: Address) -> Result<(), ()> {
+    fn hdma(&mut self, src: AddressRange, mut dest: Address) -> Result<(), ExecutionError> {
         let mut src_cursor = src.0;
         while src_cursor < src.1 {
             let v = self.read(src_cursor)?;
@@ -92,10 +93,10 @@ impl Mmu {
         Ok(())
     }
 
-    fn _read(&self, a: Address) -> Result<u8, ()> {
+    fn _read(&self, a: Address) -> Result<u8, ExecutionError> {
         if self.watchpoints.contains(&a) {
             info!("Read watchpoint for {:?}", a);
-            Err(())
+            Err(ExecutionError::MmuException)
         } else if a == REG_SVBK {
             Ok(self.ram_bank_select as u8)
         } else if a == REG_HDMA1 {
@@ -147,16 +148,16 @@ impl Mmu {
                 REG_SB | REG_SC => Ok(0),
                 _ => {
                     error!("MMU: Unimplemented memory read at address {:?}", a);
-                    Err(())
+                    Err(ExecutionError::BusError)
                 }
             }
         }
     }
 
-    fn _write(&mut self, a: Address, v: u8) -> Result<(), ()> {
+    fn _write(&mut self, a: Address, v: u8) -> Result<(), ExecutionError> {
         if self.watchpoints.contains(&a) {
             info!("Write watchpoint for {:?}", a);
-            Err(())
+            Err(ExecutionError::MmuException)
         } else if a == REG_RP {
             // IR not supported right now
             Ok(())
@@ -227,7 +228,7 @@ impl Mmu {
                 REG_SB | REG_SC => Ok(()),
                 _ => {
                     error!("MMU: Unimplemented memory write at address {:?}", a);
-                    Err(())
+                    Err(ExecutionError::BusError)
                 }
             }
         }
@@ -240,7 +241,7 @@ impl Mmu {
 }
 
 impl MemDevice for Mmu {
-    fn read(&self, a: Address) -> Result<u8, ()> {
+    fn read(&self, a: Address) -> Result<u8, ExecutionError> {
         if self.pedantic && !self.exceptions.allow(a) {
             self._read(a)
         } else {
@@ -248,7 +249,7 @@ impl MemDevice for Mmu {
         }
     }
 
-    fn write(&mut self, a: Address, v: u8) -> Result<(), ()> {
+    fn write(&mut self, a: Address, v: u8) -> Result<(), ExecutionError> {
         if self.pedantic && !self.exceptions.allow(a) {
             self._write(a, v)
         } else {

@@ -1,6 +1,7 @@
 use log::error;
 
 use super::Mbc;
+use crate::error::ExecutionError;
 use crate::mem::{
     Address, AddressRange, ExtendedAddress, MemDevice, Ram, RNG_EXT_RAM, RNG_ROM_BANK1,
 };
@@ -44,7 +45,7 @@ impl Mbc1 {
 }
 
 impl MemDevice for Mbc1 {
-    fn read(&self, a: Address) -> Result<u8, ()> {
+    fn read(&self, a: Address) -> Result<u8, ExecutionError> {
         if a.in_(RNG_ROM_BANK1) {
             let index = self.map_address_into_rom(a).0 as usize;
             Ok(self.rom[index])
@@ -55,7 +56,7 @@ impl MemDevice for Mbc1 {
         }
     }
 
-    fn write(&mut self, a: Address, v: u8) -> Result<(), ()> {
+    fn write(&mut self, a: Address, v: u8) -> Result<(), ExecutionError> {
         if a.in_(RNG_LOWER_BANK_SELECT) {
             self.lower_bank_select = (v & MASK_LOWER_BANK_SELECT) as usize;
             if self.lower_bank_select == 0 {
@@ -65,7 +66,7 @@ impl MemDevice for Mbc1 {
         } else if a.in_(RNG_EXT_RAM) {
             if self.ram_protected {
                 error!("Error: RAM is not writable right now");
-                Err(())
+                Err(ExecutionError::ProtectionFault)
             } else {
                 let mapped = self.map_address_into_ram(a);
                 self.ram.write(mapped, v)
@@ -81,7 +82,7 @@ impl MemDevice for Mbc1 {
             Ok(())
         } else {
             error!("Unimplemented MBC1 register");
-            Err(())
+            Err(ExecutionError::BusError)
         }
     }
 }

@@ -21,9 +21,8 @@ fn main() {
 
     let mut window = Window::new("j2gbc", SCREEN_SIZE.0, SCREEN_SIZE.1, options).unwrap();
     let (mut system, mut saver) = load_system(&frontend_utils::parse_args());
-    let mut timer = frontend_utils::DeltaTimer::new();
-
     window.limit_update_rate(Some(std::time::Duration::from_micros(16600)));
+    let mut timer = frontend_utils::DeltaTimer::default();
 
     while window.is_open() && !window.is_key_down(Key::Escape) {
         process_input(&window, &mut system);
@@ -71,7 +70,7 @@ fn load_system(args: &clap::ArgMatches<'static>) -> (System, Saver) {
 
     let cart_file = File::open(cart_path).unwrap();
 
-    let sink: (Box<dyn AudioSink + Send>) = if !args.is_present("no-audio") {
+    let sink: Box<dyn AudioSink + Send> = if !args.is_present("no-audio") {
         let sink = CpalSink::new().unwrap();
         Box::new(sink)
     } else {

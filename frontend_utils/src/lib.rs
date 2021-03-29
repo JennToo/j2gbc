@@ -9,13 +9,15 @@ pub struct DeltaTimer {
     last_time: Instant,
 }
 
-impl DeltaTimer {
-    pub fn new() -> DeltaTimer {
+impl Default for DeltaTimer {
+    fn default() -> DeltaTimer {
         DeltaTimer {
             last_time: Instant::now(),
         }
     }
+}
 
+impl DeltaTimer {
     pub fn elapsed(&mut self) -> Duration {
         let new_now = Instant::now();
         let d = new_now - self.last_time;

@@ -4,6 +4,7 @@ use std::num::Wrapping;
 use j2ds::{next_timer_event, Timer, TimerEvent};
 use log::error;
 
+use crate::error::ExecutionError;
 use crate::{
     cpu::{Interrupt, InterruptSet, CLOCK_RATE},
     mem::{Address, MemDevice, Ram, RNG_CHAR_DAT, RNG_LCD_BGDD1, RNG_LCD_BGDD2, RNG_LCD_OAM},
@@ -634,7 +635,7 @@ fn test_palette_convert() {
 }
 
 impl MemDevice for Lcd {
-    fn read(&self, a: Address) -> Result<u8, ()> {
+    fn read(&self, a: Address) -> Result<u8, ExecutionError> {
         if a.in_(RNG_LCD_BGDD1) {
             self.bgdd1.read(
                 a - RNG_LCD_BGDD1.0 + Address((self.bank_select * RNG_LCD_BGDD1.len()) as u16),
@@ -667,17 +668,17 @@ impl MemDevice for Lcd {
                 REG_OCPD => Ok(self.ocp[(self.ocps & PAL_DATA_IDX) as usize]),
                 REG_BGP => {
                     error!("Error: BGP is a write-only register");
-                    Err(())
+                    Err(ExecutionError::BusError)
                 }
                 _ => {
                     error!("Unimplemented LCD register {:?}", a);
-                    Err(())
+                    Err(ExecutionError::BusError)
                 }
             }
         }
     }
 
-    fn write(&mut self, a: Address, v: u8) -> Result<(), ()> {
+    fn write(&mut self, a: Address, v: u8) -> Result<(), ExecutionError> {
         if a.in_(RNG_LCD_BGDD1) {
             let adjusted = a + Address((self.bank_select * RNG_LCD_BGDD1.len()) as u16);
             self.bgdd1.write(adjusted - RNG_LCD_BGDD1.0, v)
@@ -697,7 +698,7 @@ impl MemDevice for Lcd {
             match a {
                 REG_LY => {
                     error!("LY is a read only register!");
-                    Err(())
+                    Err(ExecutionError::BusError)
                 }
                 REG_LYC => {
                     self.scanline_sweeper.set_lyc(v);
@@ -780,7 +781,7 @@ impl MemDevice for Lcd {
                 }
                 _ => {
                     error!("Unimplemented LCD register {:?}", a);
-                    Err(())
+                    Err(ExecutionError::BusError)
                 }
             }
         }

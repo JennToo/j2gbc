@@ -2,6 +2,7 @@ use std::collections::HashSet;
 use std::ops::BitOr;
 
 use super::mem::*;
+use crate::error::ExecutionError;
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
 pub enum Button {
@@ -86,13 +87,13 @@ impl Input {
 }
 
 impl MemDevice for Input {
-    fn read(&self, a: Address) -> Result<u8, ()> {
+    fn read(&self, a: Address) -> Result<u8, ExecutionError> {
         assert_eq!(a, REG_P1);
 
         Ok(self.p1)
     }
 
-    fn write(&mut self, a: Address, v: u8) -> Result<(), ()> {
+    fn write(&mut self, a: Address, v: u8) -> Result<(), ExecutionError> {
         assert_eq!(a, REG_P1);
 
         self.p1 = v;

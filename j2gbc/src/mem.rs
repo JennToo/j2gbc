@@ -1,3 +1,4 @@
+use crate::error::ExecutionError;
 use std::convert::Into;
 use std::fmt;
 use std::fmt::{Debug, Display, Formatter};
@@ -109,15 +110,15 @@ impl SubAssign<Address> for Address {
     }
 }
 
-impl Into<usize> for Address {
-    fn into(self) -> usize {
-        self.0 as usize
+impl From<Address> for usize {
+    fn from(address: Address) -> Self {
+        address.0 as usize
     }
 }
 
-impl Into<u16> for Address {
-    fn into(self) -> u16 {
-        self.0 as u16
+impl From<Address> for u16 {
+    fn from(address: Address) -> Self {
+        address.0 as u16
     }
 }
 
@@ -137,16 +138,16 @@ impl AddressRange {
 }
 
 pub trait MemDevice {
-    fn read(&self, a: Address) -> Result<u8, ()>;
-    fn write(&mut self, a: Address, v: u8) -> Result<(), ()>;
+    fn read(&self, a: Address) -> Result<u8, ExecutionError>;
+    fn write(&mut self, a: Address, v: u8) -> Result<(), ExecutionError>;
 
-    fn write16(&mut self, a: Address, v: u16) -> Result<(), ()> {
+    fn write16(&mut self, a: Address, v: u16) -> Result<(), ExecutionError> {
         self.write(a, (v & 0xFF) as u8)?;
         self.write(a + Address(1), ((v >> 8) & 0xFF) as u8)?;
         Ok(())
     }
 
-    fn read16(&self, a: Address) -> Result<u16, ()> {
+    fn read16(&self, a: Address) -> Result<u16, ExecutionError> {
         let hi = u16::from(self.read(a + Address(1))?);
         let lo = u16::from(self.read(a)?);
         Ok(hi << 8 | lo)
@@ -160,20 +161,18 @@ pub struct Ram {
 
 impl Ram {
     pub fn new(size: usize) -> Ram {
-        let mut data = Vec::with_capacity(size);
-        for _ in 0..size {
-            data.push(0);
+        Ram {
+            data: vec![0; size],
         }
-        Ram { data }
     }
 }
 
 impl MemDevice for Ram {
-    fn read(&self, a: Address) -> Result<u8, ()> {
+    fn read(&self, a: Address) -> Result<u8, ExecutionError> {
         Ok(self.data[a.0 as usize])
     }
 
-    fn write(&mut self, a: Address, v: u8) -> Result<(), ()> {
+    fn write(&mut self, a: Address, v: u8) -> Result<(), ExecutionError> {
         self.data[a.0 as usize] = v;
         Ok(())
     }

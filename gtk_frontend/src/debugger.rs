@@ -144,7 +144,7 @@ impl Context {
                     }
                     address += Address(u16::from(len));
                 }
-                Result::Err(()) => {
+                Result::Err(_) => {
                     disassembly += format!("{}: Invalid\n", address).as_str();
                     address += Address(1);
                 }

@@ -1,3 +1,4 @@
+use crate::error::ExecutionError;
 use crate::{cpu::Cpu, lcd::fb::Framebuffer, mem::MemDevice};
 pub use crate::{cpu::Register8, inst::Instruction, lcd::BG_SIZE, mem::Address};
 
@@ -26,7 +27,7 @@ impl<'a> Debugger<'a> {
         self.cpu.interrupt_master_enable
     }
 
-    pub fn read_mem(&self, addr: Address) -> Result<u8, ()> {
+    pub fn read_mem(&self, addr: Address) -> Result<u8, ExecutionError> {
         self.cpu.mmu.read(addr)
     }
 
@@ -47,7 +48,7 @@ impl<'a> Debugger<'a> {
         self.cpu.run_cycle();
     }
 
-    pub fn fetch_instruction(&self, addr: Address) -> Result<(Instruction, u8), ()> {
+    pub fn fetch_instruction(&self, addr: Address) -> Result<(Instruction, u8), ExecutionError> {
         self.cpu.fetch_instruction(addr)
     }
 

@@ -39,7 +39,7 @@ pub fn main() {
         let image = gtk::Image::from_pixbuf(Some(&pixbuf));
         window.add(&image);
 
-        let mut dt = frontend_utils::DeltaTimer::new();
+        let mut dt = frontend_utils::DeltaTimer::default();
 
         event::install_event_handlers(&window, &system);
         debugger::load_debugger(&system);

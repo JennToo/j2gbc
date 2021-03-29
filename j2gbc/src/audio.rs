@@ -1,6 +1,7 @@
 use log::error;
 
 use super::mem::{Address, MemDevice, Ram, RNG_SND_WAV_RAM};
+use crate::error::ExecutionError;
 
 mod mixer;
 mod noise;
@@ -107,7 +108,7 @@ impl Audio {
 }
 
 impl MemDevice for Audio {
-    fn read(&self, a: Address) -> Result<u8, ()> {
+    fn read(&self, a: Address) -> Result<u8, ExecutionError> {
         if a.in_(RNG_SND_WAV_RAM) {
             self.wav.read(a - RNG_SND_WAV_RAM.0)
         } else {
@@ -149,13 +150,13 @@ impl MemDevice for Audio {
                 }
                 _ => {
                     error!("Unimplemented sound register {:?}", a);
-                    Err(())
+                    Err(ExecutionError::BusError)
                 }
             }
         }
     }
 
-    fn write(&mut self, a: Address, v: u8) -> Result<(), ()> {
+    fn write(&mut self, a: Address, v: u8) -> Result<(), ExecutionError> {
         if a.in_(RNG_SND_WAV_RAM) {
             let offset = a - RNG_SND_WAV_RAM.0;
             self.wav.write(offset, v).unwrap();
@@ -335,7 +336,7 @@ impl MemDevice for Audio {
                 }
                 _ => {
                     error!("Unimplemented sound register {:?}", a);
-                    Err(())
+                    Err(ExecutionError::BusError)
                 }
             }
         }

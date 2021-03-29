@@ -1,6 +1,7 @@
 use log::error;
 
 use super::Mbc;
+use crate::error::ExecutionError;
 use crate::mem::{
     Address, AddressRange, ExtendedAddress, MemDevice, Ram, RNG_EXT_RAM, RNG_ROM_BANK1,
 };
@@ -31,7 +32,7 @@ impl Mbc5 {
 }
 
 impl MemDevice for Mbc5 {
-    fn read(&self, a: Address) -> Result<u8, ()> {
+    fn read(&self, a: Address) -> Result<u8, ExecutionError> {
         if a.in_(RNG_ROM_BANK1) {
             let index = self.map_address_into_rom(a).0 as usize;
             Ok(self.rom[index])
@@ -42,7 +43,7 @@ impl MemDevice for Mbc5 {
         }
     }
 
-    fn write(&mut self, a: Address, v: u8) -> Result<(), ()> {
+    fn write(&mut self, a: Address, v: u8) -> Result<(), ExecutionError> {
         if a.in_(RNG_EXT_RAM) {
             self.ram.write(ram_bank_adjust(a, self.ram_bank_select), v)
         } else if a.in_(RNG_RAMG) {
@@ -66,7 +67,7 @@ impl MemDevice for Mbc5 {
             Ok(())
         } else {
             error!("Unimplemented MBC5 register {}", a);
-            Err(())
+            Err(ExecutionError::BusError)
         }
     }
 }
